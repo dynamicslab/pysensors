@@ -36,7 +36,8 @@ class SensorSelector(BaseEstimator):
             basis = Identity()
         self.basis = basis
         if optimizer is None:
-            self.optimizer = optimizer
+            self.optimizer = QR()
+        self.optimizer = optimizer
 
     def fit(self, x, **optimizer_kws):
         """
@@ -66,8 +67,17 @@ class SensorSelector(BaseEstimator):
         )
 
     def predict(self, x, **solve_kws):
+        """
+        If x is a column vector, should behave fine.
+        If x is a 2D array with rows corresponding to examples we'll need
+        to transpose it before multiplying it with the basis matrix.
+        """
         check_is_fitted(self, "selected_sensors_")
         x = validate_input(x, self.selected_sensors_)
+
+        # For efficiency we may want to factor
+        # self.basis_matrix_[self.selected_sensors_, :]
+        # in case predict is called multiple times
 
         return dot(
             self.basis_matrix_,

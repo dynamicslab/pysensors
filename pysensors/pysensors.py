@@ -2,12 +2,14 @@
 SensorSelector object definition.
 """
 from numpy import dot
+from scipy.linalg import lstsq
 from scipy.linalg import solve
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 from pysensors.basis import Identity
 from pysensors.optimizers import QR
+from pysensors.utils import validate_input
 
 
 class SensorSelector(BaseEstimator):
@@ -56,14 +58,14 @@ class SensorSelector(BaseEstimator):
         x = validate_input(x)
 
         # Fit basis functions to data (sometimes unnecessary, e.g FFT)
-        basis.fit(x)
+        self.basis.fit(x)
 
         # Get matrix representation of basis
-        self.basis_matrix_ = basis.matrix_representation()
+        self.basis_matrix_ = self.basis.matrix_representation()
 
-        # Apply the optimizer
-        self.selected_sensors_ = self.optimizer.apply(
-            x, self._basis_mat, **optimizer_kws
+        # Find sparse sensor locations
+        self.selected_sensors_ = self.optimizer.get_sensors(
+            self.basis_matrix_, **optimizer_kws
         )
 
     def predict(self, x, **solve_kws):
@@ -73,13 +75,28 @@ class SensorSelector(BaseEstimator):
         to transpose it before multiplying it with the basis matrix.
         """
         check_is_fitted(self, "selected_sensors_")
-        x = validate_input(x, self.selected_sensors_)
+        x = validate_input(x, self.selected_sensors_).T
 
         # For efficiency we may want to factor
         # self.basis_matrix_[self.selected_sensors_, :]
         # in case predict is called multiple times
 
-        return dot(
-            self.basis_matrix_,
-            solve(self.basis_matrix_[self.selected_sensors_, :], x, **solve_kws),
-        )
+        # Square matrix
+        if len(self.selected_sensors_) == self.basis_matrix_.shape[1]:
+            return dot(
+                self.basis_matrix_,
+                solve(self.basis_matrix_[self.selected_sensors_, :], x, **solve_kws),
+            )
+        else:
+            return dot(
+                self.basis_matrix_,
+                lstsq(self.basis_matrix_[self.selected_sensors_, :], x, **solve_kws)[0],
+            )
+
+    def get_selected_sensors(self, num_sensors=0):
+        check_is_fitted(self, "selected_sensors_")
+
+        if num_sensors > 0:
+            return self.selected_sensors_[:num_sensors]
+        else:
+            return self.selected_sensors_

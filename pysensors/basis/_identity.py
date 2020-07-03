@@ -41,16 +41,21 @@ class Identity(TransformerMixin):
         -------
         self : instance
         """
-        n_samples, n_features = check_array(X).shape
-        self.n_input_features_ = n_features
-        self.n_output_features_ = n_features
+
+        # Note that we take a transpose here, so columns correspond to examples
+        self.basis_matrix_ = check_array(X).T.copy()
         return self
 
     def matrix_representation(self):
         """Get the matrix representation of the operator.
         """
-        check_is_fitted(self)
-        return identity(self.n_input_features_)
+        check_is_fitted(self, "basis_matrix_")
+        return identity(self.basis_matrix_)
+
+
+    """
+    I think we can get rid of these functions
+    """
 
     def transform(self, X):
         """Perform identity transformation (return a copy of the input).

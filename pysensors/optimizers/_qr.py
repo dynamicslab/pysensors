@@ -9,7 +9,7 @@ class QR():
     def __init__(self):
         pass
 
-    def get_sensors(basis_matrix, **optimizer_kws):
+    def get_sensors(self, basis_matrix, **optimizer_kws):
         """
         Parameters
         ----------

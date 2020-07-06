@@ -4,8 +4,7 @@ Identity basis class.
 This is essentially a dummy basis which just uses raw, unaltered features.
 """
 
-from numpy import identity
-from sklearn.base import BaseEstimator
+from sklearn.base import TransformerMixin
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
@@ -50,7 +49,7 @@ class Identity(TransformerMixin):
         """Get the matrix representation of the operator.
         """
         check_is_fitted(self, "basis_matrix_")
-        return identity(self.basis_matrix_)
+        return self.basis_matrix_
 
 
     """

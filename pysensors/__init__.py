@@ -11,8 +11,8 @@ from .pysensors import SensorSelector
 
 __all__ = [
     # Modules:
-    'optimizers',
-    'basis',
+    "optimizers",
+    "basis",
     # Non-modules:
-    'SensorSelector'
+    "SensorSelector",
 ]

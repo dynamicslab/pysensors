@@ -12,8 +12,8 @@ pytest
 To run tests for just one file, run
 pytest file_to_test.py
 """
-from sklearn.exceptions import NotFittedError
 import pytest
+from sklearn.exceptions import NotFittedError
 
 from pysensors import SensorSelector
 

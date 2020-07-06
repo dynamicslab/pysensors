@@ -1,5 +1,4 @@
 """Unit tests for basis classes"""
-
 import numpy as np
 import pytest
 from sklearn.exceptions import NotFittedError

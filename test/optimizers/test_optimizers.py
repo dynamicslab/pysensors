@@ -1,5 +1,4 @@
 """Unit tests for optimizers"""
-
 from pysensors.optimizers import QR
 
 

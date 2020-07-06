@@ -2,12 +2,13 @@
 Various utility functions.
 """
 import numpy as np
-from sklearn.utils.validation import check_array
+
+# from sklearn.utils.validation import check_array
 
 
 def validate_input(x, sensors=None):
     """
-    Ensure that x is of compatible type and shape. 
+    Ensure that x is of compatible type and shape.
 
     Parameters
     ----------
@@ -25,7 +26,10 @@ def validate_input(x, sensors=None):
         n_features = len(x) if np.ndim(x) == 1 else x.shape[1]
         if len(sensors) != n_features:
             raise ValueError(
-                f"x has the wrong number of features: {n_features}. Expected {len(sensors)}"
+                """x has the wrong number of features: {}.
+                Expected {}""".format(
+                    n_features, len(sensors)
+                )
             )
 
     return x

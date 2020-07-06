@@ -120,7 +120,7 @@ class SensorSelector(BaseEstimator):
 
         if num_sensors > len(self.selected_sensors_):
             raise ValueError(
-                "Requested number of sensors cannot exceed number of available sensors: "
+                "num_sensors cannot exceed number of available sensors: "
                 "{}".format(len(self.selected_sensors_))
             )
         elif num_sensors < 0:

@@ -1,5 +1,3 @@
-# TODO
-
 from ._base import validate_input
 
 

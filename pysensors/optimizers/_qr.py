@@ -1,13 +1,13 @@
 from scipy.linalg import qr
 
 
-class QR():
+class QR:
     """
     Greedy QR optimizer for sensor selection.
     """
 
     def __init__(self):
-        pass
+        self.pivots_ = None
 
     def get_sensors(self, basis_matrix, **optimizer_kws):
         """
@@ -21,6 +21,6 @@ class QR():
             Keyword arguments to be passed to the qr method.
         """
 
-        _, _, pivots = qr(basis_matrix.T, pivoting=True, **optimizer_kws)
+        _, _, self.pivots_ = qr(basis_matrix.T, pivoting=True, **optimizer_kws)
 
-        return pivots
+        return self.pivots_

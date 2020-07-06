@@ -1,0 +1,2 @@
+# Interpret Jupyter notebooks as Python
+*.ipynb linguist-language=Python

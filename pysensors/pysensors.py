@@ -49,7 +49,7 @@ class SensorSelector(BaseEstimator):
         ----------
         x: array-like, shape (n_samples, n_input_features)
             Training data.
-        
+
         optimizer_kws: dict
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
         """

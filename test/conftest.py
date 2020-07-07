@@ -19,3 +19,11 @@ def data_vandermonde():
     # PySensor objects expect rows to correspond to examples,
     # columns to positions
     return vde.T
+
+
+@pytest.fixture
+def data_random():
+    n_examples = 30
+    n_features = 20
+
+    return np.random.randn(n_examples, n_features)

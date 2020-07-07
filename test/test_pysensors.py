@@ -14,8 +14,11 @@ pytest file_to_test.py
 """
 import pytest
 from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 from pysensors import SensorSelector
+from pysensors.basis import Identity
+from pysensors.basis import POD
 
 
 def test_not_fitted(data_vandermonde):
@@ -49,13 +52,25 @@ def test_set_number_of_sensors(data_vandermonde):
     assert len(model.get_selected_sensors()) == 15
 
 
-def test_get_all_sensors(data_vandermonde):
-    x = data_vandermonde
+@pytest.mark.parametrize(
+    "data",
+    [pytest.lazy_fixture("data_vandermonde"), pytest.lazy_fixture("data_random")],
+)
+def test_get_all_sensors(data):
+    x = data
     max_sensors = x.shape[1]
 
     model = SensorSelector()
     model.fit(x)
     assert len(model.get_all_sensors()) == max_sensors
+
+
+@pytest.mark.parametrize("basis", [Identity(), POD()])
+def test_basis_compatibility(data_vandermonde, basis):
+    x = data_vandermonde
+    model = SensorSelector(basis=basis)
+    model.fit(x)
+    check_is_fitted(model)
 
 
 # TODO: tests for

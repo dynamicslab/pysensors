@@ -15,25 +15,21 @@ class Identity(TransformerMixin):
 
     Attributes
     ----------
-    n_input_features_ : int
-        The total number of input features.
-
-    n_output_features_ : int
-        The total number of output features. The number of output features
-        is equal to the number of input features.
+    basis_matrix_ : numpy ndarray, shape (n_features, n_samples)
+        The transpose of the input data.
     """
 
     def __init__(self):
         self.n_input_features_ = None
 
-    def fit(self, X, y=None):
+    def fit(self, X):
         """
-        Compute number of output features.
+        Memorize the input data.
 
         Parameters
         ----------
         X : array-like, shape (n_samples, n_features)
-            The data.
+            The training data.
 
         Returns
         -------
@@ -44,8 +40,14 @@ class Identity(TransformerMixin):
         self.basis_matrix_ = check_array(X).T.copy()
         return self
 
-    def matrix_representation(self):
-        """Get the matrix representation of the operator.
+    def matrix_representation(self, copy=False):
+        """
+        Get the matrix representation of the operator.
+
+        Parameters
+        ----------
+        copy : boolean, optional (default False)
+            Whether to return a copy of the basis matrix.
         """
         check_is_fitted(self, "basis_matrix_")
-        return self.basis_matrix_
+        return self.basis_matrix_.copy() if copy else self.basis_matrix_

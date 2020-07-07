@@ -49,9 +49,9 @@ class SensorSelector(BaseEstimator):
         ----------
         x: array-like, shape (n_samples, n_input_features)
             Training data.
-
+        
         optimizer_kws: dict
-            Keyword arguments to be fed into the `fit` method of the optimizer.
+            Keyword arguments to be passed to the `get_sensors` method of the optimizer.
         """
 
         # TODO: some kind of preprocessing / quality control on x
@@ -96,6 +96,7 @@ class SensorSelector(BaseEstimator):
                     **solve_kws
                 ),
             )
+        # Rectangular matrix
         else:
             return dot(
                 self.basis_matrix_,

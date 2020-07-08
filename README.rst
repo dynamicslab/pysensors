@@ -1,5 +1,6 @@
 PySensors
 =========
+|Build|
 
 **PySensors** is a Python package for sparse sensor placement.
 
@@ -86,3 +87,6 @@ References
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
    `[DOI] <10.1109/JSEN.2018.2887044>`_
+   
+.. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
+    :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests

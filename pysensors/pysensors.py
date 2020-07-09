@@ -41,7 +41,7 @@ class SensorSelector(BaseEstimator):
             optimizer = QR()
         self.optimizer = optimizer
 
-    def fit(self, x, **optimizer_kws):
+    def fit(self, x, num_sensors=None, num_basis_modes=None, **optimizer_kws):
         """
         Fit the SensorSelector model, determining which sensors are relevant.
 
@@ -49,6 +49,11 @@ class SensorSelector(BaseEstimator):
         ----------
         x: array-like, shape (n_samples, n_input_features)
             Training data.
+
+        num_sensors: int, optional (default n_input_features)
+            Number of sensors to select.
+            Note that ``self.fit(x, num_sensors=10)`` is equivalent to
+            ``self.fit(x); self.set_number_of_sensors(10)``.
 
         optimizer_kws: dict
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
@@ -68,7 +73,24 @@ class SensorSelector(BaseEstimator):
             self.basis_matrix_, **optimizer_kws
         )
 
-        self.num_sensors = len(self.selected_sensors_)
+        if num_sensors is None:
+            self.num_sensors = len(self.selected_sensors_)
+        elif num_sensors > len(self.selected_sensors_):
+            raise ValueError(
+                """SensorSelector successfully fit, but num_sensors cannot exceed
+                 number of available sensors: {}.\nUse
+                SensorSelector.set_number_of_sensors to set num_sensors.""".format(
+                    len(self.selected_sensors_)
+                )
+            )
+        elif num_sensors < 0:
+            raise ValueError(
+                """SensorSelector successfully fit, but num_sensors must be a positive
+                integer.\nUse SensorSelector.set_number_of_sensors to set
+                num_sensors."""
+            )
+        else:
+            self.num_sensors = num_sensors
 
     def predict(self, x, **solve_kws):
         """

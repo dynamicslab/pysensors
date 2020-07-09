@@ -14,10 +14,10 @@ class POD(TruncatedSVD):
 
     Parameters
     ----------
-    n_components : int, optional (default 10)
+    n_basis_modes : int, optional (default 10)
         Number of basis modes to retain. Cannot be larger than
-        the number of features `n_features`, or the number of examples
-        `n_examples`.
+        the number of features ``n_features``, or the number of examples
+        ``n_examples``.
 
     algorithm: string, optional (default "randomized")
         SVD solver to use. Either “arpack” for the ARPACK wrapper
@@ -29,8 +29,8 @@ class POD(TruncatedSVD):
 
     Attributes
     ----------
-    basis_matrix_ : numpy ndarray, shape (n_features, n_components)
-        The top n_components left singular vectors of the training data.
+    basis_matrix_ : numpy ndarray, shape (n_features, n_basis_modes)
+        The top n_basis_modes left singular vectors of the training data.
 
     References
     -----
@@ -42,8 +42,8 @@ class POD(TruncatedSVD):
     2009 (arXiv:909) https://arxiv.org/pdf/0909.4061.pdf
     """
 
-    def __init__(self, n_components=10, **kwargs):
-        super(POD, self).__init__(n_components=n_components, **kwargs)
+    def __init__(self, n_basis_modes=10, **kwargs):
+        super(POD, self).__init__(n_components=n_basis_modes, **kwargs)
 
     def fit(self, X):
         """

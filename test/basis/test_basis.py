@@ -27,7 +27,7 @@ def test_pod_matrix_representation(data_random):
     n_features = data.shape[1]
     n_components = 5
 
-    basis = POD(n_components=n_components)
+    basis = POD(n_basis_modes=n_components)
     basis.fit(data)
     matrix_representation = basis.matrix_representation()
 

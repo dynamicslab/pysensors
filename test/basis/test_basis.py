@@ -33,3 +33,26 @@ def test_pod_matrix_representation(data_random):
 
     assert matrix_representation.shape[0] == n_features
     assert matrix_representation.shape[1] == n_components
+
+
+@pytest.mark.parametrize("basis", [Identity, POD])
+def test_n_basis_modes(basis, data_random):
+    with pytest.raises(ValueError):
+        b = basis(n_basis_modes=0)
+    with pytest.raises(ValueError):
+        b = basis(n_basis_modes=1.2)
+    with pytest.raises(ValueError):
+        b = basis(n_basis_modes="1")
+
+    data = data_random
+    n_basis_modes = data.shape[0] + 1
+    b = basis(n_basis_modes=n_basis_modes)
+    # Can't have more basis modes than the number of training examples
+    with pytest.raises(ValueError):
+        b.fit(data)
+
+    n_basis_modes = 5
+    b = basis(n_basis_modes=n_basis_modes)
+    b.fit(data)
+
+    assert b.matrix_representation().shape[1] == n_basis_modes

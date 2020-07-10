@@ -139,12 +139,14 @@ class SensorSelector(BaseEstimator):
     def set_number_of_sensors(self, n_sensors):
         check_is_fitted(self, "selected_sensors_")
 
-        if n_sensors > len(self.selected_sensors_):
+        if not isinstance(n_sensors, int):
+            raise ValueError("n_sensors must be a positive integer")
+        elif n_sensors <= 0:
+            raise ValueError("n_sensors must be a positive integer")
+        elif n_sensors > len(self.selected_sensors_):
             raise ValueError(
                 "n_sensors cannot exceed number of available sensors: "
                 "{}".format(len(self.selected_sensors_))
             )
-        elif n_sensors < 0:
-            raise ValueError("n_sensors must be a positive integer")
-
-        self.n_sensors = n_sensors
+        else:
+            self.n_sensors = n_sensors

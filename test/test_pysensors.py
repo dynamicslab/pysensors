@@ -46,7 +46,11 @@ def test_set_number_of_sensors(data_vandermonde):
     with pytest.raises(ValueError):
         model.set_number_of_sensors(max_sensors + 1)
     with pytest.raises(ValueError):
-        model.set_number_of_sensors(-1)
+        model.set_number_of_sensors(0)
+    with pytest.raises(ValueError):
+        model.set_number_of_sensors(1.5)
+    with pytest.raises(ValueError):
+        model.set_number_of_sensors("3")
 
     model.set_number_of_sensors(15)
     assert len(model.get_selected_sensors()) == 15
@@ -71,6 +75,26 @@ def test_basis_compatibility(data_vandermonde, basis):
     model = SensorSelector(basis=basis)
     model.fit(x)
     check_is_fitted(model)
+
+
+def test_n_sensors(data_random):
+
+    # Check for bad inputs
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=0)
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=5.4)
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors="1")
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=[1])
+
+    n_sensors = 5
+    x = data_random
+    model = SensorSelector(n_sensors=n_sensors)
+    model.fit(x)
+
+    assert len(model.get_selected_sensors()) == n_sensors
 
 
 # TODO: tests for

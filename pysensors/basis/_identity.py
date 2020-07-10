@@ -53,7 +53,15 @@ class Identity(TransformerMixin):
         if self.n_basis_modes is None:
             self.basis_matrix_ = check_array(X).T.copy()
         else:
+            if self.n_basis_modes > X.shape[0]:
+                raise ValueError(
+                    "X needs at least n_basis_modes ({}) examples/rows".format(
+                        self.n_basis_modes
+                    )
+                )
+
             self.basis_matrix_ = check_array(X)[: self.n_basis_modes, :].T.copy()
+
             if self.n_basis_modes < X.shape[0]:
                 warn(f"Only the first {self.n_basis_modes} examples were retained.")
         return self

@@ -5,12 +5,12 @@ This is essentially a dummy basis which just uses raw, unaltered features.
 """
 from warnings import warn
 
-from sklearn.base import TransformerMixin
+from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
 
-class Identity(TransformerMixin):
+class Identity(BaseEstimator):
     """
     Generate an identity transformation which maps all input features to
     themselves.

@@ -121,6 +121,20 @@ def test_predict_accuracy(data_vandermonde_testing):
     assert_allclose(x_test, model.predict(x_test[sensors]), atol=1e-4)
 
 
+def test_reconstruction_error(data_vandermonde_testing):
+    data, x_test = data_vandermonde_testing
+
+    model = SensorSelector()
+    model.fit(data)
+
+    assert len(model.reconstruction_error(x_test)) == min(
+        model.n_sensors, data.shape[1]
+    )
+
+    sensor_range = [1, 2, 3]
+    assert len(model.reconstruction_error(x_test, sensor_range=sensor_range)) == 3
+
+
 # TODO: tests for
 #   - predict method
 #       Square vs. rectangular matrices (predict method)

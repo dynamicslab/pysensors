@@ -165,14 +165,11 @@ class SensorSelector(BaseEstimator):
 
         TODO: write docstring
         """
-
         check_is_fitted(self, "selected_sensors_")
 
         basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
         if sensor_range is None:
-            sensor_range = np.arange(
-                1, min(len(self.selected_sensors_), basis_mode_dim) + 1
-            )
+            sensor_range = np.arange(1, min(self.n_sensors, basis_mode_dim) + 1)
         if sensor_range[-1] > basis_mode_dim:
             warn(
                 f"Performance may be poor when using more than {basis_mode_dim} sensors"

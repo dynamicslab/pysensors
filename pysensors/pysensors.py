@@ -1,7 +1,9 @@
 """
 SensorSelector object definition.
 """
-from numpy import dot
+from warnings import warn
+
+import numpy as np
 from scipy.linalg import lstsq
 from scipy.linalg import solve
 from sklearn.base import BaseEstimator
@@ -10,6 +12,9 @@ from sklearn.utils.validation import check_is_fitted
 from pysensors.basis import Identity
 from pysensors.optimizers import QR
 from pysensors.utils import validate_input
+
+
+INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
 class SensorSelector(BaseEstimator):
@@ -48,7 +53,7 @@ class SensorSelector(BaseEstimator):
         self.optimizer = optimizer
         if n_sensors is None:
             self.n_sensors = None
-        elif isinstance(n_sensors, int) and n_sensors > 0:
+        elif isinstance(n_sensors, INT_TYPES) and n_sensors > 0:
             self.n_sensors = n_sensors
         else:
             raise ValueError("n_sensors must be a positive integer.")
@@ -106,26 +111,29 @@ class SensorSelector(BaseEstimator):
         # self.basis_matrix_[self.selected_sensors_, :]
         # in case predict is called multiple times
 
+        if self.n_sensors > self.basis_matrix_.shape[0]:
+            warn("n_sensors exceeds dimension of basis modes. Performance may be poor")
+
         # Square matrix
-        if len(self.selected_sensors_[: self.n_sensors]) == self.basis_matrix_.shape[1]:
-            return dot(
-                self.basis_matrix_,
-                solve(
-                    self.basis_matrix_[self.selected_sensors_[: self.n_sensors], :],
-                    x,
-                    **solve_kws
-                ),
+        if self.n_sensors == self.basis_matrix_.shape[1]:
+            return self._square_predict(
+                x, self.selected_sensors_[: self.n_sensors], **solve_kws
             )
         # Rectangular matrix
         else:
-            return dot(
-                self.basis_matrix_,
-                lstsq(
-                    self.basis_matrix_[self.selected_sensors_[: self.n_sensors], :],
-                    x,
-                    **solve_kws
-                )[0],
+            return self._rectangular_predict(
+                x, self.selected_sensors_[: self.n_sensors], **solve_kws
             )
+
+    def _square_predict(self, x, sensors, **solve_kws):
+        return np.dot(
+            self.basis_matrix_, solve(self.basis_matrix_[sensors, :], x, **solve_kws)
+        ).T
+
+    def _rectangular_predict(self, x, sensors, **solve_kws):
+        return np.dot(
+            self.basis_matrix_, lstsq(self.basis_matrix_[sensors, :], x, **solve_kws)[0]
+        ).T
 
     def get_selected_sensors(self):
         check_is_fitted(self, "selected_sensors_")
@@ -139,7 +147,7 @@ class SensorSelector(BaseEstimator):
     def set_number_of_sensors(self, n_sensors):
         check_is_fitted(self, "selected_sensors_")
 
-        if not isinstance(n_sensors, int):
+        if not isinstance(n_sensors, INT_TYPES):
             raise ValueError("n_sensors must be a positive integer")
         elif n_sensors <= 0:
             raise ValueError("n_sensors must be a positive integer")
@@ -150,3 +158,51 @@ class SensorSelector(BaseEstimator):
             )
         else:
             self.n_sensors = n_sensors
+
+    def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):
+        """
+        Compute the reconstruction error for different numbers of sensors.
+
+        TODO: write docstring
+        """
+
+        check_is_fitted(self, "selected_sensors_")
+
+        basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
+        if sensor_range is None:
+            sensor_range = np.arange(
+                1, min(len(self.selected_sensors_), basis_mode_dim) + 1
+            )
+        if sensor_range[-1] > basis_mode_dim:
+            warn(
+                f"Performance may be poor when using more than {basis_mode_dim} sensors"
+            )
+
+        if score is None:
+
+            def score(x, y):
+                return np.linalg.norm(x - y)
+
+        error = np.zeros_like(sensor_range, dtype=np.float64)
+
+        for k, n_sensors in enumerate(sensor_range):
+            if n_sensors == n_basis_modes:
+                error[k] = score(
+                    self._square_predict(
+                        x_test[self.selected_sensors_[:n_sensors]],
+                        self.selected_sensors_[:n_sensors],
+                        **solve_kws,
+                    ),
+                    x_test,
+                )
+            else:
+                error[k] = score(
+                    self._rectangular_predict(
+                        x_test[self.selected_sensors_[:n_sensors]],
+                        self.selected_sensors_[:n_sensors],
+                        **solve_kws,
+                    ),
+                    x_test,
+                )
+
+        return error

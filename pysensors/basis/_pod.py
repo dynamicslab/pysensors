@@ -60,6 +60,7 @@ class POD(TruncatedSVD):
         self : instance
         """
         self.basis_matrix_ = super(POD, self).fit(X).components_.T
+        return self
 
     def matrix_representation(self, copy=False):
         """

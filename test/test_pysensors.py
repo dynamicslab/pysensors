@@ -13,6 +13,7 @@ To run tests for just one file, run
 pytest file_to_test.py
 """
 import pytest
+from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -46,7 +47,11 @@ def test_set_number_of_sensors(data_vandermonde):
     with pytest.raises(ValueError):
         model.set_number_of_sensors(max_sensors + 1)
     with pytest.raises(ValueError):
-        model.set_number_of_sensors(-1)
+        model.set_number_of_sensors(0)
+    with pytest.raises(ValueError):
+        model.set_number_of_sensors(1.5)
+    with pytest.raises(ValueError):
+        model.set_number_of_sensors("3")
 
     model.set_number_of_sensors(15)
     assert len(model.get_selected_sensors()) == 15
@@ -71,6 +76,63 @@ def test_basis_compatibility(data_vandermonde, basis):
     model = SensorSelector(basis=basis)
     model.fit(x)
     check_is_fitted(model)
+
+
+def test_n_sensors(data_random):
+
+    # Check for bad inputs
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=0)
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=5.4)
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors="1")
+    with pytest.raises(ValueError):
+        model = SensorSelector(n_sensors=[1])
+
+    n_sensors = 5
+    x = data_random
+    model = SensorSelector(n_sensors=n_sensors)
+    model.fit(x)
+
+    assert len(model.get_selected_sensors()) == n_sensors
+
+
+def test_predict(data_random):
+    data = data_random
+
+    n_sensors = 5
+    model = SensorSelector(n_sensors=n_sensors)
+    model.fit(data)
+
+    # Rectangular case
+    sensors = model.get_selected_sensors()
+    assert data.shape == model.predict(data[:, sensors]).shape
+
+
+def test_predict_accuracy(data_vandermonde_testing):
+    # Polynomials up to degree 10 on [0, 1]
+    data, x_test = data_vandermonde_testing
+
+    model = SensorSelector()
+    model.fit(data)
+    model.set_number_of_sensors(8)
+    sensors = model.get_selected_sensors()
+    assert_allclose(x_test, model.predict(x_test[sensors]), atol=1e-4)
+
+
+def test_reconstruction_error(data_vandermonde_testing):
+    data, x_test = data_vandermonde_testing
+
+    model = SensorSelector()
+    model.fit(data)
+
+    assert len(model.reconstruction_error(x_test)) == min(
+        model.n_sensors, data.shape[1]
+    )
+
+    sensor_range = [1, 2, 3]
+    assert len(model.reconstruction_error(x_test, sensor_range=sensor_range)) == 3
 
 
 # TODO: tests for

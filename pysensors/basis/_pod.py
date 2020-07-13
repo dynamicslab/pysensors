@@ -59,7 +59,7 @@ class POD(TruncatedSVD):
         -------
         self : instance
         """
-        self.basis_matrix_ = super(POD, self).fit(X)
+        self.basis_matrix_ = super(POD, self).fit(X).components_.T
 
     def matrix_representation(self, copy=False):
         """
@@ -70,7 +70,7 @@ class POD(TruncatedSVD):
         copy : boolean, optional (default False)
             Whether to return a copy of the basis matrix.
         """
-        check_is_fitted(self, "components_")
+        check_is_fitted(self, "basis_matrix_")
         # Note: the TruncatedSVD object returns components as rows, so we
         # take a transpose here.
-        return self.components_.T.copy() if copy else self.components_.T
+        return self.basis_matrix_.copy() if copy else self.basis_matrix_

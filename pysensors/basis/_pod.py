@@ -45,6 +45,7 @@ class POD(TruncatedSVD):
     def __init__(self, n_basis_modes=10, **kwargs):
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
             super(POD, self).__init__(n_components=n_basis_modes, **kwargs)
+            self.n_basis_modes = n_basis_modes
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
 

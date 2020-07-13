@@ -20,6 +20,7 @@ from sklearn.utils.validation import check_is_fitted
 from pysensors import SensorSelector
 from pysensors.basis import Identity
 from pysensors.basis import POD
+from pysensors.basis import RandomProjection
 
 
 def test_not_fitted(data_vandermonde):
@@ -70,7 +71,9 @@ def test_get_all_sensors(data):
     assert len(model.get_all_sensors()) == max_sensors
 
 
-@pytest.mark.parametrize("basis", [Identity(), POD()])
+@pytest.mark.parametrize(
+    "basis", [Identity(), POD(), RandomProjection(n_basis_modes=5)]
+)
 def test_basis_compatibility(data_vandermonde, basis):
     x = data_vandermonde
     model = SensorSelector(basis=basis)

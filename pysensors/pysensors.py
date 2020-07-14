@@ -166,6 +166,7 @@ class SensorSelector(BaseEstimator):
         TODO: write docstring
         """
         check_is_fitted(self, "selected_sensors_")
+        x_test = validate_input(x_test, self.selected_sensors_[: self.n_sensors]).T
 
         basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
         if sensor_range is None:
@@ -178,7 +179,7 @@ class SensorSelector(BaseEstimator):
         if score is None:
 
             def score(x, y):
-                return np.linalg.norm(x - y)
+                return np.sqrt(np.mean((x - y) ** 2))
 
         error = np.zeros_like(sensor_range, dtype=np.float64)
 
@@ -190,7 +191,7 @@ class SensorSelector(BaseEstimator):
                         self.selected_sensors_[:n_sensors],
                         **solve_kws,
                     ),
-                    x_test,
+                    x_test.T,
                 )
             else:
                 error[k] = score(
@@ -199,7 +200,7 @@ class SensorSelector(BaseEstimator):
                         self.selected_sensors_[:n_sensors],
                         **solve_kws,
                     ),
-                    x_test,
+                    x_test.T,
                 )
 
         return error

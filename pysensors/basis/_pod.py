@@ -45,6 +45,7 @@ class POD(TruncatedSVD):
     def __init__(self, n_basis_modes=10, **kwargs):
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
             super(POD, self).__init__(n_components=n_basis_modes, **kwargs)
+            self.n_basis_modes = n_basis_modes
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
 
@@ -59,7 +60,8 @@ class POD(TruncatedSVD):
         -------
         self : instance
         """
-        self.basis_matrix_ = super(POD, self).fit(X)
+        self.basis_matrix_ = super(POD, self).fit(X).components_.T
+        return self
 
     def matrix_representation(self, copy=False):
         """
@@ -70,7 +72,7 @@ class POD(TruncatedSVD):
         copy : boolean, optional (default False)
             Whether to return a copy of the basis matrix.
         """
-        check_is_fitted(self, "components_")
+        check_is_fitted(self, "basis_matrix_")
         # Note: the TruncatedSVD object returns components as rows, so we
         # take a transpose here.
-        return self.components_.T.copy() if copy else self.components_.T
+        return self.basis_matrix_.copy() if copy else self.basis_matrix_

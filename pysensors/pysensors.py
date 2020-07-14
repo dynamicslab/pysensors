@@ -191,7 +191,7 @@ class SensorSelector(BaseEstimator):
                         self.selected_sensors_[:n_sensors],
                         **solve_kws,
                     ),
-                    x_test,
+                    x_test.T,
                 )
             else:
                 error[k] = score(
@@ -200,7 +200,7 @@ class SensorSelector(BaseEstimator):
                         self.selected_sensors_[:n_sensors],
                         **solve_kws,
                     ),
-                    x_test,
+                    x_test.T,
                 )
 
         return error

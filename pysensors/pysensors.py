@@ -166,6 +166,7 @@ class SensorSelector(BaseEstimator):
         TODO: write docstring
         """
         check_is_fitted(self, "selected_sensors_")
+        x_test = validate_input(x_test, self.selected_sensors_[: self.n_sensors]).T
 
         basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
         if sensor_range is None:

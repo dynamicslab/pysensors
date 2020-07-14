@@ -123,6 +123,10 @@ def test_predict_accuracy(data_vandermonde_testing):
     sensors = model.get_selected_sensors()
     assert_allclose(x_test, model.predict(x_test[sensors]), atol=1e-4)
 
+    # Should also work for row vectors
+    x_test = x_test.reshape(1, -1)
+    assert_allclose(x_test, model.predict(x_test[:, sensors]), atol=1e-4)
+
 
 def test_reconstruction_error(data_vandermonde_testing):
     data, x_test = data_vandermonde_testing

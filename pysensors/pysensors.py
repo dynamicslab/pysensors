@@ -179,7 +179,7 @@ class SensorSelector(BaseEstimator):
         if score is None:
 
             def score(x, y):
-                return np.linalg.norm(x - y)
+                return np.sqrt(np.mean((x - y) ** 2))
 
         error = np.zeros_like(sensor_range, dtype=np.float64)
 

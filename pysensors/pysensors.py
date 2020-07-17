@@ -1,7 +1,7 @@
 """
 SensorSelector object definition.
 """
-from warnings import warn
+import warnings
 
 import numpy as np
 from scipy.linalg import lstsq
@@ -54,11 +54,11 @@ class SensorSelector(BaseEstimator):
         if n_sensors is None:
             self.n_sensors = None
         elif isinstance(n_sensors, INT_TYPES) and n_sensors > 0:
-            self.n_sensors = n_sensors
+            self.n_sensors = int(n_sensors)
         else:
             raise ValueError("n_sensors must be a positive integer.")
 
-    def fit(self, x, **optimizer_kws):
+    def fit(self, x, quiet=False, **optimizer_kws):
         """
         Fit the SensorSelector model, determining which sensors are relevant.
 
@@ -66,6 +66,9 @@ class SensorSelector(BaseEstimator):
         ----------
         x: array-like, shape (n_samples, n_input_features)
             Training data.
+
+        quiet: boolean, optional (default False)
+            Whether or not to suppress warnings during fitting.
 
         optimizer_kws: dict
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
@@ -75,7 +78,10 @@ class SensorSelector(BaseEstimator):
         x = validate_input(x)
 
         # Fit basis functions to data (sometimes unnecessary, e.g FFT)
-        self.basis.fit(x)
+        action = "ignore" if quiet else "default"
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action, category=UserWarning)
+            self.basis.fit(x)
 
         # Get matrix representation of basis
         self.basis_matrix_ = self.basis.matrix_representation()
@@ -112,7 +118,9 @@ class SensorSelector(BaseEstimator):
         # in case predict is called multiple times
 
         if self.n_sensors > self.basis_matrix_.shape[0]:
-            warn("n_sensors exceeds dimension of basis modes. Performance may be poor")
+            warnings.warn(
+                "n_sensors exceeds dimension of basis modes. Performance may be poor"
+            )
 
         # Square matrix
         if self.n_sensors == self.basis_matrix_.shape[1]:
@@ -159,6 +167,37 @@ class SensorSelector(BaseEstimator):
         else:
             self.n_sensors = n_sensors
 
+    def score(self, x, y=None, solve_kws={}):
+        """
+        Compute the reconstruction error for a given set of measurements.
+
+        x should be the full state size, not just measurements at the chosen
+        sensors: shape (n_examples, n_features), not (n_examples, n_sensors)
+
+        TODO: docstring
+        TODO: generalize to use other score functions
+        TODO: refactor for full state size x
+        """
+        check_is_fitted(self, "selected_sensors_")
+
+        n_features = len(x) if np.ndim(x) == 1 else x.shape[1]
+        if self.n_sensors != n_features:
+            if len(self.selected_sensors_) == n_features:
+                inds = self.selected_sensors_[: self.n_sensors]
+                return -np.sqrt(
+                    np.mean((self.predict(x[:, inds], **solve_kws) - x) ** 2)
+                )
+            else:
+                raise ValueError(
+                    "x has an incompatible number of features. "
+                    f"x has {n_features}, but should have either "
+                    f"{self.n_sensors} or {len(self.selected_sensors_)} features."
+                )
+
+        # The negative sign is because sklearn expects higher scores to mean
+        # better performance
+        return -np.sqrt(np.mean((self.predict(x, **solve_kws) - x) ** 2))
+
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):
         """
         Compute the reconstruction error for different numbers of sensors.
@@ -172,7 +211,7 @@ class SensorSelector(BaseEstimator):
         if sensor_range is None:
             sensor_range = np.arange(1, min(self.n_sensors, basis_mode_dim) + 1)
         if sensor_range[-1] > basis_mode_dim:
-            warn(
+            warnings.warn(
                 f"Performance may be poor when using more than {basis_mode_dim} sensors"
             )
 

@@ -71,6 +71,12 @@ class POD(TruncatedSVD):
         ----------
         copy : boolean, optional (default False)
             Whether to return a copy of the basis matrix.
+
+        Returns
+        -------
+        B : numpy array, shape (n_features, n_basis_modes)
+            Matrix representation of the basis. Note that rows correspond to
+            features and columns to basis modes.
         """
         check_is_fitted(self, "basis_matrix_")
         # Note: the TruncatedSVD object returns components as rows, so we

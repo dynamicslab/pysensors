@@ -18,9 +18,9 @@ INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
 class SensorSelector(BaseEstimator):
-    """TODO: write docstring
-
-    <Description>
+    """
+    A model for selecting the best sensor locations for reconstruction or
+    classification tasks.
 
     Parameters
     ----------
@@ -70,11 +70,10 @@ class SensorSelector(BaseEstimator):
         quiet: boolean, optional (default False)
             Whether or not to suppress warnings during fitting.
 
-        optimizer_kws: dict
+        optimizer_kws: dict, optional
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
         """
 
-        # TODO: some kind of preprocessing / quality control on x
         x = validate_input(x)
 
         # Fit basis functions to data (sometimes unnecessary, e.g FFT)
@@ -104,18 +103,32 @@ class SensorSelector(BaseEstimator):
 
     def predict(self, x, **solve_kws):
         """
-        TODO: docstring
+        Predict values at all positions given measurements at sensor locations.
 
-        If x is a column vector, should behave fine.
-        If x is a 2D array with rows corresponding to examples we'll need
-        to transpose it before multiplying it with the basis matrix.
+        Parameters
+        ----------
+        x: array-like, shape (n_samples, n_sensors)
+            Measurements from which to form prediction.
+            The measurements should be taken at the sensor locations specified by
+            `self.get_selected_sensors()`.
+
+        solve_kws: dict, optional
+            keyword arguments to be passed to the linear solver used to invert
+            the basis matrix.
+
+        Returns
+        -------
+        y: numpy array, shape (n_samples, n_features)
+            Predicted values at every location.
         """
         check_is_fitted(self, "selected_sensors_")
         x = validate_input(x, self.selected_sensors_[: self.n_sensors]).T
 
         # For efficiency we may want to factor
         # self.basis_matrix_[self.selected_sensors_, :]
-        # in case predict is called multiple times
+        # in case predict is called multiple times.
+        # Although if the user changes the number of sensors between calls
+        # the factorization will be wasted.
 
         if self.n_sensors > self.basis_matrix_.shape[0]:
             warnings.warn(
@@ -134,25 +147,53 @@ class SensorSelector(BaseEstimator):
             )
 
     def _square_predict(self, x, sensors, **solve_kws):
+        """Get prediction when the problem is square."""
         return np.dot(
             self.basis_matrix_, solve(self.basis_matrix_[sensors, :], x, **solve_kws)
         ).T
 
     def _rectangular_predict(self, x, sensors, **solve_kws):
+        """Get prediction when the problem is rectangular."""
         return np.dot(
             self.basis_matrix_, lstsq(self.basis_matrix_[sensors, :], x, **solve_kws)[0]
         ).T
 
     def get_selected_sensors(self):
+        """
+        Get the indices of the sensors chosen by the model.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_sensors,)
+            Inidices of the sensors chosen by the model
+            (i.e. the sensor locations).
+        """
         check_is_fitted(self, "selected_sensors_")
         return self.selected_sensors_[: self.n_sensors]
 
     def get_all_sensors(self):
+        """
+        Get a ranked list consisting of all the sensors.
+        The sensors are given in descending order of importance.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_features,)
+            Indices of sensors in descending order of importance.
+        """
         check_is_fitted(self, "selected_sensors_")
         return self.selected_sensors_
 
-    # TODO: functionality for selecting how many sensors to use
     def set_number_of_sensors(self, n_sensors):
+        """
+        Set `n_sensors`, the number of sensors to be used for prediction.
+
+        Parameters
+        ----------
+        n_sensors: int
+            The number of sensors. Must be a positive integer.
+            Cannot exceed the number of available sensors (n_features).
+        """
         check_is_fitted(self, "selected_sensors_")
 
         if not isinstance(n_sensors, INT_TYPES):
@@ -170,11 +211,30 @@ class SensorSelector(BaseEstimator):
     def score(self, x, y=None, solve_kws={}):
         """
         Compute the reconstruction error for a given set of measurements.
+        Currently computes the negative mean-squared error.
+
+        Parameters
+        ----------
+        x: numpy array, shape (n_examples, n_features)
+            Measurements with which to compute the score.
+            Note that `x` should consist of measurements at every location,
+            not just the recommended sensor location, i.e. its shape should be
+            (n_examples, n_features) rather than (n_examples, n_sensors).
+
+        y: None
+            Dummy input to maintain compatibility with Scikit-learn.
+
+        solve_kws: dict, optional
+            Keyword arguments to be passed to the predict method.
+
+        Returns
+        -------
+        score: float
+            The score.
 
         x should be the full state size, not just measurements at the chosen
         sensors: shape (n_examples, n_features), not (n_examples, n_sensors)
 
-        TODO: docstring
         TODO: generalize to use other score functions
         TODO: refactor for full state size x
         """
@@ -201,6 +261,29 @@ class SensorSelector(BaseEstimator):
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):
         """
         Compute the reconstruction error for different numbers of sensors.
+
+        Parameters
+        ----------
+        x_test: numpy array, shape (n_examples, n_features)
+            Measurements to be reconstructed.
+
+        sensor_range: 1D numpy array, optional (default None)
+            Numbers of sensors at which to compute the reconstruction error.
+            If None, will be set to
+            [1, 2, ... , min(`n_sensors`, `basis.n_basis_modes`)].
+
+        score: callable, optional (default None)
+            Function used to compute the reconstruction error.
+            Should have the signature `score(x, x_pred)`.
+            If None, the root mean squared error is used.
+
+        solve_kws: dict, optional
+            Keyword arguments to be passed to the linear solver.
+
+        Returns
+        -------
+        error: numpy array, shape (len(sensor_range),)
+            Reconstruction scores for each number of sensors in `sensor_range`.
 
         TODO: write docstring
         """

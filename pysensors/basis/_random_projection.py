@@ -15,7 +15,7 @@ class RandomProjection(GaussianRandomProjection):
 
     Parameters
     ----------
-    n_basis_modes : int or "auto", optional (default "auto")
+    n_basis_modes : int or "auto", optional (default 10)
         Dimensionality of the target projection space (number of modes).
 
         `n_basis_modes` can be automatically adjusted according to the
@@ -47,7 +47,7 @@ class RandomProjection(GaussianRandomProjection):
 
     """
 
-    def __init__(self, n_basis_modes="auto", eps=0.1, random_state=None):
+    def __init__(self, n_basis_modes=10, eps=0.1, random_state=None):
         if (
             isinstance(n_basis_modes, int) and n_basis_modes > 0
         ) or n_basis_modes == "auto":

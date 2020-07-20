@@ -208,10 +208,9 @@ class SensorSelector(BaseEstimator):
         else:
             self.n_sensors = n_sensors
 
-    def score(self, x, y=None, solve_kws={}):
+    def score(self, x, y=None, score_function=None, score_kws={}, solve_kws={}):
         """
         Compute the reconstruction error for a given set of measurements.
-        Currently computes the negative mean-squared error.
 
         Parameters
         ----------
@@ -224,6 +223,16 @@ class SensorSelector(BaseEstimator):
         y: None
             Dummy input to maintain compatibility with Scikit-learn.
 
+        score_function: callable, optional (default None)
+            Function used to compute the score. Should have the call signature
+            `score_function(y_true, y_pred, **score_kws)`.
+            Default is the negative of the root mean squared error
+            (sklearn expects higher scores to correspond to better performance).
+
+        score_kws: dict, optional
+            Keyword arguments to be passed to score_function. Ignored if
+            score_function is None.
+
         solve_kws: dict, optional
             Keyword arguments to be passed to the predict method.
 
@@ -231,32 +240,26 @@ class SensorSelector(BaseEstimator):
         -------
         score: float
             The score.
-
-        x should be the full state size, not just measurements at the chosen
-        sensors: shape (n_examples, n_features), not (n_examples, n_sensors)
-
-        TODO: generalize to use other score functions
-        TODO: refactor for full state size x
         """
         check_is_fitted(self, "selected_sensors_")
 
-        n_features = len(x) if np.ndim(x) == 1 else x.shape[1]
-        if self.n_sensors != n_features:
-            if len(self.selected_sensors_) == n_features:
-                inds = self.selected_sensors_[: self.n_sensors]
-                return -np.sqrt(
-                    np.mean((self.predict(x[:, inds], **solve_kws) - x) ** 2)
-                )
-            else:
-                raise ValueError(
-                    "x has an incompatible number of features. "
-                    f"x has {n_features}, but should have either "
-                    f"{self.n_sensors} or {len(self.selected_sensors_)} features."
-                )
+        n_input_features = len(x) if np.ndim(x) == 1 else x.shape[1]
+        n_expected_features = len(self.selected_sensors_)
+        if n_expected_features != n_input_features:
+            raise ValueError(
+                f"x has {n_input_features} features (columns), "
+                f"but should have {n_expected_features}"
+            )
 
-        # The negative sign is because sklearn expects higher scores to mean
-        # better performance
-        return -np.sqrt(np.mean((self.predict(x, **solve_kws) - x) ** 2))
+        sensors = self.selected_sensors_[: self.n_sensors]
+        if score_function is None:
+            return -np.sqrt(
+                np.mean((self.predict(x[:, sensors], **solve_kws) - x) ** 2)
+            )
+        else:
+            return score_function(
+                x, self.predict(x[:, sensors], **solve_kws), **score_kws,
+            )
 
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):
         """
@@ -284,8 +287,6 @@ class SensorSelector(BaseEstimator):
         -------
         error: numpy array, shape (len(sensor_range),)
             Reconstruction scores for each number of sensors in `sensor_range`.
-
-        TODO: write docstring
         """
         check_is_fitted(self, "selected_sensors_")
         x_test = validate_input(x_test, self.selected_sensors_[: self.n_sensors]).T

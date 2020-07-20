@@ -48,3 +48,11 @@ def data_random():
     n_features = 20
 
     return np.random.randn(n_examples, n_features)
+
+
+@pytest.fixture
+def data_random_square():
+    n_examples = 30
+    n_features = 30
+
+    return np.random.randn(n_examples, n_features)

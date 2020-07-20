@@ -36,6 +36,10 @@ def test_not_fitted(data_vandermonde):
         model.get_all_sensors()
     with pytest.raises(NotFittedError):
         model.set_number_of_sensors(20)
+    with pytest.raises(NotFittedError):
+        model.score(x)
+    with pytest.raises(NotFittedError):
+        model.reconstruction_error(x)
 
 
 def test_set_number_of_sensors(data_vandermonde):
@@ -108,7 +112,21 @@ def test_predict(data_random):
     model = SensorSelector(n_sensors=n_sensors)
     model.fit(data)
 
+    # Wrong size input for predict
+    # (should only pass data at sensor locations)
+    with pytest.raises(ValueError):
+        model.predict(data)
+
     # Rectangular case
+    sensors = model.get_selected_sensors()
+    assert data.shape == model.predict(data[:, sensors]).shape
+
+
+def test_square_predict(data_random_square):
+    data = data_random_square
+
+    model = SensorSelector()
+    model.fit(data)
     sensors = model.get_selected_sensors()
     assert data.shape == model.predict(data[:, sensors]).shape
 
@@ -142,10 +160,21 @@ def test_reconstruction_error(data_vandermonde_testing):
     assert len(model.reconstruction_error(x_test, sensor_range=sensor_range)) == 3
 
 
-# TODO: tests for
-#   - predict method
-#       Square vs. rectangular matrices (predict method)
-#       Wrong size inputs for predict method
+def test_score(data_vandermonde):
+    data = data_vandermonde
+
+    weak_model = SensorSelector(n_sensors=3)
+    weak_model.fit(data)
+
+    # You must pass in data with as many features as the training set
+    with pytest.raises(ValueError):
+        weak_model.score(data[:, :5])
+
+    strong_model = SensorSelector(n_sensors=8)
+    strong_model.fit(data)
+
+    assert weak_model.score(data) < strong_model.score(data)
+
 
 # TODO: add more datasets for testing
 # TODO: test for accuracy somehow?

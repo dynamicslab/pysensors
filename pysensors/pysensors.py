@@ -97,7 +97,7 @@ class SensorSelector(BaseEstimator):
             )
 
         # Find sparse sensor locations
-        self.selected_sensors_ = self.optimizer.get_sensors(
+        self.ranked_sensors_ = self.optimizer.get_sensors(
             self.basis_matrix_, **optimizer_kws
         )
 
@@ -110,7 +110,7 @@ class SensorSelector(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors)
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            `self.get_selected_sensors()`.
+            `self.get_ranked_sensors()`.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert
@@ -121,11 +121,11 @@ class SensorSelector(BaseEstimator):
         y: numpy array, shape (n_samples, n_features)
             Predicted values at every location.
         """
-        check_is_fitted(self, "selected_sensors_")
-        x = validate_input(x, self.selected_sensors_[: self.n_sensors]).T
+        check_is_fitted(self, "ranked_sensors_")
+        x = validate_input(x, self.ranked_sensors_[: self.n_sensors]).T
 
         # For efficiency we may want to factor
-        # self.basis_matrix_[self.selected_sensors_, :]
+        # self.basis_matrix_[self.ranked_sensors_, :]
         # in case predict is called multiple times.
         # Although if the user changes the number of sensors between calls
         # the factorization will be wasted.
@@ -138,12 +138,12 @@ class SensorSelector(BaseEstimator):
         # Square matrix
         if self.n_sensors == self.basis_matrix_.shape[1]:
             return self._square_predict(
-                x, self.selected_sensors_[: self.n_sensors], **solve_kws
+                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
             )
         # Rectangular matrix
         else:
             return self._rectangular_predict(
-                x, self.selected_sensors_[: self.n_sensors], **solve_kws
+                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
             )
 
     def _square_predict(self, x, sensors, **solve_kws):
@@ -165,11 +165,12 @@ class SensorSelector(BaseEstimator):
         Returns
         -------
         sensors: numpy array, shape (n_sensors,)
-            Inidices of the sensors chosen by the model
-            (i.e. the sensor locations).
+            Indices of the sensors chosen by the model
+            (i.e. the sensor locations) ranked in descending order
+            of importance.
         """
-        check_is_fitted(self, "selected_sensors_")
-        return self.selected_sensors_[: self.n_sensors]
+        check_is_fitted(self, "ranked_sensors_")
+        return self.ranked_sensors_[: self.n_sensors]
 
     def get_all_sensors(self):
         """
@@ -181,8 +182,8 @@ class SensorSelector(BaseEstimator):
         sensors: numpy array, shape (n_features,)
             Indices of sensors in descending order of importance.
         """
-        check_is_fitted(self, "selected_sensors_")
-        return self.selected_sensors_
+        check_is_fitted(self, "ranked_sensors_")
+        return self.ranked_sensors_
 
     def set_number_of_sensors(self, n_sensors):
         """
@@ -194,16 +195,16 @@ class SensorSelector(BaseEstimator):
             The number of sensors. Must be a positive integer.
             Cannot exceed the number of available sensors (n_features).
         """
-        check_is_fitted(self, "selected_sensors_")
+        check_is_fitted(self, "ranked_sensors_")
 
         if not isinstance(n_sensors, INT_TYPES):
             raise ValueError("n_sensors must be a positive integer")
         elif n_sensors <= 0:
             raise ValueError("n_sensors must be a positive integer")
-        elif n_sensors > len(self.selected_sensors_):
+        elif n_sensors > len(self.ranked_sensors_):
             raise ValueError(
                 "n_sensors cannot exceed number of available sensors: "
-                "{}".format(len(self.selected_sensors_))
+                "{}".format(len(self.ranked_sensors_))
             )
         else:
             self.n_sensors = n_sensors
@@ -241,17 +242,17 @@ class SensorSelector(BaseEstimator):
         score: float
             The score.
         """
-        check_is_fitted(self, "selected_sensors_")
+        check_is_fitted(self, "ranked_sensors_")
 
         n_input_features = len(x) if np.ndim(x) == 1 else x.shape[1]
-        n_expected_features = len(self.selected_sensors_)
+        n_expected_features = len(self.ranked_sensors_)
         if n_expected_features != n_input_features:
             raise ValueError(
                 f"x has {n_input_features} features (columns), "
                 f"but should have {n_expected_features}"
             )
 
-        sensors = self.selected_sensors_[: self.n_sensors]
+        sensors = self.get_selected_sensors()
         if score_function is None:
             return -np.sqrt(
                 np.mean((self.predict(x[:, sensors], **solve_kws) - x) ** 2)
@@ -288,8 +289,8 @@ class SensorSelector(BaseEstimator):
         error: numpy array, shape (len(sensor_range),)
             Reconstruction scores for each number of sensors in `sensor_range`.
         """
-        check_is_fitted(self, "selected_sensors_")
-        x_test = validate_input(x_test, self.selected_sensors_[: self.n_sensors]).T
+        check_is_fitted(self, "ranked_sensors_")
+        x_test = validate_input(x_test, self.get_selected_sensors()).T
 
         basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
         if sensor_range is None:
@@ -310,8 +311,8 @@ class SensorSelector(BaseEstimator):
             if n_sensors == n_basis_modes:
                 error[k] = score(
                     self._square_predict(
-                        x_test[self.selected_sensors_[:n_sensors]],
-                        self.selected_sensors_[:n_sensors],
+                        x_test[self.ranked_sensors_[:n_sensors]],
+                        self.ranked_sensors_[:n_sensors],
                         **solve_kws,
                     ),
                     x_test.T,
@@ -319,8 +320,8 @@ class SensorSelector(BaseEstimator):
             else:
                 error[k] = score(
                     self._rectangular_predict(
-                        x_test[self.selected_sensors_[:n_sensors]],
-                        self.selected_sensors_[:n_sensors],
+                        x_test[self.ranked_sensors_[:n_sensors]],
+                        self.ranked_sensors_[:n_sensors],
                         **solve_kws,
                     ),
                     x_test.T,

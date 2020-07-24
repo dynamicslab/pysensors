@@ -148,8 +148,7 @@ class SensorSelector(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors)
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            `self.get_selected_sensors()`.
-
+            ``self.get_ranked_sensors()``.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert

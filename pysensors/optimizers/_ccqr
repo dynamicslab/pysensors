@@ -1,10 +1,12 @@
+import numpy as np
+
 class CCQR:
     """
     Greedy cost-constrained QR optimizer for sensor selection.
     """
 
     def __init__(self):
-        self.pivots_ = None
+        self.p_ = None
 
     def get_sensors(self, basis_matrix, **optimizer_kws, cost_function):
         """
@@ -32,58 +34,59 @@ if len(cost_function) != n:
 
 QH = numpy.zeros([m,n])
 R = basis_matrixT
-p = range(1, n+1)
+p = range(n)
 
 #The below needs to be translated to Python
 
-k = min(m,n);
-if nargin > 2
-    k = varargin{1};
-end
+k = min(m,n)
 
-for j = 1:k
-    [u,ipiv] = qrpc_reflector(R(j:m,j:n),c(p(j:n)));
-    % track column pivots
-    ipiv = ipiv+j-1;
-    itemp = p(j);
-    p(j) = p(ipiv);
-    p(ipiv) = itemp;
-    % switch columns
-    temp = R(:,j);
-    R(:,j) = R(:,ipiv);
-    R(:,ipiv) = temp;
-    % apply reflector
-    QH(j:m,j) = u;
-    R(j:m,j:n) = R(j:m,j:n) - bsxfun(@times,u,u'*R(j:m,j:n));
-    R(j+1:m,j) = 0;
-end
+for j in range(k)
+    u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
+    # track column pivots
+    ipiv = ipiv+j
+    itemp = p[j]
+    p[j] = p[ipiv]
+    p[ipiv] = itemp
+    # switch columns
+    temp = R[:,j]
+    R[:,j] = R[:,ipiv]
+    R[:,ipiv] = temp
+    # apply reflector
+    QH[j:m-1,j] = u
+    R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - u*(u.T*R[j:m-1,j:n-1])
+    R[j+1:m-1,j] = 0
+    
+    
+     return self.p_
 
-end
 
-function [u,ipiv] = qrpc_reflector(r,c)
-%QRPC_REFLECTOR best reflector with column pivoting and a cost function
-% 
-% This function generates a Householder reflector
-% The pivoting is biased by a cost function, i.e.
-% the pivot is chosen as the argmax of norm(r(:,i))-c(i)
+def qrpc_reflector(r,cost_function)
+"""
+QRPC_REFLECTOR best reflector with column pivoting and a cost function
+ 
+This function generates a Householder reflector
+The pivoting is biased by a cost function, i.e.
+the pivot is chosen as the argmax of norm(r(:,i))-cost_function(i)
+"""
 
-% size of each column
-dlens = sqrt(sum(r.^2,1));
+# size of each column
+r2 = np.multiply(r,r)
+sum_r2 = r2.sum(axis=1)
+dlens = np.sqrt(sum_r2)
 
-% choose pivot
-[~,ipiv] = max(dlens(:)-c(:));
+# choose pivot
+[~,ipiv] = max(dlens-cost_function)
 
-dlen = dlens(ipiv);
+dlen = dlens[ipiv]
 
-if (dlen > 0.0)
-    u = r(:,ipiv)/dlen;
-    u(1) = u(1) + sign(u(1)) + (u(1) == 0);
-    u = u/sqrt(abs(u(1)));
+if dlen > 0.0
+    u = r[:,ipiv]/dlen
+    u[1,1] = u[1,1] + numpy.sign(u[1,1]) + (u[1] == 0) #Not sure what the last piece is doing, or how to do it in Python
+    u = u/np.sqrt(abs(u[1,1]))
 else
-    u = r(:,ipiv);
-    u(1) = sqrt(2.0);
-end
+    u = r[:,ipiv]
+    u[1] = sqrt(2.0)
 
-end
+return u ipiv
 
-        return self.pivots_
+       

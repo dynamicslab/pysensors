@@ -1,0 +1,89 @@
+class CCQR:
+    """
+    Greedy cost-constrained QR optimizer for sensor selection.
+    """
+
+    def __init__(self):
+        self.pivots_ = None
+
+    def get_sensors(self, basis_matrix, **optimizer_kws, cost_function):
+        """
+        Parameters
+        ----------
+        basis_matrix: np.ndarray, shape [n_features, n_samples]
+            Matrix whose columns are the basis vectors in which to
+            represent the measurement data.
+        optimizer_kws: dictionary, optional
+            Keyword arguments to be passed to the qr method.
+        cost_function: Cost function on sensor location, shape [n_features, 1]
+        """
+
+#TODO: Translate code from Matlab to Python
+
+        basis_matrixT = basis_matrix.conj().T
+        m, n = basis_matrixT.shape
+
+if len(cost_function) != n:
+    raise ValueError(
+                f"vector of costs has wrong dimensions"
+            )
+
+# initialize
+
+QH = numpy.zeros([m,n])
+R = basis_matrixT
+p = range(1, n+1)
+
+#The below needs to be translated to Python
+
+k = min(m,n);
+if nargin > 2
+    k = varargin{1};
+end
+
+for j = 1:k
+    [u,ipiv] = qrpc_reflector(R(j:m,j:n),c(p(j:n)));
+    % track column pivots
+    ipiv = ipiv+j-1;
+    itemp = p(j);
+    p(j) = p(ipiv);
+    p(ipiv) = itemp;
+    % switch columns
+    temp = R(:,j);
+    R(:,j) = R(:,ipiv);
+    R(:,ipiv) = temp;
+    % apply reflector
+    QH(j:m,j) = u;
+    R(j:m,j:n) = R(j:m,j:n) - bsxfun(@times,u,u'*R(j:m,j:n));
+    R(j+1:m,j) = 0;
+end
+
+end
+
+function [u,ipiv] = qrpc_reflector(r,c)
+%QRPC_REFLECTOR best reflector with column pivoting and a cost function
+% 
+% This function generates a Householder reflector
+% The pivoting is biased by a cost function, i.e.
+% the pivot is chosen as the argmax of norm(r(:,i))-c(i)
+
+% size of each column
+dlens = sqrt(sum(r.^2,1));
+
+% choose pivot
+[~,ipiv] = max(dlens(:)-c(:));
+
+dlen = dlens(ipiv);
+
+if (dlen > 0.0)
+    u = r(:,ipiv)/dlen;
+    u(1) = u(1) + sign(u(1)) + (u(1) == 0);
+    u = u/sqrt(abs(u(1)));
+else
+    u = r(:,ipiv);
+    u(1) = sqrt(2.0);
+end
+
+end
+
+        return self.pivots_

@@ -23,7 +23,7 @@ First clone this repository:
 
 .. code-block:: bash
 
-  git clone https://github.com/dynamicslab/pysensors
+  git clone https://github.com/dynamicslab/pysensors.git
 
 Then, to install the package, run
 

@@ -43,9 +43,6 @@ class SensorSelector(BaseEstimator):
         ``s = SensorSelector(n_sensors=10); s.fit(x)``
         is equivalent to
         ``s = SensorSelector(); s.fit(x); s.set_number_of_sensors(10)``.
-        
-    cost_function: cost object, optional
-        Array of sensor location costs.
 
     Attributes
     ----------

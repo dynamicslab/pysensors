@@ -8,7 +8,7 @@ class CCQR:
     def __init__(self):
         self.p_ = None
 
-    def get_sensors(self, basis_matrix, **optimizer_kws, cost_function):
+    def get_sensors(self, basis_matrix, cost_function, **optimizer_kws,):
         """
         Parameters
         ----------
@@ -20,44 +20,42 @@ class CCQR:
         cost_function: Cost function on sensor location, shape [n_features, 1]
         """
 
-#TODO: Translate code from Matlab to Python
+        #TODO: Translate code from Matlab to Python
 
         basis_matrixT = basis_matrix.conj().T
         m, n = basis_matrixT.shape
 
-if len(cost_function) != n:
-    raise ValueError(
-                f"vector of costs has wrong dimensions"
-            )
+        if len(cost_function) != n:
+            raise ValueError(
+                    f"vector of costs has wrong dimensions"
+                )
 
-# initialize
+        # initialize
+        QH = np.zeros([m,n])
+        R = basis_matrixT
+        p = range(n)
 
-QH = np.zeros([m,n])
-R = basis_matrixT
-p = range(n)
+        #The below needs to be translated to Python
 
-#The below needs to be translated to Python
+        k = min(m,n)
 
-k = min(m,n)
+        for j in range(k):
+            u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
+            # track column pivots
+            ipiv = ipiv+j
+            itemp = p[j]
+            p[j] = p[ipiv]
+            p[ipiv] = itemp
+            # switch columns
+            temp = R[:,j]
+            R[:,j] = R[:,ipiv]
+            R[:,ipiv] = temp
+            # apply reflector
+            QH[j:m-1,j] = u
+            R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - u*(u.T*R[j:m-1,j:n-1])
+            R[j+1:m-1,j] = 0
 
-for j in range(k)
-    u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
-    # track column pivots
-    ipiv = ipiv+j
-    itemp = p[j]
-    p[j] = p[ipiv]
-    p[ipiv] = itemp
-    # switch columns
-    temp = R[:,j]
-    R[:,j] = R[:,ipiv]
-    R[:,ipiv] = temp
-    # apply reflector
-    QH[j:m-1,j] = u
-    R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - u*(u.T*R[j:m-1,j:n-1])
-    R[j+1:m-1,j] = 0
-    
-    
-     return self.p
+        return self.p
 
 
 def qrpc_reflector(r,cost_function):
@@ -88,5 +86,3 @@ def qrpc_reflector(r,cost_function):
         u[1] = sqrt(2.0)
 
     return u, ipiv
-
-       

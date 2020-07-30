@@ -32,7 +32,7 @@ if len(cost_function) != n:
 
 # initialize
 
-QH = numpy.zeros([m,n])
+QH = np.zeros([m,n])
 R = basis_matrixT
 p = range(n)
 
@@ -57,36 +57,36 @@ for j in range(k)
     R[j+1:m-1,j] = 0
     
     
-     return self.p_
+     return self.p
 
 
-def qrpc_reflector(r,cost_function)
-"""
-QRPC_REFLECTOR best reflector with column pivoting and a cost function
+def qrpc_reflector(r,cost_function):
+    """
+    QRPC_REFLECTOR best reflector with column pivoting and a cost function
  
-This function generates a Householder reflector
-The pivoting is biased by a cost function, i.e.
-the pivot is chosen as the argmax of norm(r(:,i))-cost_function(i)
-"""
+    This function generates a Householder reflector
+    The pivoting is biased by a cost function, i.e.
+    the pivot is chosen as the argmax of norm(r(:,i))-cost_function(i)
+    """
 
-# size of each column
-r2 = np.multiply(r,r)
-sum_r2 = r2.sum(axis=1)
-dlens = np.sqrt(sum_r2)
+    # size of each column
+    r2 = np.multiply(r,r)
+    sum_r2 = r2.sum(axis=0)
+    dlens = np.sqrt(sum_r2)
 
-# choose pivot
-[~,ipiv] = max(dlens-cost_function)
+    # choose pivot
+    ipiv = np.argmax(dlens-cost_function)
 
-dlen = dlens[ipiv]
+    dlen = dlens[ipiv]
 
-if dlen > 0.0
-    u = r[:,ipiv]/dlen
-    u[1,1] = u[1,1] + numpy.sign(u[1,1]) + (u[1] == 0) #Not sure what the last piece is doing, or how to do it in Python
-    u = u/np.sqrt(abs(u[1,1]))
-else
-    u = r[:,ipiv]
-    u[1] = sqrt(2.0)
+    if dlen > 0.0:
+        u = r[:,ipiv]/dlen
+        u[1] = u[1] + np.sign(u[1]) + (u[1] == 0) #Not sure what the last piece is doing, or how to do it in Python
+        u = u/np.sqrt(abs(u[1]))
+    else:
+        u = r[:,ipiv]
+        u[1] = sqrt(2.0)
 
-return u ipiv
+    return u, ipiv
 
        

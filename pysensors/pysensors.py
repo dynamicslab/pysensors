@@ -66,7 +66,6 @@ class SensorSelector(BaseEstimator):
         self.basis = basis
         if optimizer is None:
             optimizer = QR()
-            from pysensors.optimizers import QR
         self.optimizer = optimizer
         if n_sensors is None:
             self.n_sensors = None
@@ -82,8 +81,11 @@ class SensorSelector(BaseEstimator):
             if optimizer == QR():
                 showwarning("Cost function present but cost-free optimizer selected.\
                 Choose optimizer = CCQR to incorporate cost function.")
+<<<<<<< HEAD
         else:
             from pysensors.optimizers import CCQR
+>>>>>>> Update pysensors.py
+=======
 >>>>>>> Update pysensors.py
 
     def fit(self, x, quiet=False, prefit_basis=False, seed=None, **optimizer_kws):

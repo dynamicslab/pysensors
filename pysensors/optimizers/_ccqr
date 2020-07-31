@@ -33,7 +33,7 @@ class CCQR:
         # initialize
         QH = np.zeros([m,n])
         R = basis_matrixT
-        p = range(n)
+        p = list(range(n))
 
         k = min(m,n)
 

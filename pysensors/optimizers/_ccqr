@@ -35,8 +35,6 @@ class CCQR:
         R = basis_matrixT
         p = range(n)
 
-        #The below needs to be translated to Python
-
         k = min(m,n)
 
         for j in range(k):
@@ -61,7 +59,7 @@ class CCQR:
 def qrpc_reflector(r,cost_function):
     """
     QRPC_REFLECTOR best reflector with column pivoting and a cost function
- 
+
     This function generates a Householder reflector
     The pivoting is biased by a cost function, i.e.
     the pivot is chosen as the argmax of norm(r(:,i))-cost_function(i)

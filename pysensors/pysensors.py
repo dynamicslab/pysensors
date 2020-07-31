@@ -80,7 +80,8 @@ class SensorSelector(BaseEstimator):
         if self.cost_function is None:
             self.cost_function = None
             if optimizer == QR():
-            showwarning("Cost function present but cost-free optimizer selected. Choose optimizer = CCQR to incorporate cost function.")
+                showwarning("Cost function present but cost-free optimizer selected.\
+                Choose optimizer = CCQR to incorporate cost function.")
         else:
             from pysensors.optimizers import CCQR
 >>>>>>> Update pysensors.py

@@ -13,7 +13,8 @@ To run tests for just one file, run
 pytest file_to_test.py
 """
 import pytest
-from numpy.testing import assert_allclose
+from numpy import mean
+from numpy import sqrt
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -136,20 +137,20 @@ def test_predict_accuracy(data_vandermonde_testing):
     data, x_test = data_vandermonde_testing
 
     model = SensorSelector()
-    model.fit(data)
+    model.fit(data, seed=1)
     model.set_number_of_sensors(8)
     sensors = model.get_selected_sensors()
-    assert_allclose(x_test, model.predict(x_test[sensors]), atol=1e-4)
+    assert sqrt(mean((x_test - model.predict(x_test[sensors])) ** 2)) <= 1.0e-3
 
     # Should also work for row vectors
     x_test = x_test.reshape(1, -1)
-    assert_allclose(x_test, model.predict(x_test[:, sensors]), atol=1e-4)
+    assert sqrt(mean((x_test - model.predict(x_test[:, sensors])) ** 2)) <= 1.0e-3
 
 
 def test_reconstruction_error(data_vandermonde_testing):
     data, x_test = data_vandermonde_testing
 
-    model = SensorSelector()
+    model = SensorSelector(n_sensors=3)
     model.fit(data)
 
     assert len(model.reconstruction_error(x_test)) == min(

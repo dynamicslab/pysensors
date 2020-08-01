@@ -58,7 +58,7 @@ class SensorSelector(BaseEstimator):
         else:
             raise ValueError("n_sensors must be a positive integer.")
 
-    def fit(self, x, quiet=False, **optimizer_kws):
+    def fit(self, x, quiet=False, seed=None, **optimizer_kws):
         """
         Fit the SensorSelector model, determining which sensors are relevant.
 
@@ -69,6 +69,12 @@ class SensorSelector(BaseEstimator):
 
         quiet: boolean, optional (default False)
             Whether or not to suppress warnings during fitting.
+
+        seed: int, optional (default None)
+            Seed for the random number generator used to shuffle sensors after the
+            ``self.basis.n_basis_modes`` sensor. Most optimizers only rank the top
+            ``self.basis.n_basis_modes`` sensors, leaving the rest virtually
+            untouched. As a result the remaining samples are randomly permuted.
 
         optimizer_kws: dict, optional
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
@@ -99,6 +105,13 @@ class SensorSelector(BaseEstimator):
         # Find sparse sensor locations
         self.ranked_sensors_ = self.optimizer.get_sensors(
             self.basis_matrix_, **optimizer_kws
+        )
+
+        # Randomly shuffle sensors after self.basis.n_basis_modes
+        rng = np.random.default_rng(seed)
+        n_basis_modes = self.basis.n_basis_modes
+        self.ranked_sensors_[n_basis_modes:] = rng.permutation(
+            self.ranked_sensors_[n_basis_modes:]
         )
 
     def predict(self, x, **solve_kws):
@@ -290,7 +303,7 @@ class SensorSelector(BaseEstimator):
             Reconstruction scores for each number of sensors in `sensor_range`.
         """
         check_is_fitted(self, "ranked_sensors_")
-        x_test = validate_input(x_test, self.get_selected_sensors()).T
+        x_test = validate_input(x_test, self.get_all_sensors()).T
 
         basis_mode_dim, n_basis_modes = self.basis_matrix_.shape
         if sensor_range is None:

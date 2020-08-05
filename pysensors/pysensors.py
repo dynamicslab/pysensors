@@ -57,8 +57,9 @@ class SensorSelector(BaseEstimator):
             self.n_sensors = int(n_sensors)
         else:
             raise ValueError("n_sensors must be a positive integer.")
+        self.n_basis_modes = None
 
-    def fit(self, x, quiet=False, seed=None, **optimizer_kws):
+    def fit(self, x, quiet=False, prefit_basis=False, seed=None, **optimizer_kws):
         """
         Fit the SensorSelector model, determining which sensors are relevant.
 
@@ -70,6 +71,12 @@ class SensorSelector(BaseEstimator):
         quiet: boolean, optional (default False)
             Whether or not to suppress warnings during fitting.
 
+        prefit_basis: boolean, optional (default False)
+            Whether or not the basis has already been fit to x.
+            For example, you may have already fit and experimented with
+            a ``POD`` object to determine the optimal number of modes. This
+            option allows you to avoid an unnecessary SVD.
+
         seed: int, optional (default None)
             Seed for the random number generator used to shuffle sensors after the
             ``self.basis.n_basis_modes`` sensor. Most optimizers only rank the top
@@ -80,16 +87,40 @@ class SensorSelector(BaseEstimator):
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
         """
 
-        x = validate_input(x)
-
         # Fit basis functions to data (sometimes unnecessary, e.g FFT)
-        action = "ignore" if quiet else "default"
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action, category=UserWarning)
-            self.basis.fit(x)
+        if prefit_basis:
+            check_is_fitted(self.basis, "basis_matrix_")
+        else:
+            x = validate_input(x)
+
+            with warnings.catch_warnings():
+                action = "ignore" if quiet else "default"
+                warnings.filterwarnings(action, category=UserWarning)
+                self.basis.fit(x)
 
         # Get matrix representation of basis
-        self.basis_matrix_ = self.basis.matrix_representation()
+        self.basis_matrix_ = self.basis.matrix_representation(
+            n_basis_modes=self.n_basis_modes
+        )
+
+        # Check that n_sensors doesn't exceed dimension of basis vectors
+        self._validate_n_sensors()
+
+        # Find sparse sensor locations
+        self.ranked_sensors_ = self.optimizer.get_sensors(
+            self.basis_matrix_, **optimizer_kws
+        )
+
+        # Randomly shuffle sensors after self.basis.n_basis_modes
+        rng = np.random.default_rng(seed)
+        n_basis_modes = self.basis_matrix_.shape[1]
+        self.ranked_sensors_[n_basis_modes:] = rng.permutation(
+            self.ranked_sensors_[n_basis_modes:]
+        )
+
+    # TODO: move
+    def _validate_n_sensors(self):
+        check_is_fitted(self, "basis_matrix_")
 
         # Maximum number of sensors (= dimension of basis vectors)
         max_sensors = self.basis_matrix_.shape[0]
@@ -101,18 +132,6 @@ class SensorSelector(BaseEstimator):
                     max_sensors
                 )
             )
-
-        # Find sparse sensor locations
-        self.ranked_sensors_ = self.optimizer.get_sensors(
-            self.basis_matrix_, **optimizer_kws
-        )
-
-        # Randomly shuffle sensors after self.basis.n_basis_modes
-        rng = np.random.default_rng(seed)
-        n_basis_modes = self.basis.n_basis_modes
-        self.ranked_sensors_[n_basis_modes:] = rng.permutation(
-            self.ranked_sensors_[n_basis_modes:]
-        )
 
     def predict(self, x, **solve_kws):
         """
@@ -200,7 +219,7 @@ class SensorSelector(BaseEstimator):
 
     def set_number_of_sensors(self, n_sensors):
         """
-        Set `n_sensors`, the number of sensors to be used for prediction.
+        Set ``n_sensors``, the number of sensors to be used for prediction.
 
         Parameters
         ----------
@@ -222,6 +241,44 @@ class SensorSelector(BaseEstimator):
         else:
             self.n_sensors = n_sensors
 
+    def update_n_basis_modes(self, n_basis_modes, x=None):
+        """
+        Re-fit the SensorSelector object using a different value of
+        ``n_basis_modes``.
+
+        The benefit of this method is TODO (avoid recomputing basis)
+
+        Parameters
+        ----------
+        n_basis_modes: positive int, optional (default None)
+            Number of basis modes to be used during fit.
+            Must be less than or equal to ``n_samples``.
+
+        x: numpy array, shape (n_examples, n_features), optional (default None)
+            Only used if n_basis_modes is larger than TODO
+        """
+        if not isinstance(n_basis_modes, INT_TYPES) or n_basis_modes < 0:
+            raise ValueError("n_basis_modes must be a positive integer")
+
+        check_is_fitted(self, "basis_matrix_")
+
+        # No need to refit basis
+        if n_basis_modes < self.basis_matrix_.shape[1]:
+            self.n_basis_modes = n_basis_modes
+            self.fit(x, prefit_basis=True)
+
+        elif x is None:
+            raise ValueError(
+                "n_basis_modes exceeds number of available modes so x cannot be None"
+            )
+        elif n_basis_modes > x.shape[0]:
+            raise ValueError(
+                "n_basis_modes cannot exceed the number of examples, x.shape[0]"
+            )
+        else:
+            self.n_basis_modes = n_basis_modes
+            self.fit(x, prefit_basis=False)
+
     def score(self, x, y=None, score_function=None, score_kws={}, solve_kws={}):
         """
         Compute the reconstruction error for a given set of measurements.
@@ -230,7 +287,7 @@ class SensorSelector(BaseEstimator):
         ----------
         x: numpy array, shape (n_examples, n_features)
             Measurements with which to compute the score.
-            Note that `x` should consist of measurements at every location,
+            Note that ``x`` should consist of measurements at every location,
             not just the recommended sensor location, i.e. its shape should be
             (n_examples, n_features) rather than (n_examples, n_sensors).
 
@@ -239,7 +296,7 @@ class SensorSelector(BaseEstimator):
 
         score_function: callable, optional (default None)
             Function used to compute the score. Should have the call signature
-            `score_function(y_true, y_pred, **score_kws)`.
+            ``score_function(y_true, y_pred, **score_kws)``.
             Default is the negative of the root mean squared error
             (sklearn expects higher scores to correspond to better performance).
 

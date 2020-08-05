@@ -2,10 +2,11 @@
 POD mode basis class.
 """
 from sklearn.decomposition import TruncatedSVD
-from sklearn.utils.validation import check_is_fitted
+
+from ._base import MatrixMixin
 
 
-class POD(TruncatedSVD):
+class POD(TruncatedSVD, MatrixMixin):
     """
     Generate a POD transformation which maps input features to
     POD modes.
@@ -62,23 +63,3 @@ class POD(TruncatedSVD):
         """
         self.basis_matrix_ = super(POD, self).fit(X).components_.T
         return self
-
-    def matrix_representation(self, copy=False):
-        """
-        Get the matrix representation of the operator.
-
-        Parameters
-        ----------
-        copy : boolean, optional (default False)
-            Whether to return a copy of the basis matrix.
-
-        Returns
-        -------
-        B : numpy array, shape (n_features, n_basis_modes)
-            Matrix representation of the basis. Note that rows correspond to
-            features and columns to basis modes.
-        """
-        check_is_fitted(self, "basis_matrix_")
-        # Note: the TruncatedSVD object returns components as rows, so we
-        # take a transpose here.
-        return self.basis_matrix_.copy() if copy else self.basis_matrix_

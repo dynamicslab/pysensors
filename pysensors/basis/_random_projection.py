@@ -4,10 +4,11 @@ Random projections basis class.
 Project data onto random features.
 """
 from sklearn.random_projection import GaussianRandomProjection
-from sklearn.utils.validation import check_is_fitted
+
+from ._base import MatrixMixin
 
 
-class RandomProjection(GaussianRandomProjection):
+class RandomProjection(GaussianRandomProjection, MatrixMixin):
     """
     Generate a basis based on Gaussian random projection.
 
@@ -71,15 +72,3 @@ class RandomProjection(GaussianRandomProjection):
         super(RandomProjection, self).fit(X.T)
         self.basis_matrix_ = super(RandomProjection, self).transform(X.T)
         return self
-
-    def matrix_representation(self, copy=False):
-        """
-        Get the matrix representation of the operator.
-
-        Parameters
-        ----------
-        copy : boolean, optional (default False)
-            Whether to return a copy of the basis matrix.
-        """
-        check_is_fitted(self, "basis_matrix_")
-        return self.basis_matrix_.copy() if copy else self.basis_matrix_

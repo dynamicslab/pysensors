@@ -37,13 +37,13 @@ class CCQR:
 
         k = min(m,n)
 
-        for j in range(k):
+        for j in range(k-1):
             u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
             # track column pivots
-            ipiv = ipiv+j
+            ipiv = ipiv+j-1
             itemp = self.p[j]
             self.p[j] = self.p[ipiv]
-            p[ipiv] = itemp
+            self.p[ipiv] = itemp
             # switch columns
             temp = R[:,j]
             R[:,j] = R[:,ipiv]
@@ -82,6 +82,6 @@ def qrpc_reflector(r,cost_function):
         u = u/np.sqrt(abs(u[0]))
     else:
         u = r[:,ipiv]
-        u[0] = sqrt(2.0)
+        u[0] = np.sqrt(2.0)
 
     return u, ipiv

@@ -33,7 +33,7 @@ class CCQR:
         # initialize
         QH = np.zeros([m,n])
         R = basis_matrixT
-        p = list(range(n))
+        self.p = list(range(n))
 
         k = min(m,n)
 
@@ -41,8 +41,8 @@ class CCQR:
             u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
             # track column pivots
             ipiv = ipiv+j
-            itemp = p[j]
-            p[j] = p[ipiv]
+            itemp = self.p[j]
+            self.p[j] = self.p[ipiv]
             p[ipiv] = itemp
             # switch columns
             temp = R[:,j]
@@ -50,7 +50,8 @@ class CCQR:
             R[:,ipiv] = temp
             # apply reflector
             QH[j:m-1,j] = u
-            R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - u*(u.T*R[j:m-1,j:n-1])
+            s = np.dot(u.T,R[j:m-1,j:n-1])
+            R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - np.outer(u,s)
             R[j+1:m-1,j] = 0
 
         return self.p
@@ -77,10 +78,10 @@ def qrpc_reflector(r,cost_function):
 
     if dlen > 0.0:
         u = r[:,ipiv]/dlen
-        u[1] = u[1] + np.sign(u[1]) + (u[1] == 0) #Not sure what the last piece is doing, or how to do it in Python
-        u = u/np.sqrt(abs(u[1]))
+        u[0] = u[0] + np.sign(u[0]) + (u[0] == 0) #Not sure what the last piece is doing, or how to do it in Python
+        u = u/np.sqrt(abs(u[0]))
     else:
         u = r[:,ipiv]
-        u[1] = sqrt(2.0)
+        u[0] = sqrt(2.0)
 
     return u, ipiv

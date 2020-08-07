@@ -13,7 +13,9 @@ To run tests for just one file, run
 pytest file_to_test.py
 """
 import pytest
+from numpy import isnan
 from numpy import mean
+from numpy import nan
 from numpy import sqrt
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
@@ -177,5 +179,66 @@ def test_score(data_vandermonde):
     assert weak_model.score(data) < strong_model.score(data)
 
 
-# TODO: add more datasets for testing
-# TODO: test for accuracy somehow?
+def test_prefit_basis(data_random):
+    data = data_random
+    basis = Identity()
+    basis.fit(data)
+
+    # This data should be ignored during the fit
+    data_to_ignore = nan * data_random
+
+    model = SensorSelector(basis=basis)
+    model.fit(data_to_ignore, prefit_basis=True)
+    assert not any(isnan(model.get_selected_sensors()))
+
+
+def test_update_n_basis_modes_errors(data_random):
+    data = data_random
+    n_basis_modes = 5
+    model = SensorSelector(basis=Identity(n_basis_modes=n_basis_modes))
+
+    model.fit(data)
+
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes(0)
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes("5")
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes(data.shape[0] + 1)
+    # Need to pass x when increasing n_basis_modes beyond capacity
+    # of the original basis
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes(n_basis_modes + 1)
+
+
+def test_update_n_basis_modes(data_random):
+    data = data_random
+    model = SensorSelector()
+    model.fit(data)
+    assert model.basis.n_basis_modes == data.shape[0]
+    assert model.basis_matrix_.shape[1] == data.shape[0]
+
+    n_basis_modes = 5
+    model.update_n_basis_modes(n_basis_modes)
+    assert model.basis.n_basis_modes == data.shape[0]
+    assert model.basis_matrix_.shape[1] == n_basis_modes
+
+
+def test_update_n_basis_modes_refit(data_random):
+    data = data_random
+    n_basis_modes = 5
+    model = SensorSelector(basis=Identity(n_basis_modes=n_basis_modes))
+    model.fit(data)
+    assert model.basis_matrix_.shape[1] == n_basis_modes
+
+    model.update_n_basis_modes(n_basis_modes + 1, data)
+    assert model.basis_matrix_.shape[1] == n_basis_modes + 1
+
+
+def test_update_n_basis_modes_unfit_basis(data_random):
+    data = data_random
+    n_basis_modes = 5
+    model = SensorSelector()
+    model.update_n_basis_modes(n_basis_modes, data)
+
+    assert model.basis_matrix_.shape[1] == n_basis_modes

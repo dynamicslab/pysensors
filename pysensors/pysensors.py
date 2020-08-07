@@ -246,7 +246,12 @@ class SensorSelector(BaseEstimator):
         Re-fit the SensorSelector object using a different value of
         ``n_basis_modes``.
 
-        The benefit of this method is TODO (avoid recomputing basis)
+        This method allows one to relearn sensor locations for a
+        different number of basis modes _without_ re-fitting the basis
+        in many cases.
+        Specifically, if ``n_basis_modes <= self.basis.n_basis_modes``
+        then the basis does not need to be refit.
+        Otherwise this function does not save any computational resources.
 
         Parameters
         ----------
@@ -255,21 +260,23 @@ class SensorSelector(BaseEstimator):
             Must be less than or equal to ``n_samples``.
 
         x: numpy array, shape (n_examples, n_features), optional (default None)
-            Only used if n_basis_modes is larger than TODO
+            Only used if ``n_basis_modes`` exceeds the number of available
+            basis modes for the already fit basis.
         """
-        if not isinstance(n_basis_modes, INT_TYPES) or n_basis_modes < 0:
+        if not isinstance(n_basis_modes, INT_TYPES) or n_basis_modes <= 0:
             raise ValueError("n_basis_modes must be a positive integer")
 
-        check_is_fitted(self, "basis_matrix_")
-
-        # No need to refit basis
-        if n_basis_modes < self.basis_matrix_.shape[1]:
+        # No need to refit basis; only refit sensors
+        if (
+            hasattr(self.basis, "basis_matrix_")
+            and n_basis_modes <= self.basis.n_basis_modes
+        ):
             self.n_basis_modes = n_basis_modes
             self.fit(x, prefit_basis=True)
 
         elif x is None:
             raise ValueError(
-                "n_basis_modes exceeds number of available modes so x cannot be None"
+                "x cannot be None when n_basis_modes exceeds number of available modes"
             )
         elif n_basis_modes > x.shape[0]:
             raise ValueError(
@@ -277,6 +284,7 @@ class SensorSelector(BaseEstimator):
             )
         else:
             self.n_basis_modes = n_basis_modes
+            self.basis.n_basis_modes = n_basis_modes
             self.fit(x, prefit_basis=False)
 
     def score(self, x, y=None, score_function=None, score_kws={}, solve_kws={}):

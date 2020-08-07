@@ -37,10 +37,10 @@ class CCQR:
 
         k = min(m,n)
 
-        for j in range(k-1):
-            u, ipiv = qrpc_reflector(np.array(R[j:m-1,j:n-1]),np.array(cost_function[p[j:n-1]]))
+        for j in range(k):
+            u, ipiv = qrpc_reflector(np.array(R[j:m,j:n]),np.array(cost_function[p[j:n]]))
             # track column pivots
-            ipiv = ipiv+j-1
+            ipiv = ipiv+j
             itemp = self.p[j]
             self.p[j] = self.p[ipiv]
             self.p[ipiv] = itemp
@@ -49,10 +49,10 @@ class CCQR:
             R[:,j] = R[:,ipiv]
             R[:,ipiv] = temp
             # apply reflector
-            QH[j:m-1,j] = u
-            s = np.dot(u.T,R[j:m-1,j:n-1])
-            R[j:m-1,j:n-1] = R[j:m-1,j:n-1] - np.outer(u,s)
-            R[j+1:m-1,j] = 0
+            QH[j:m,j] = u
+            s = np.dot(u.T,R[j:m,j:n])
+            R[j:m,j:n] = R[j:m,j:n] - np.outer(u,s)
+            R[j+1:m,j] = 0
 
         return self.p
 
@@ -67,7 +67,7 @@ def qrpc_reflector(r,cost_function):
     """
 
     # size of each column
-    r2 = np.multiply(r,r)
+    r2 = np.multiply(r,r.conj())
     sum_r2 = r2.sum(axis=0)
     dlens = np.sqrt(sum_r2)
 
@@ -78,7 +78,7 @@ def qrpc_reflector(r,cost_function):
 
     if dlen > 0.0:
         u = r[:,ipiv]/dlen
-        u[0] = u[0] + np.sign(u[0]) + (u[0] == 0) #Not sure what the last piece is doing, or how to do it in Python
+        u[0] = u[0] + np.sign(u[0]) + (u[0] == 0)
         u = u/np.sqrt(abs(u[0]))
     else:
         u = r[:,ipiv]

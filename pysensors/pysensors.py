@@ -87,7 +87,7 @@ class SensorSelector(BaseEstimator):
             Keyword arguments to be passed to the `get_sensors` method of the optimizer.
         """
 
-        # Fit basis functions to data (sometimes unnecessary, e.g FFT)
+        # Fit basis functions to data
         if prefit_basis:
             check_is_fitted(self.basis, "basis_matrix_")
         else:
@@ -117,21 +117,6 @@ class SensorSelector(BaseEstimator):
         self.ranked_sensors_[n_basis_modes:] = rng.permutation(
             self.ranked_sensors_[n_basis_modes:]
         )
-
-    # TODO: move
-    def _validate_n_sensors(self):
-        check_is_fitted(self, "basis_matrix_")
-
-        # Maximum number of sensors (= dimension of basis vectors)
-        max_sensors = self.basis_matrix_.shape[0]
-        if self.n_sensors is None:
-            self.n_sensors = max_sensors
-        elif self.n_sensors > max_sensors:
-            raise ValueError(
-                "n_sensors cannot exceed number of available sensors: {}".format(
-                    max_sensors
-                )
-            )
 
     def predict(self, x, **solve_kws):
         """
@@ -352,11 +337,11 @@ class SensorSelector(BaseEstimator):
         sensor_range: 1D numpy array, optional (default None)
             Numbers of sensors at which to compute the reconstruction error.
             If None, will be set to
-            [1, 2, ... , min(`n_sensors`, `basis.n_basis_modes`)].
+            [1, 2, ... , min(``n_sensors``, ``basis.n_basis_modes``)].
 
         score: callable, optional (default None)
             Function used to compute the reconstruction error.
-            Should have the signature `score(x, x_pred)`.
+            Should have the signature ``score(x, x_pred)``.
             If None, the root mean squared error is used.
 
         solve_kws: dict, optional
@@ -365,7 +350,7 @@ class SensorSelector(BaseEstimator):
         Returns
         -------
         error: numpy array, shape (len(sensor_range),)
-            Reconstruction scores for each number of sensors in `sensor_range`.
+            Reconstruction scores for each number of sensors in ``sensor_range``.
         """
         check_is_fitted(self, "ranked_sensors_")
         x_test = validate_input(x_test, self.get_all_sensors()).T
@@ -406,3 +391,17 @@ class SensorSelector(BaseEstimator):
                 )
 
         return error
+
+    def _validate_n_sensors(self):
+        check_is_fitted(self, "basis_matrix_")
+
+        # Maximum number of sensors (= dimension of basis vectors)
+        max_sensors = self.basis_matrix_.shape[0]
+        if self.n_sensors is None:
+            self.n_sensors = max_sensors
+        elif self.n_sensors > max_sensors:
+            raise ValueError(
+                "n_sensors cannot exceed number of available sensors: {}".format(
+                    max_sensors
+                )
+            )

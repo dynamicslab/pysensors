@@ -9,9 +9,9 @@ from scipy.linalg import solve
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
-from pysensors.basis import Identity
-from pysensors.optimizers import QR
-from pysensors.utils import validate_input
+from .basis import Identity
+from .optimizers import QR
+from .utils import validate_input
 
 
 INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
@@ -84,7 +84,7 @@ class SensorSelector(BaseEstimator):
             untouched. As a result the remaining samples are randomly permuted.
 
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the `get_sensors` method of the optimizer.
+            Keyword arguments to be passed to the ``get_sensors`` method of the optimizer.
         """
 
         # Fit basis functions to data
@@ -127,7 +127,7 @@ class SensorSelector(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors)
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            `self.get_ranked_sensors()`.
+            ``self.get_ranked_sensors()``.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert

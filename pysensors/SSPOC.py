@@ -4,33 +4,42 @@ SSPOC object definition.
 import warnings
 
 import numpy as np
-from scipy.linalg import lstsq
-from scipy.linalg import solve
 from sklearn.base import BaseEstimator
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.utils.validation import check_is_fitted
 
 from .basis import Identity
-from .optimizers import LDA
-from .pysensors import SensorSelector
+from .utils import constrained_binary_solve
+from .utils import constrained_multiclass_solve
 from .utils import validate_input
 
 
 INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
-class SSPOC(SensorSelector):
+class SSPOC(BaseEstimator):
     """
     Sparse Sensor Placement Optimization for Classification.
     """
 
-    def __init__(self, basis=None, optimizer=None, n_sensors=None):
-        if optimizer is None:
-            optimizer = CVX
-        super(SSPOC, self).__init__(
-            basis=basis, optimizer=optimizer, n_sensors=n_sensors
-        )
+    def __init__(self, basis=None, threshold=None):
+        if basis is None:
+            basis = Identity()
+        self.basis = basis
+        self.classifier = LinearDiscriminantAnalysis()
+        self.n_basis_modes = None
+        self.threshold = threshold
 
-    def fit(self, x, y, quiet=False, prefit_basis=False, seed=None, **optimizer_kws):
+    def fit(
+        self,
+        x,
+        y,
+        quiet=False,
+        prefit_basis=False,
+        seed=None,
+        refit=True,
+        **optimizer_kws
+    ):
         """
         Fit the SSPOC model, determining which sensors are relevant.
 
@@ -57,8 +66,13 @@ class SSPOC(SensorSelector):
             ``self.basis.n_basis_modes`` sensors, leaving the rest virtually
             untouched. As a result the remaining samples are randomly permuted.
 
+        refit: bool, optional (default True)
+            Whether or not to refit the classifier using measurements
+            only from the learned sensor locations.
+
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the ``get_sensors`` method of the optimizer.
+            Keyword arguments to be passed to the ``get_sensors``
+            method of the optimizer.
         """
 
         # Fit basis functions to data
@@ -74,23 +88,35 @@ class SSPOC(SensorSelector):
                 self.basis.fit(x)
 
         # Get matrix representation of basis
+        # TODO: use a different function here
         self.basis_matrix_ = self.basis.matrix_representation(
             n_basis_modes=self.n_basis_modes
         )
 
-        # Check that n_sensors doesn't exceed dimension of basis vectors
-        self._validate_n_sensors()
-
         # Find weight vector
-        # TODO: should this be projection of x onto basis?
-        self.optimizer.fit(self.basis_matrix_.T, y)
+        # TODO: transpose is probably off
+        self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
+        # self.optimizer.fit(self.basis_matrix_.T, y)
 
-        self.w_ = self.optimizer.coef_
+        # TODO: do we need to save w?
+        self.w_ = self.classifier.transform(x)
 
         # TODO: cvx routine to learn sensors
-        s = CVX_routine(...)
+        n_classes = len(set(y[:]))
+        if n_classes == 2:
+            s = constrained_binary_solve(self.w_, self.basis_matrix_)
+        else:
+            s = constrained_multiclass_solve(self.w_, self.basis_matrix_)
 
         # Get sensor locations from s
+        if self.threshold is None:
+            threshold = 1  # TODO
+        else:
+            threshold = self.threshold
+
+        # Decide which sensors to retain
+        self.sensor_coef_ = s
+        self.update_threshold(threshold)
 
     def predict(self, x):
         """
@@ -108,5 +134,16 @@ class SSPOC(SensorSelector):
         y: numpy array, shape (n_samples,)
             Predicted classes.
         """
+        check_is_fitted(self, "sensor_coef_")
+        # TODO: transpose is probably off
+        return self.classifier.predict(np.dot(self.basis_matrix_.T, x))
 
         return np.zeros(x.shape[0])
+
+    def update_threshold(self, threshold):
+        check_is_fitted(self, "sensor_coef_")
+        self.threshold = threshold
+        self.sparse_sensors_ = np.abs(self.sensor_coef_) > threshold
+
+        if np.count_nonzero(self.sparse_sensors_) == 0:
+            warnings.warn("threshold set too high; no sensors selected.")

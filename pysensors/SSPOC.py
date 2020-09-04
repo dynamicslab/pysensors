@@ -95,14 +95,14 @@ class SSPOC(BaseEstimator):
 
         # Get matrix representation of basis - this is \Psi^T in the paper
         # TODO: implement this method
-        self.basis_coordinate_map_ = self.basis.get_coordinate_map(
+        self.basis_matrix_inverse_ = self.basis.matrix_inverse(
             n_basis_modes=self.n_basis_modes
         )
 
         # Find weight vector
-        # Equivalent to np.dot(self.basis_coordinate_map_, x.T).T
+        # Equivalent to np.dot(self.basis_matrix_inverse_, x.T).T
         # TODO
-        self.classifier.fit(np.dot(x, self.basis_coordinate_map_.T), y)
+        self.classifier.fit(np.dot(x, self.basis_matrix_inverse_.T), y)
         # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
@@ -116,14 +116,14 @@ class SSPOC(BaseEstimator):
         if n_classes == 2:
             s = constrained_binary_solve(
                 w,
-                self.basis_coordinate_map_,
+                self.basis_matrix_inverse_,
                 l1_penalty=self.l1_penalty,
                 **optimizer_kws
             )
         else:
             s = constrained_multiclass_solve(
                 w,
-                self.basis_coordinate_map_,
+                self.basis_matrix_inverse_,
                 n_sensors=self.n_sensors,
                 tol=self.tol,
                 **optimizer_kws
@@ -166,7 +166,7 @@ class SSPOC(BaseEstimator):
         if self.refit_:
             return self.classifier.predict(x)
         else:
-            return self.classifier.predict(np.dot(x, self.basis_coordinate_map_.T))
+            return self.classifier.predict(np.dot(x, self.basis_matrix_inverse_.T))
 
     def update_threshold(self, threshold):
         check_is_fitted(self, "sensor_coef_")

@@ -5,10 +5,18 @@ class CCQR:
     Greedy cost-constrained QR optimizer for sensor selection.
     """
 
-    def __init__(self):
-        self.p_ = None
+    def __init__(self, cost_function):
+        if np.ndim(cost_function) != 1:
+            raise ValueError(
+                "cost_function must be a 1D array, "
+                f"but a {np.ndim(cost_function)}D array was given"
+            )
+        self.cost_function = cost_function
 
-    def get_sensors(self, basis_matrix, cost_function, **optimizer_kws,):
+    def get_sensors(
+        self,
+        basis_matrix,
+    ):
         """
         Parameters
         ----------

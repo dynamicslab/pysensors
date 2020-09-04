@@ -20,15 +20,22 @@ INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
 class SSPOC(BaseEstimator):
     """
     Sparse Sensor Placement Optimization for Classification.
+
+    Parameters
+    ----------
+    TODO
     """
 
-    def __init__(self, basis=None, threshold=None):
+    def __init__(self, basis=None, threshold=None, n_sensors=None, tol=None):
         if basis is None:
             basis = Identity()
         self.basis = basis
         self.classifier = LinearDiscriminantAnalysis()
         self.n_basis_modes = None
         self.threshold = threshold
+        # TODO: do some validating of this number
+        self.n_sensors = n_sensors
+        self.tol = tol
 
     def fit(
         self,
@@ -71,8 +78,7 @@ class SSPOC(BaseEstimator):
             only from the learned sensor locations.
 
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the ``get_sensors``
-            method of the optimizer.
+            Keyword arguments to be passed to the ``cvxopt`` optimizer.
         """
 
         # Fit basis functions to data
@@ -87,35 +93,45 @@ class SSPOC(BaseEstimator):
                 warnings.filterwarnings(action, category=UserWarning)
                 self.basis.fit(x)
 
-        # Get matrix representation of basis
-        # TODO: use a different function here
+        # Get matrix representation of basis - this is \Psi^T in the paper
+        # TODO: implement this method
         self.basis_coordinate_map_ = self.basis.get_coordinate_map(
             n_basis_modes=self.n_basis_modes
         )
 
         # Find weight vector
-        # TODO: transpose is probably off
-        # Indeed - we need to map to coefficient representation
-        self.classifier.fit(np.dot(self.basis_coordinate_map_, x), y)
+        # Equivalent to np.dot(self.basis_coordinate_map_, x.T).T
+        # TODO
+        self.classifier.fit(np.dot(x, self.basis_coordinate_map_.T), y)
         # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
         # TODO: do we need to save w?
         # Do we want to generalize and grab self.classifier.coef_?
         # self.w_ = self.classifier.transform(x)
-        w = self.classifier.coef_
+        w = self.classifier.coef_.T
 
         # TODO: cvx routine to learn sensors
-        # TODO: lambda
         n_classes = len(set(y[:]))
         if n_classes == 2:
-            s = constrained_binary_solve(w, self.basis_coordinate_map_)
+            s = constrained_binary_solve(
+                w,
+                self.basis_coordinate_map_,
+                l1_penalty=self.l1_penalty,
+                **optimizer_kws
+            )
         else:
-            s = constrained_multiclass_solve(w, self.basis_coordinate_map_)
+            s = constrained_multiclass_solve(
+                w,
+                self.basis_coordinate_map_,
+                n_sensors=self.n_sensors,
+                tol=self.tol,
+                **optimizer_kws
+            )
 
         # Get sensor locations from s
         if self.threshold is None:
-            threshold = 1  # TODO
+            threshold = 1  # TODO - pick this as in the paper
         else:
             threshold = self.threshold
 
@@ -126,6 +142,7 @@ class SSPOC(BaseEstimator):
         # Refit the classifier using sparse measurements
         if refit:
             self.classifier.fit(x[self.sparse_sensors_], y)
+            self.refit_ = True
 
         return self
 
@@ -135,11 +152,10 @@ class SSPOC(BaseEstimator):
 
         Parameters
         ----------
-        x: array-like, shape (n_samples, n_sensors)
+        x: array-like, shape (n_samples, n_sensors) or (n_samples, n_features)
             Examples to be classified.
-            Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            ``self.get_ranked_sensors()``.
+            ``self.get_selected_sensors()``.
 
         Returns
         -------
@@ -147,15 +163,20 @@ class SSPOC(BaseEstimator):
             Predicted classes.
         """
         check_is_fitted(self, "sensor_coef_")
-        # TODO: transpose is probably off
-        return self.classifier.predict(np.dot(self.basis_matrix_.T, x))
-
-        return np.zeros(x.shape[0])
+        if self.refit_:
+            return self.classifier.predict(x)
+        else:
+            return self.classifier.predict(np.dot(x, self.basis_coordinate_map_.T))
 
     def update_threshold(self, threshold):
         check_is_fitted(self, "sensor_coef_")
+        # TODO: check whether this makes sense if we're using OMP
         self.threshold = threshold
-        self.sparse_sensors_ = np.abs(self.sensor_coef_) > threshold
+        self.sparse_sensors_ = np.nonzero(np.abs(self.sensor_coef_) > threshold)
 
         if np.count_nonzero(self.sparse_sensors_) == 0:
             warnings.warn("threshold set too high; no sensors selected.")
+
+    def get_selected_sensors(self):
+        check_is_fitted(self, "sparse_sensors_")
+        return self.sparse_sensors_

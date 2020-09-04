@@ -84,7 +84,8 @@ class SensorSelector(BaseEstimator):
             untouched. As a result the remaining samples are randomly permuted.
 
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the `get_sensors` method of the optimizer.
+            Keyword arguments to be passed to the ``get_sensors`` method of
+            the optimizer.
         """
 
         # Fit basis functions to data
@@ -127,7 +128,7 @@ class SensorSelector(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors)
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            `self.get_ranked_sensors()`.
+            `self.get_selected_sensors()`.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert

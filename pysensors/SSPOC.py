@@ -89,24 +89,29 @@ class SSPOC(BaseEstimator):
 
         # Get matrix representation of basis
         # TODO: use a different function here
-        self.basis_matrix_ = self.basis.matrix_representation(
+        self.basis_coordinate_map_ = self.basis.get_coordinate_map(
             n_basis_modes=self.n_basis_modes
         )
 
         # Find weight vector
         # TODO: transpose is probably off
-        self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
+        # Indeed - we need to map to coefficient representation
+        self.classifier.fit(np.dot(self.basis_coordinate_map_, x), y)
+        # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
         # TODO: do we need to save w?
-        self.w_ = self.classifier.transform(x)
+        # Do we want to generalize and grab self.classifier.coef_?
+        # self.w_ = self.classifier.transform(x)
+        w = self.classifier.coef_
 
         # TODO: cvx routine to learn sensors
+        # TODO: lambda
         n_classes = len(set(y[:]))
         if n_classes == 2:
-            s = constrained_binary_solve(self.w_, self.basis_matrix_)
+            s = constrained_binary_solve(w, self.basis_coordinate_map_)
         else:
-            s = constrained_multiclass_solve(self.w_, self.basis_matrix_)
+            s = constrained_multiclass_solve(w, self.basis_coordinate_map_)
 
         # Get sensor locations from s
         if self.threshold is None:
@@ -118,6 +123,12 @@ class SSPOC(BaseEstimator):
         self.sensor_coef_ = s
         self.update_threshold(threshold)
 
+        # Refit the classifier using sparse measurements
+        if refit:
+            self.classifier.fit(x[self.sparse_sensors_], y)
+
+        return self
+
     def predict(self, x):
         """
         Predict classes for given measurements.
@@ -125,6 +136,7 @@ class SSPOC(BaseEstimator):
         Parameters
         ----------
         x: array-like, shape (n_samples, n_sensors)
+            Examples to be classified.
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
             ``self.get_ranked_sensors()``.

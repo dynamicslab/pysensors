@@ -1,5 +1,5 @@
 # import cvxopt
-from sklearn.linearmodel import OrthogonalMatchingPursuit
+from sklearn.linear_model import OrthogonalMatchingPursuit
 
 
 def constrained_binary_solve(w, psi):

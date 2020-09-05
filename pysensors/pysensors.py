@@ -84,7 +84,8 @@ class SensorSelector(BaseEstimator):
             untouched. As a result the remaining samples are randomly permuted.
 
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the ``get_sensors`` method of the optimizer.
+            Keyword arguments to be passed to the ``get_sensors`` method of
+            the optimizer.
         """
 
         # Fit basis functions to data

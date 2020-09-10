@@ -1,6 +1,6 @@
 from ._base import validate_input
-from ._cvxopt import constrained_binary_solve
-from ._cvxopt import constrained_multiclass_solve
+from ._optimizers import constrained_binary_solve
+from ._optimizers import constrained_multiclass_solve
 
 
 __all__ = [

@@ -26,16 +26,16 @@ class SSPOC(BaseEstimator):
     TODO
     """
 
-    def __init__(self, basis=None, threshold=None, n_sensors=None, tol=None):
+    def __init__(self, basis=None, classifier=None, threshold=None, l1_penalty=1.0):
         if basis is None:
             basis = Identity()
         self.basis = basis
-        self.classifier = LinearDiscriminantAnalysis()
+        if classifier is None:
+            classifier = LinearDiscriminantAnalysis()
+        self.classifier = classifier
         self.n_basis_modes = None
         self.threshold = threshold
-        # TODO: do some validating of this number
-        self.n_sensors = n_sensors
-        self.tol = tol
+        self.l1_penalty = l1_penalty
 
     def fit(
         self,
@@ -78,7 +78,7 @@ class SSPOC(BaseEstimator):
             only from the learned sensor locations.
 
         optimizer_kws: dict, optional
-            Keyword arguments to be passed to the ``cvxopt`` optimizer.
+            Keyword arguments to be passed to the optimization routine.
         """
 
         # Fit basis functions to data
@@ -108,25 +108,15 @@ class SSPOC(BaseEstimator):
 
         # TODO: do we need to save w?
         # Do we want to generalize and grab self.classifier.coef_?
-        # self.w_ = self.classifier.transform(x)
-        w = self.classifier.coef_.T
+        w = np.squeeze(self.classifier.coef_).T
 
         # TODO: cvx routine to learn sensors
         n_classes = len(set(y[:]))
         if n_classes == 2:
-            s = constrained_binary_solve(
-                w,
-                self.basis_matrix_inverse_,
-                l1_penalty=self.l1_penalty,
-                **optimizer_kws
-            )
+            s = constrained_binary_solve(w, self.basis_matrix_inverse_, **optimizer_kws)
         else:
             s = constrained_multiclass_solve(
-                w,
-                self.basis_matrix_inverse_,
-                n_sensors=self.n_sensors,
-                tol=self.tol,
-                **optimizer_kws
+                w, self.basis_matrix_inverse_, alpha=self.l1_penalty, **optimizer_kws
             )
 
         # Get sensor locations from s
@@ -141,7 +131,7 @@ class SSPOC(BaseEstimator):
 
         # Refit the classifier using sparse measurements
         if refit:
-            self.classifier.fit(x[self.sparse_sensors_], y)
+            self.classifier.fit(x[:, self.sparse_sensors_], y)
             self.refit_ = True
 
         return self
@@ -168,15 +158,29 @@ class SSPOC(BaseEstimator):
         else:
             return self.classifier.predict(np.dot(x, self.basis_matrix_inverse_.T))
 
-    def update_threshold(self, threshold):
+    def update_threshold(self, threshold, xy=None):
         check_is_fitted(self, "sensor_coef_")
+        # TODO: update for multiclass
         # TODO: check whether this makes sense if we're using OMP
         self.threshold = threshold
-        self.sparse_sensors_ = np.nonzero(np.abs(self.sensor_coef_) > threshold)
+        if np.ndim(self.sensor_coef_) == 1:
+            self.sparse_sensors_ = np.nonzero(np.abs(self.sensor_coef_) > threshold)[0]
+        else:
+            # We just need to consider the first column of self.sensor_coef_
+            # since MultiTaskLasso (group lasso) zeros out entire rows
+            self.sparse_sensors_ = np.nonzero(
+                np.abs(self.sensor_coef_[:, 0]) > threshold
+            )[0]
 
         if np.count_nonzero(self.sparse_sensors_) == 0:
             warnings.warn("threshold set too high; no sensors selected.")
 
-    def get_selected_sensors(self):
+        if xy is not None:
+            x, y = xy
+            self.classifier.fit(x[:, self.sparse_sensors_], y)
+            self.refit_ = True
+
+    @property
+    def selected_sensors(self):
         check_is_fitted(self, "sparse_sensors_")
         return self.sparse_sensors_

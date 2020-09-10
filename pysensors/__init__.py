@@ -8,6 +8,7 @@ except DistributionNotFound:
 
 
 from .pysensors import SensorSelector
+from .sspoc import SSPOC
 
 __all__ = [
     # Modules:
@@ -15,4 +16,5 @@ __all__ = [
     "basis",
     # Non-modules:
     "SensorSelector",
+    "SSPOC",
 ]

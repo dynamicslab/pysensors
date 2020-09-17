@@ -74,3 +74,13 @@ def test_extra_basis_modes(basis, data_random):
     # Can't have more basis modes than the number of training examples
     with pytest.raises(ValueError):
         b.fit(data)
+
+
+# TODO
+# @pytest.mark.parametrize("basis", [Identity(), POD(), RandomProjection()])
+# def test_matrix_inverse(basis, data_random):
+#     data = data_random
+#     basis.fit(data)
+
+#     inverse_coefs = np.dot(basis.matrix_inverse(), data.T).T
+#     basis.fit(inverse_coefs)

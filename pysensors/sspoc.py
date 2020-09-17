@@ -45,7 +45,7 @@ class SSPOC(BaseEstimator):
         prefit_basis=False,
         seed=None,
         refit=True,
-        **optimizer_kws
+        **optimizer_kws,
     ):
         """
         Fit the SSPOC model, determining which sensors are relevant.
@@ -106,11 +106,8 @@ class SSPOC(BaseEstimator):
         # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
-        # TODO: do we need to save w?
-        # Do we want to generalize and grab self.classifier.coef_?
         w = np.squeeze(self.classifier.coef_).T
 
-        # TODO: cvx routine to learn sensors
         n_classes = len(set(y[:]))
         if n_classes == 2:
             s = constrained_binary_solve(w, self.basis_matrix_inverse_, **optimizer_kws)
@@ -145,7 +142,7 @@ class SSPOC(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors) or (n_samples, n_features)
             Examples to be classified.
             The measurements should be taken at the sensor locations specified by
-            ``self.get_selected_sensors()``.
+            ``self.selected_sensors``.
 
         Returns
         -------
@@ -158,23 +155,28 @@ class SSPOC(BaseEstimator):
         else:
             return self.classifier.predict(np.dot(x, self.basis_matrix_inverse_.T))
 
-    def update_threshold(self, threshold, xy=None):
+    def update_threshold(self, threshold, xy=None, method=np.median, **method_kws):
         check_is_fitted(self, "sensor_coef_")
-        # TODO: update for multiclass
-        # TODO: check whether this makes sense if we're using OMP
         self.threshold = threshold
         if np.ndim(self.sensor_coef_) == 1:
-            self.sparse_sensors_ = np.nonzero(np.abs(self.sensor_coef_) > threshold)[0]
+            sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) > threshold)[0]
         else:
             # We just need to consider the first column of self.sensor_coef_
             # since MultiTaskLasso (group lasso) zeros out entire rows
-            self.sparse_sensors_ = np.nonzero(
-                np.abs(self.sensor_coef_[:, 0]) > threshold
+
+            sparse_sensors = np.nonzero(
+                method(np.abs(self.sensor_coef_), axis=1, **method_kws) > threshold
             )[0]
 
-        if np.count_nonzero(self.sparse_sensors_) == 0:
-            warnings.warn("threshold set too high; no sensors selected.")
+        # Don't save new sensors unless
+        if np.count_nonzero(sparse_sensors) == 0:
+            warnings.warn(f"Threshold set too high ({threshold}); no sensors selected.")
+            if xy is not None:
+                warnings.warn("No selected sensors; model was not refit.")
+        else:
+            self.sparse_sensors_ = sparse_sensors
 
+        # Refit if xy was passed
         if xy is not None:
             x, y = xy
             self.classifier.fit(x[:, self.sparse_sensors_], y)

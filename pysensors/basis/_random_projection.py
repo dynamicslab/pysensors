@@ -96,4 +96,4 @@ class RandomProjection(GaussianRandomProjection, InvertibleBasis, MatrixMixin):
         """
         n_basis_modes = self._validate_input(n_basis_modes)
 
-        return pinv(self.components_[:n_basis_modes, :].T, **kwargs)
+        return pinv(self.basis_matrix_[:, :n_basis_modes], **kwargs)

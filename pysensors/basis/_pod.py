@@ -86,4 +86,4 @@ class POD(TruncatedSVD, InvertibleBasis, MatrixMixin):
         """
         n_basis_modes = self._validate_input(n_basis_modes)
 
-        return self.basis_matrix_.T
+        return self.basis_matrix_[:, :n_basis_modes].T

@@ -102,7 +102,7 @@ class SSPOC(BaseEstimator):
         # Find weight vector
         # Equivalent to np.dot(self.basis_matrix_inverse_, x.T).T
         # TODO
-        self.classifier.fit(np.dot(x, self.basis_matrix_inverse_.T), y)
+        self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
         # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
@@ -155,7 +155,7 @@ class SSPOC(BaseEstimator):
         else:
             return self.classifier.predict(np.dot(x, self.basis_matrix_inverse_.T))
 
-    def update_threshold(self, threshold, xy=None, method=np.median, **method_kws):
+    def update_threshold(self, threshold, xy=None, method=np.mean, **method_kws):
         check_is_fitted(self, "sensor_coef_")
         self.threshold = threshold
         if np.ndim(self.sensor_coef_) == 1:

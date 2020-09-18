@@ -161,14 +161,11 @@ class SSPOC(BaseEstimator):
         if np.ndim(self.sensor_coef_) == 1:
             sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) > threshold)[0]
         else:
-            # We just need to consider the first column of self.sensor_coef_
-            # since MultiTaskLasso (group lasso) zeros out entire rows
-
             sparse_sensors = np.nonzero(
                 method(np.abs(self.sensor_coef_), axis=1, **method_kws) > threshold
             )[0]
 
-        # Don't save new sensors unless
+        # Don't save new sensors if the threshold eliminated them all
         if np.count_nonzero(sparse_sensors) == 0:
             warnings.warn(f"Threshold set too high ({threshold}); no sensors selected.")
             if xy is not None:
@@ -176,11 +173,11 @@ class SSPOC(BaseEstimator):
         else:
             self.sparse_sensors_ = sparse_sensors
 
-        # Refit if xy was passed
-        if xy is not None:
-            x, y = xy
-            self.classifier.fit(x[:, self.sparse_sensors_], y)
-            self.refit_ = True
+            # Refit if xy was passed
+            if xy is not None:
+                x, y = xy
+                self.classifier.fit(x[:, self.sparse_sensors_], y)
+                self.refit_ = True
 
     @property
     def selected_sensors(self):

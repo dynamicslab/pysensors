@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.dummy import DummyClassifier
 from sklearn.utils.validation import check_is_fitted
 
 from .basis import Identity
@@ -26,16 +27,24 @@ class SSPOC(BaseEstimator):
     TODO
     """
 
-    def __init__(self, basis=None, classifier=None, threshold=None, l1_penalty=1.0):
+    def __init__(
+        self,
+        basis=None,
+        classifier=None,
+        n_sensors=None,
+        threshold=None,
+        l1_penalty=0.1,
+    ):
         if basis is None:
             basis = Identity()
         self.basis = basis
         if classifier is None:
             classifier = LinearDiscriminantAnalysis()
         self.classifier = classifier
-        self.n_basis_modes = None
+        self.n_sensors = n_sensors
         self.threshold = threshold
         self.l1_penalty = l1_penalty
+        self.n_basis_modes = None
 
     def fit(
         self,
@@ -102,7 +111,10 @@ class SSPOC(BaseEstimator):
         # Find weight vector
         # Equivalent to np.dot(self.basis_matrix_inverse_, x.T).T
         # TODO
-        self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
+        with warnings.catch_warnings():
+            action = "ignore" if quiet else "default"
+            warnings.filterwarnings(action, category=UserWarning)
+            self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
         # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
         # self.optimizer.fit(self.basis_matrix_.T, y)
 
@@ -116,20 +128,23 @@ class SSPOC(BaseEstimator):
                 w, self.basis_matrix_inverse_, alpha=self.l1_penalty, **optimizer_kws
             )
 
-        # Get sensor locations from s
         if self.threshold is None:
-            threshold = 1  # TODO - pick this as in the paper
+            # Chosen as in Brunton et al. (2016)
+            threshold = np.sqrt(np.sum(s ** 2)) / (
+                2 * self.basis_matrix_inverse_.shape[0] * n_classes
+            )
         else:
             threshold = self.threshold
 
-        # Decide which sensors to retain
+        # Decide which sensors to retain based on s
         self.sensor_coef_ = s
-        self.update_threshold(threshold)
+        self.sparse_sensors_ = np.array([])
+        xy = (x, y) if refit else None
+        self.update_sensors(n_sensors=self.n_sensors, threshold=threshold, xy=xy)
 
-        # Refit the classifier using sparse measurements
-        if refit:
-            self.classifier.fit(x[:, self.sparse_sensors_], y)
-            self.refit_ = True
+        # Form a dummy classifier for when no sensors are retained
+        self.dummy_ = DummyClassifier(strategy="stratified")
+        self.dummy_.fit(x[:, 0], y)
 
         return self
 
@@ -150,34 +165,86 @@ class SSPOC(BaseEstimator):
             Predicted classes.
         """
         check_is_fitted(self, "sensor_coef_")
+        if self.n_sensors == 0:
+            warnings.warn(
+                "SSPOC model has no selected sensors so predictions are random. "
+                "Increase n_sensors or lower threshold with SSPOC.update_sensors."
+            )
+            return self.dummy_.predict(x[:, 0])
         if self.refit_:
             return self.classifier.predict(x)
         else:
             return self.classifier.predict(np.dot(x, self.basis_matrix_inverse_.T))
 
-    def update_threshold(self, threshold, xy=None, method=np.mean, **method_kws):
+    def update_sensors(
+        self, n_sensors=None, threshold=None, xy=None, method=np.max, **method_kws
+    ):
         check_is_fitted(self, "sensor_coef_")
-        self.threshold = threshold
-        if np.ndim(self.sensor_coef_) == 1:
-            sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) > threshold)[0]
-        else:
-            sparse_sensors = np.nonzero(
-                method(np.abs(self.sensor_coef_), axis=1, **method_kws) > threshold
-            )[0]
+        if n_sensors is not None and threshold is not None:
+            warnings.warn(
+                f"Both n_sensors({n_sensors}) and threshold({threshold}) were passed "
+                "so threshold will be ignored"
+            )
 
-        # Don't save new sensors if the threshold eliminated them all
-        if np.count_nonzero(sparse_sensors) == 0:
-            warnings.warn(f"Threshold set too high ({threshold}); no sensors selected.")
-            if xy is not None:
-                warnings.warn("No selected sensors; model was not refit.")
+        if n_sensors is None and threshold is None:
+            raise ValueError("At least one of n_sensors or threshold must be passed.")
+
+        elif n_sensors is not None:
+            if n_sensors > len(self.sensor_coef_):
+                raise ValueError(
+                    f"n_sensors({n_sensors}) cannot exceed number of available sensors "
+                    f"({len(self.sensor_coef_)})"
+                )
+            self.n_sensors = n_sensors
+            # Could be made more efficient with a max heap
+            if np.ndim(self.sensor_coef_) == 1:
+                sorted_sensors = np.argsort(-np.abs(self.sensor_coef_))
+                if np.abs(self.sensor_coef_[sorted_sensors[-1]]) == 0:
+                    warnings.warn(
+                        "Some uninformative sensors were selected. "
+                        "Consider decreasing n_sensors"
+                    )
+            else:
+                sorted_sensors = np.argsort(
+                    -method(np.abs(self.sensor_coef_), axis=1, **method_kws)
+                )
+                if (
+                    method(
+                        np.abs(self.sensor_coef_[sorted_sensors[-1], :]), **method_kws
+                    )
+                    == 0
+                ):
+                    warnings.warn(
+                        "Some uninformative sensors were selected. "
+                        "Consider decreasing n_sensors"
+                    )
+            self.sparse_sensors_ = sorted_sensors[:n_sensors]
+
         else:
+            self.threshold = threshold
+            if np.ndim(self.sensor_coef_) == 1:
+                sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) >= threshold)[0]
+            else:
+                sparse_sensors = np.nonzero(
+                    method(np.abs(self.sensor_coef_), axis=1, **method_kws) >= threshold
+                )[0]
+
+            self.n_sensors = len(sparse_sensors)
             self.sparse_sensors_ = sparse_sensors
 
-            # Refit if xy was passed
-            if xy is not None:
+            if self.n_sensors == 0:
+                warnings.warn(
+                    f"Threshold set too high ({threshold}); no sensors selected."
+                )
+
+        # Refit if xy was passed
+        if xy is not None:
+            if self.n_sensors > 0:
                 x, y = xy
                 self.classifier.fit(x[:, self.sparse_sensors_], y)
                 self.refit_ = True
+            else:
+                warnings.warn("No selected sensors; model was not refit.")
 
     @property
     def selected_sensors(self):

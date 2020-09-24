@@ -76,11 +76,13 @@ def test_extra_basis_modes(basis, data_random):
         b.fit(data)
 
 
-# TODO
-# @pytest.mark.parametrize("basis", [Identity(), POD(), RandomProjection()])
-# def test_matrix_inverse(basis, data_random):
-#     data = data_random
-#     basis.fit(data)
+@pytest.mark.parametrize("basis", [POD(), RandomProjection()])
+def test_matrix_inverse_shape(basis, data_random):
+    data = data_random
+    n_features = data.shape[1]
+    n_basis_modes = 5
 
-#     inverse_coefs = np.dot(basis.matrix_inverse(), data.T).T
-#     basis.fit(inverse_coefs)
+    basis.fit(data)
+    inverse = basis.matrix_inverse(n_basis_modes=n_basis_modes)
+
+    assert inverse.shape == (n_basis_modes, n_features)

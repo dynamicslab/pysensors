@@ -9,12 +9,12 @@ from scipy.linalg import solve
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
-from pysensors.basis import Identity
-from pysensors.optimizers import QR
-from pysensors.utils import validate_input
+from .basis import Identity
+from .optimizers import QR
+from .utils import validate_input
 
 
-INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
+INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
 class SensorSelector(BaseEstimator):
@@ -53,7 +53,7 @@ class SensorSelector(BaseEstimator):
         self.optimizer = optimizer
         if n_sensors is None:
             self.n_sensors = None
-        elif isinstance(n_sensors, INT_TYPES) and n_sensors > 0:
+        elif isinstance(n_sensors, INT_DTYPES) and n_sensors > 0:
             self.n_sensors = int(n_sensors)
         else:
             raise ValueError("n_sensors must be a positive integer.")
@@ -215,7 +215,7 @@ class SensorSelector(BaseEstimator):
         """
         check_is_fitted(self, "ranked_sensors_")
 
-        if not isinstance(n_sensors, INT_TYPES):
+        if not isinstance(n_sensors, INT_DTYPES):
             raise ValueError("n_sensors must be a positive integer")
         elif n_sensors <= 0:
             raise ValueError("n_sensors must be a positive integer")
@@ -249,7 +249,7 @@ class SensorSelector(BaseEstimator):
             Only used if ``n_basis_modes`` exceeds the number of available
             basis modes for the already fit basis.
         """
-        if not isinstance(n_basis_modes, INT_TYPES) or n_basis_modes <= 0:
+        if not isinstance(n_basis_modes, INT_DTYPES) or n_basis_modes <= 0:
             raise ValueError("n_basis_modes must be a positive integer")
 
         # No need to refit basis; only refit sensors

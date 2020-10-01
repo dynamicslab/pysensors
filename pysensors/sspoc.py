@@ -1,5 +1,5 @@
 """
-SSPOC object definition.
+Sparse Sensor Placement Optimization for Classification (SSPOC).
 """
 import warnings
 
@@ -15,15 +15,75 @@ from .utils import constrained_multiclass_solve
 from .utils import validate_input
 
 
-INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
+INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
 class SSPOC(BaseEstimator):
-    """
-    Sparse Sensor Placement Optimization for Classification.
+    r"""
+    Sparse Sensor Placement Optimization for Classification (SSPOC) object.
+
+    As the name suggests, this class can be used to select optimal sensor
+    locations (measurement locations) for classification tasks.
+
+    See the following reference for more information:
+
+        Brunton, Bingni W., et al.
+        "Sparse sensor placement optimization for classification."
+        SIAM Journal on Applied Mathematics 76.5 (2016): 2099-2122.
 
     Parameters
     ----------
+    basis: basis object, optional (default :class:`pysensors.basis.Identity`)
+        Basis in which to represent the data. Default is the identity basis
+        (i.e. raw features).
+
+    classifier: classifier object, optional \
+            (default Linear Discriminant Analysis (LDA))
+        Classifier for which to optimize sensors. Must be a *linear* classifier
+        with a :code:`coef_` attribute and :code:`fit` and :code:`predict`
+        methods.
+
+    n_sensors: positive integer, optional (default None)
+        Number of sensor locations to be used after fitting.
+        If :code:`n_sensors` is not None then it overrides the :code:`threshold`
+        parameter.
+        If set to 0, then :code:`classifier` will be replaced with a dummy
+        classifier which predicts the class randomly.
+
+    threshold: nonnegative float, optional (default None)
+        Threshold for selecting sensors.
+        Overriden by :code:`n_sensors`.
+        If both :code:`threshold` and :code:`n_sensors` are None when the
+        :meth:`fit` method is called, then the threshold will be set to
+
+        .. math::
+            \frac{\|s\|_F}{2rc}
+
+        where :math:`s` is a sensor coefficient matrix, :math:`r` is the number
+        of basis modes, and :math:`c` is the number of distinct classes,
+        as suggested in Brunton et al. (2016).
+
+    l1_penalty: nonnegative float, optional (default 0.1)
+        The L1 penalty term used to form the sensor coefficient matrix, s.
+        Larger values will result in a sparser s and fewer selected sensors.
+        This parameter is ignored for binary classification problems.
+
+    Attributes
+    ----------
+    n_basis_modes: nonnegative integer
+        Number of basis modes to be used when deciding sensor locations.
+
+    basis_matrix_inverse_: np.ndarray, shape (n_basis_modes, n_input_features)
+        The inverse of the matrix of basis vectors.
+
+    sensor_coef_: np.ndarray, shape (n_input_features, n_classes)
+        The sensor coefficient matrix, s.
+
+    sparse_sensors_: np.ndarray, shape (n_sensors, )
+        The selected sensors.
+
+    Examples
+    --------
     TODO
     """
 
@@ -52,7 +112,6 @@ class SSPOC(BaseEstimator):
         y,
         quiet=False,
         prefit_basis=False,
-        seed=None,
         refit=True,
         **optimizer_kws,
     ):
@@ -76,22 +135,19 @@ class SSPOC(BaseEstimator):
             a ``POD`` object to determine the optimal number of modes. This
             option allows you to avoid an unnecessary SVD.
 
-        seed: int, optional (default None)
-            Seed for the random number generator used to shuffle sensors after the
-            ``self.basis.n_basis_modes`` sensor. Most optimizers only rank the top
-            ``self.basis.n_basis_modes`` sensors, leaving the rest virtually
-            untouched. As a result the remaining samples are randomly permuted.
-
-        refit: bool, optional (default True)
+        refit: boolean, optional (default True)
             Whether or not to refit the classifier using measurements
             only from the learned sensor locations.
 
         optimizer_kws: dict, optional
             Keyword arguments to be passed to the optimization routine.
+
+        Returns
+        -------
+        self: a fitted :class:`SSPOC` instance
         """
 
         # Fit basis functions to data
-        # TODO: base class should have a _fit_basis method
         if prefit_basis:
             check_is_fitted(self.basis, "basis_matrix_")
         else:
@@ -103,20 +159,15 @@ class SSPOC(BaseEstimator):
                 self.basis.fit(x)
 
         # Get matrix representation of basis - this is \Psi^T in the paper
-        # TODO: implement this method
         self.basis_matrix_inverse_ = self.basis.matrix_inverse(
             n_basis_modes=self.n_basis_modes
         )
 
         # Find weight vector
-        # Equivalent to np.dot(self.basis_matrix_inverse_, x.T).T
-        # TODO
         with warnings.catch_warnings():
             action = "ignore" if quiet else "default"
             warnings.filterwarnings(action, category=UserWarning)
             self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
-        # self.classifier.fit(np.dot(self.basis_matrix_.T, x), y)
-        # self.optimizer.fit(self.basis_matrix_.T, y)
 
         w = np.squeeze(self.classifier.coef_).T
 
@@ -151,6 +202,8 @@ class SSPOC(BaseEstimator):
     def predict(self, x):
         """
         Predict classes for given measurements.
+        If :code:`self.n_sensors` is 0 then a dummy classifier is used in place
+        of :code:`self.classifier`.
 
         Parameters
         ----------
@@ -161,7 +214,7 @@ class SSPOC(BaseEstimator):
 
         Returns
         -------
-        y: numpy array, shape (n_samples,)
+        y: np.ndarray, shape (n_samples,)
             Predicted classes.
         """
         check_is_fitted(self, "sensor_coef_")
@@ -179,6 +232,43 @@ class SSPOC(BaseEstimator):
     def update_sensors(
         self, n_sensors=None, threshold=None, xy=None, method=np.max, **method_kws
     ):
+        """
+        Update the selected sensors by changing either the preferred number of sensors
+        or the threshold used to select the sensors, refitting the classifier
+        afterwards, if possible.
+
+        Parameters
+        ----------
+        n_sensors: nonnegative integer, optional (default None)
+            The number of sensor locations to select.
+            If None, then :code:`threshold` will be used to pick the sensors.
+            Note that :code:`n_sensors` and :code:`threshold` cannot both be None.
+
+        threshold: nonnegative float, optional (default None)
+            The threshold to use to select sensors based on the magnitudes of entries
+            in :code:`self.sensor_coef_` (s).
+            Overridden by :code:`n_sensors`.
+            Note that :code:`n_sensors` and :code:`threshold` cannot both be None.
+
+        xy: tuple of np.ndarray, length 2, optional (default None)
+            Tuple containing training data x and labels y for refitting.
+            x should have shape (n_samples, n_input_features) and y shape (n_samples, ).
+            If not None, the classifier will be refit after the new sensors have been
+            selected.
+
+        method: callable, optional (default :code:`np.max`)
+            Function used along with :code:`threshold` to select sensors.
+            For binary classification problems one need not specify a method.
+            For multiclass classification problems, :code:`sensor_coef_` (s) has
+            multiple columns and :code:`method` is applied along each row to aggregate
+            coefficients for thresholding, i.e. :code:`method` is called as follows
+            :code:`method(np.abs(self.sensor_coef_), axis=1, **method_kws)`.
+            Other examples of acceptable methods are :code:`np.min`, :code:`np.mean`,
+            and :code:`np.median`.
+
+        **method_kws: dict, optional
+            Keyword arguments to be passed into :code:`method` when it is called.
+        """
         check_is_fitted(self, "sensor_coef_")
         if n_sensors is not None and threshold is not None:
             warnings.warn(
@@ -197,6 +287,7 @@ class SSPOC(BaseEstimator):
                 )
             self.n_sensors = n_sensors
             # Could be made more efficient with a max heap
+            # (we don't need to sort the whole list)
             if np.ndim(self.sensor_coef_) == 1:
                 sorted_sensors = np.argsort(-np.abs(self.sensor_coef_))
                 if np.abs(self.sensor_coef_[sorted_sensors[-1]]) == 0:
@@ -248,5 +339,6 @@ class SSPOC(BaseEstimator):
 
     @property
     def selected_sensors(self):
+        """Get the selected sensors."""
         check_is_fitted(self, "sparse_sensors_")
         return self.sparse_sensors_

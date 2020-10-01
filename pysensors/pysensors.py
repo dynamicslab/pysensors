@@ -19,17 +19,24 @@ INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 class SensorSelector(BaseEstimator):
     """
-    A model for selecting the best sensor locations for reconstruction or
-    classification tasks.
+    A model for selecting the best sensor locations for state reconstruction.
+
+    Given a basis in which to represent the state (e.g. PCA modes) along with
+    measurement data, a :class:`SensorSelector` instance produces a list of
+    sensor locations (a permutation of the numbers 0, 1, ...,
+    :code:`n_input_features` - 1) ranked in descending order of importance.
+    One can then select the top k sensors and take future measurements at
+    that limited set of locations.
 
     Parameters
     ----------
-    basis: basis object, optional
+    basis: basis object, optional (default :class:`pysensors.basis.Identity`)
         Basis in which to represent the data. Default is the identity basis
         (i.e. raw features).
 
-    optimizer: optimizer object, optional
-        Optimization method used to identify sparse sensors.
+    optimizer: optimizer object, optional \
+            (default :class:`pysensors.optimizers.QR`)
+        Optimization method used to rank sensor locations.
 
     n_sensors: int, optional (default n_input_features)
         Number of sensors to select. Note that
@@ -39,9 +46,18 @@ class SensorSelector(BaseEstimator):
 
     Attributes
     ----------
+    n_basis_modes: int
+        Number of basis modes considered during fitting.
+
+    basis_matrix_: np.ndarray
+        Internal representation of the basis.
+
+    ranked_sensors_: np.ndarray
+        Sensor locations ranked in descending order of importance.
 
     Examples
     --------
+    TODO
     """
 
     def __init__(self, basis=None, optimizer=None, n_sensors=None):
@@ -86,6 +102,10 @@ class SensorSelector(BaseEstimator):
         optimizer_kws: dict, optional
             Keyword arguments to be passed to the ``get_sensors`` method of
             the optimizer.
+
+        Returns
+        -------
+        self: a fitted :class:`SensorSelector` instance
         """
 
         # Fit basis functions to data

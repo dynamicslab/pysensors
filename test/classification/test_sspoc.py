@@ -6,10 +6,10 @@ from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_is_fitted
 
-from pysensors import SSPOC
 from pysensors.basis import Identity
 from pysensors.basis import POD
 from pysensors.basis import RandomProjection
+from pysensors.classification import SSPOC
 
 
 SEED = 15

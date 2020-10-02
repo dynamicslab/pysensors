@@ -9,10 +9,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.dummy import DummyClassifier
 from sklearn.utils.validation import check_is_fitted
 
-from .basis import Identity
-from .utils import constrained_binary_solve
-from .utils import constrained_multiclass_solve
-from .utils import validate_input
+from ..basis import Identity
+from ..utils import constrained_binary_solve
+from ..utils import constrained_multiclass_solve
+from ..utils import validate_input
 
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)

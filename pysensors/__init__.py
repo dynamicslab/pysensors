@@ -8,13 +8,11 @@ except DistributionNotFound:
 
 
 from .pysensors import SensorSelector
-from .sspoc import SSPOC
 
 __all__ = [
     # Modules:
-    "optimizers",
     "basis",
+    "classification" "optimizers",
     # Non-modules:
     "SensorSelector",
-    "SSPOC",
 ]

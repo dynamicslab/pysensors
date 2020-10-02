@@ -107,7 +107,13 @@ class SSPOC(BaseEstimator):
         self.n_basis_modes = None
 
     def fit(
-        self, x, y, quiet=False, prefit_basis=False, refit=True, **optimizer_kws,
+        self,
+        x,
+        y,
+        quiet=False,
+        prefit_basis=False,
+        refit=True,
+        **optimizer_kws,
     ):
         """
         Fit the SSPOC model, determining which sensors are relevant.
@@ -185,7 +191,9 @@ class SSPOC(BaseEstimator):
         self.sensor_coef_ = s
         self.sparse_sensors_ = np.array([])
         xy = (x, y) if refit else None
-        self.update_sensors(n_sensors=self.n_sensors, threshold=threshold, xy=xy)
+        self.update_sensors(
+            n_sensors=self.n_sensors, threshold=threshold, xy=xy, quiet=quiet
+        )
 
         # Form a dummy classifier for when no sensors are retained
         self.dummy_ = DummyClassifier(strategy="stratified")
@@ -273,82 +281,123 @@ class SSPOC(BaseEstimator):
             Keyword arguments to be passed into :code:`method` when it is called.
         """
         check_is_fitted(self, "sensor_coef_")
-        with warnings.catch_warnings():
-            action = "ignore" if quiet else "default"
-            warnings.filterwarnings(action, category=UserWarning)
+        warn = not quiet
 
-            if n_sensors is not None and threshold is not None:
-                warnings.warn(
-                    f"Both n_sensors({n_sensors}) and threshold({threshold}) "
-                    "were passed so threshold will be ignored"
-                )
+        if n_sensors is not None and threshold is not None and warn:
+            warnings.warn(
+                f"Both n_sensors({n_sensors}) and threshold({threshold}) "
+                "were passed so threshold will be ignored"
+            )
 
-            if n_sensors is None and threshold is None:
+        if n_sensors is None and threshold is None:
+            raise ValueError("At least one of n_sensors or threshold must be passed.")
+
+        elif n_sensors is not None:
+            if n_sensors > len(self.sensor_coef_):
                 raise ValueError(
-                    "At least one of n_sensors or threshold must be passed."
+                    f"n_sensors({n_sensors}) cannot exceed number of available "
+                    f"sensors ({len(self.sensor_coef_)})"
+                )
+            self.n_sensors = n_sensors
+            # Could be made more efficient with a max heap
+            # (we don't need to sort the whole list)
+            if np.ndim(self.sensor_coef_) == 1:
+                sorted_sensors = np.argsort(-np.abs(self.sensor_coef_))
+                if np.abs(self.sensor_coef_[sorted_sensors[-1]]) == 0 and warn:
+                    warnings.warn(
+                        "Some uninformative sensors were selected. "
+                        "Consider decreasing n_sensors"
+                    )
+            else:
+                sorted_sensors = np.argsort(
+                    -method(np.abs(self.sensor_coef_), axis=1, **method_kws)
+                )
+                if (
+                    method(
+                        np.abs(self.sensor_coef_[sorted_sensors[-1], :]),
+                        **method_kws,
+                    )
+                    == 0
+                    and warn
+                ):
+                    warnings.warn(
+                        "Some uninformative sensors were selected. "
+                        "Consider decreasing n_sensors"
+                    )
+            self.sparse_sensors_ = sorted_sensors[:n_sensors]
+
+        else:
+            self.threshold = threshold
+            if np.ndim(self.sensor_coef_) == 1:
+                sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) >= threshold)[0]
+            else:
+                sparse_sensors = np.nonzero(
+                    method(np.abs(self.sensor_coef_), axis=1, **method_kws) >= threshold
+                )[0]
+
+            self.n_sensors = len(sparse_sensors)
+            self.sparse_sensors_ = sparse_sensors
+
+            if self.n_sensors == 0 and warn:
+                warnings.warn(
+                    f"Threshold set too high ({threshold}); no sensors selected."
                 )
 
-            elif n_sensors is not None:
-                if n_sensors > len(self.sensor_coef_):
-                    raise ValueError(
-                        f"n_sensors({n_sensors}) cannot exceed number of available "
-                        f"sensors ({len(self.sensor_coef_)})"
-                    )
-                self.n_sensors = n_sensors
-                # Could be made more efficient with a max heap
-                # (we don't need to sort the whole list)
-                if np.ndim(self.sensor_coef_) == 1:
-                    sorted_sensors = np.argsort(-np.abs(self.sensor_coef_))
-                    if np.abs(self.sensor_coef_[sorted_sensors[-1]]) == 0:
-                        warnings.warn(
-                            "Some uninformative sensors were selected. "
-                            "Consider decreasing n_sensors"
-                        )
-                else:
-                    sorted_sensors = np.argsort(
-                        -method(np.abs(self.sensor_coef_), axis=1, **method_kws)
-                    )
-                    if (
-                        method(
-                            np.abs(self.sensor_coef_[sorted_sensors[-1], :]),
-                            **method_kws,
-                        )
-                        == 0
-                    ):
-                        warnings.warn(
-                            "Some uninformative sensors were selected. "
-                            "Consider decreasing n_sensors"
-                        )
-                self.sparse_sensors_ = sorted_sensors[:n_sensors]
-
+        # Refit if xy was passed
+        if xy is not None:
+            if self.n_sensors > 0:
+                x, y = xy
+                self.classifier.fit(x[:, self.sparse_sensors_], y)
+                self.refit_ = True
             else:
-                self.threshold = threshold
-                if np.ndim(self.sensor_coef_) == 1:
-                    sparse_sensors = np.nonzero(np.abs(self.sensor_coef_) >= threshold)[
-                        0
-                    ]
-                else:
-                    sparse_sensors = np.nonzero(
-                        method(np.abs(self.sensor_coef_), axis=1, **method_kws)
-                        >= threshold
-                    )[0]
+                warnings.warn("No selected sensors; model was not refit.")
 
-                self.n_sensors = len(sparse_sensors)
-                self.sparse_sensors_ = sparse_sensors
+    def update_n_basis_modes(self, n_basis_modes, xy, **fit_kws):
+        """
+        Re-fit the :class:`SSPOC` object using a different value of
+        :code:`n_basis_modes`.
 
-                if self.n_sensors == 0:
-                    warnings.warn(
-                        f"Threshold set too high ({threshold}); no sensors selected."
-                    )
+        This method allows one to relearn sensor locations for a
+        different number of basis modes _without_ re-fitting the basis
+        in many cases.
+        Specifically, if :code:`n_basis_modes <= self.basis.n_basis_modes`
+        then the basis does not need to be refit.
+        Otherwise this function does not save any computational resources.
 
-            # Refit if xy was passed
-            if xy is not None:
-                if self.n_sensors > 0:
-                    x, y = xy
-                    self.classifier.fit(x[:, self.sparse_sensors_], y)
-                    self.refit_ = True
-                else:
-                    warnings.warn("No selected sensors; model was not refit.")
+        Parameters
+        ----------
+        n_basis_modes: positive int, optional (default None)
+            Number of basis modes to be used during fit.
+            Must be less than or equal to ``n_samples``.
+
+        xy: tuple of np.ndarray, length 2
+            Tuple containing training data x and labels y for refitting.
+            x should have shape (n_samples, n_input_features) and y shape (n_samples, ).
+
+        **fit_kws: dict, optional
+            Keyword arguments to pass to :meth:`SSPOC.fit`.
+        """
+        if not isinstance(n_basis_modes, INT_DTYPES) or n_basis_modes <= 0:
+            raise ValueError("n_basis_modes must be a positive integer")
+
+        x, y = xy
+        # No need to refit basis; only refit sensors
+        if (
+            hasattr(self.basis, "basis_matrix_")
+            and n_basis_modes <= self.basis.n_basis_modes
+        ):
+            self.n_basis_modes = n_basis_modes
+            self.fit(x, y, prefit_basis=True, **fit_kws)
+
+        else:
+            if n_basis_modes > x.shape[0]:
+                raise ValueError(
+                    "n_basis_modes cannot exceed the number of examples, x.shape[0]"
+                )
+            else:
+                self.n_basis_modes = n_basis_modes
+                self.basis.n_basis_modes = n_basis_modes
+                self.fit(x, y, prefit_basis=False, **fit_kws)
 
     @property
     def selected_sensors(self):

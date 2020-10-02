@@ -46,9 +46,9 @@ def test_prefit_basis(data_binary_classification):
     x, y, _ = data_binary_classification
     basis = Identity().fit(x)
     model_prefit = SSPOC(basis=basis)
-    model_prefit.fit(x, y, prefit_basis=True)
+    model_prefit.fit(x, y, prefit_basis=True, quiet=True)
 
-    model_standard = SSPOC().fit(x, y)
+    model_standard = SSPOC().fit(x, y, quiet=True)
 
     np.testing.assert_allclose(model_prefit.sensor_coef_, model_standard.sensor_coef_)
 
@@ -63,7 +63,7 @@ def test_prefit_basis(data_binary_classification):
 def test_initialize_with_n_sensors(data):
     x, y, l1_penalty = data
     n_sensors = 3
-    model = SSPOC(n_sensors=n_sensors, l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(n_sensors=n_sensors, l1_penalty=l1_penalty).fit(x, y, quiet=True)
 
     assert len(model.selected_sensors) == n_sensors
     assert model.n_sensors == n_sensors
@@ -79,7 +79,7 @@ def test_initialize_with_n_sensors(data):
 def test_initialize_with_threshold(data):
     x, y, l1_penalty = data
     max_sensors = x.shape[1]
-    model = SSPOC(threshold=0, l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(threshold=0, l1_penalty=l1_penalty).fit(x, y, quiet=True)
 
     assert len(model.selected_sensors) == max_sensors
     assert model.n_sensors == max_sensors
@@ -95,9 +95,9 @@ def test_initialize_with_threshold(data):
 )
 def test_update_n_sensors(data, n_sensors):
     x, y, l1_penalty = data
-    model = SSPOC(l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(l1_penalty=l1_penalty).fit(x, y, quiet=True)
 
-    model.update_sensors(n_sensors=n_sensors)
+    model.update_sensors(n_sensors=n_sensors, quiet=True)
     assert len(model.selected_sensors) == n_sensors
     assert model.n_sensors == n_sensors
 
@@ -112,11 +112,11 @@ def test_update_n_sensors(data, n_sensors):
 def test_update_threshold(data):
     x, y, l1_penalty = data
 
-    model = SSPOC(threshold=0.01, l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(threshold=0.01, l1_penalty=l1_penalty).fit(x, y, quiet=True)
     nnz = len(model.selected_sensors)
 
     # Larger threshold should result in fewer sensors
-    model.update_sensors(threshold=1)
+    model.update_sensors(threshold=1, quiet=True)
     assert len(model.selected_sensors) < nnz
 
 
@@ -129,16 +129,16 @@ def test_update_threshold(data):
 )
 def test_large_threshold(data):
     x, y, l1_penalty = data
-    model = SSPOC(l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(l1_penalty=l1_penalty).fit(x, y, quiet=True)
 
-    model.update_sensors(threshold=10)
+    model.update_sensors(threshold=10, quiet=True)
     assert len(model.selected_sensors) == 0
     assert model.n_sensors == 0
 
 
 def test_bad_update_sensors_input(data_binary_classification):
     x, y, _ = data_binary_classification
-    model = SSPOC().fit(x, y)
+    model = SSPOC().fit(x, y, quiet=True)
 
     with pytest.raises(ValueError):
         model.update_sensors()
@@ -153,7 +153,7 @@ def test_bad_update_sensors_input(data_binary_classification):
 )
 def test_predict_accuracy(data, baseline_accuracy):
     x, y, l1_penalty = data
-    model = SSPOC(threshold=0, l1_penalty=l1_penalty).fit(x, y)
+    model = SSPOC(threshold=0, l1_penalty=l1_penalty).fit(x, y, quiet=True)
 
     assert (
         accuracy_score(y, model.predict(x[:, model.selected_sensors]))
@@ -170,8 +170,8 @@ def test_predict_accuracy(data, baseline_accuracy):
 )
 def test_dummy_predict(data):
     x, y, l1_penalty = data
-    model = SSPOC(l1_penalty=l1_penalty).fit(x, y)
-    model.update_sensors(n_sensors=0, xy=(x, y))
+    model = SSPOC(l1_penalty=l1_penalty).fit(x, y, quiet=True)
+    model.update_sensors(n_sensors=0, xy=(x, y), quiet=True)
 
     assert model.n_sensors == 0
     # Test that model can still make predictions, albeit random ones
@@ -193,7 +193,7 @@ def test_dummy_predict(data):
 def test_basis_integration(basis, data):
     x, y, _ = data
     model = SSPOC(basis=basis, n_sensors=5)
-    model.fit(x, y)
+    model.fit(x, y, quiet=True)
 
     check_is_fitted(model)
 
@@ -207,6 +207,59 @@ def test_basis_integration(basis, data):
 )
 def test_coefficient_shape(data, shape):
     x, y, _ = data
-    model = SSPOC().fit(x, y)
+    model = SSPOC().fit(x, y, quiet=True)
 
     assert model.sensor_coef_.shape == shape
+
+
+@pytest.mark.parametrize("basis", [POD, RandomProjection])
+def test_update_n_basis_modes_errors(basis, data_binary_classification):
+    x, y, _ = data_binary_classification
+    n_basis_modes = 5
+    model = SSPOC(basis=basis(n_basis_modes=n_basis_modes))
+
+    model.fit(x, y, quiet=True)
+
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes(0, xy=(x, y))
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes("5", xy=(x, y))
+    with pytest.raises(ValueError):
+        model.update_n_basis_modes(x.shape[0] + 1, xy=(x, y))
+
+
+@pytest.mark.parametrize("basis", [POD, RandomProjection])
+def test_update_n_basis_modes_shape(basis, data_binary_classification):
+    x, y, _ = data_binary_classification
+    n_basis_modes_init = 10
+    model = SSPOC(basis=basis(n_basis_modes=n_basis_modes_init))
+    model.fit(x, y, quiet=True)
+    assert model.basis.n_basis_modes == n_basis_modes_init
+    assert model.basis_matrix_inverse_.shape[0] == n_basis_modes_init
+
+    n_basis_modes = 5
+    model.update_n_basis_modes(n_basis_modes, xy=(x, y), quiet=True)
+    assert model.basis.n_basis_modes == n_basis_modes_init
+    assert model.basis_matrix_inverse_.shape[0] == n_basis_modes
+
+
+@pytest.mark.parametrize("basis", [POD, RandomProjection])
+def test_update_n_basis_modes_refit(basis, data_binary_classification):
+    x, y, _ = data_binary_classification
+    n_basis_modes = 5
+    model = SSPOC(basis=basis(n_basis_modes=n_basis_modes))
+    model.fit(x, y, quiet=True)
+    assert model.basis_matrix_inverse_.shape[0] == n_basis_modes
+
+    model.update_n_basis_modes(n_basis_modes + 1, (x, y), quiet=True)
+    assert model.basis_matrix_inverse_.shape[0] == n_basis_modes + 1
+
+
+@pytest.mark.parametrize("basis", [POD, RandomProjection])
+def test_update_n_basis_modes_unfit_basis(basis, data_binary_classification):
+    x, y, _ = data_binary_classification
+    n_basis_modes = 5
+    model = SSPOC(basis=basis())
+    model.update_n_basis_modes(n_basis_modes, (x, y), quiet=True)
+
+    assert model.basis_matrix_inverse_.shape[0] == n_basis_modes

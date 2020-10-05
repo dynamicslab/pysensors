@@ -26,3 +26,6 @@ venv/*
 *.pyc
 
 *.sublime*
+
+# ignore data files in examples
+examples/*.nc

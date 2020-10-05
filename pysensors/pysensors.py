@@ -14,7 +14,7 @@ from .optimizers import QR
 from .utils import validate_input
 
 
-INT_TYPES = (int, np.int64, np.int32, np.int16, np.int8)
+INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
 class SensorSelector(BaseEstimator):
@@ -69,7 +69,7 @@ class SensorSelector(BaseEstimator):
         self.optimizer = optimizer
         if n_sensors is None:
             self.n_sensors = None
-        elif isinstance(n_sensors, INT_TYPES) and n_sensors > 0:
+        elif isinstance(n_sensors, INT_DTYPES) and n_sensors > 0:
             self.n_sensors = int(n_sensors)
         else:
             raise ValueError("n_sensors must be a positive integer.")
@@ -106,7 +106,7 @@ class SensorSelector(BaseEstimator):
         Returns
         -------
         self: a fitted :class:`SensorSelector` instance
-        """
+
 
         # Fit basis functions to data
         if prefit_basis:
@@ -148,7 +148,8 @@ class SensorSelector(BaseEstimator):
         x: array-like, shape (n_samples, n_sensors)
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
-            ``self.get_ranked_sensors()``.
+            `self.get_selected_sensors()`.
+
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert
@@ -235,7 +236,7 @@ class SensorSelector(BaseEstimator):
         """
         check_is_fitted(self, "ranked_sensors_")
 
-        if not isinstance(n_sensors, INT_TYPES):
+        if not isinstance(n_sensors, INT_DTYPES):
             raise ValueError("n_sensors must be a positive integer")
         elif n_sensors <= 0:
             raise ValueError("n_sensors must be a positive integer")
@@ -269,7 +270,7 @@ class SensorSelector(BaseEstimator):
             Only used if ``n_basis_modes`` exceeds the number of available
             basis modes for the already fit basis.
         """
-        if not isinstance(n_basis_modes, INT_TYPES) or n_basis_modes <= 0:
+        if not isinstance(n_basis_modes, INT_DTYPES) or n_basis_modes <= 0:
             raise ValueError("n_basis_modes must be a positive integer")
 
         # No need to refit basis; only refit sensors

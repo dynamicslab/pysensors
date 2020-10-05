@@ -106,7 +106,7 @@ class SensorSelector(BaseEstimator):
         Returns
         -------
         self: a fitted :class:`SensorSelector` instance
-
+        """
 
         # Fit basis functions to data
         if prefit_basis:

@@ -3,12 +3,14 @@ Random projections basis class.
 
 Project data onto random features.
 """
+from numpy.linalg import pinv
 from sklearn.random_projection import GaussianRandomProjection
 
+from ._base import InvertibleBasis
 from ._base import MatrixMixin
 
 
-class RandomProjection(GaussianRandomProjection, MatrixMixin):
+class RandomProjection(GaussianRandomProjection, InvertibleBasis, MatrixMixin):
     """
     Generate a basis based on Gaussian random projection.
 
@@ -72,3 +74,36 @@ class RandomProjection(GaussianRandomProjection, MatrixMixin):
         super(RandomProjection, self).fit(X.T)
         self.basis_matrix_ = super(RandomProjection, self).transform(X.T)
         return self
+
+    def matrix_inverse(self, n_basis_modes=None, **kwargs):
+        """
+        Get the inverse matrix mapping from measurement space to
+        coordinates with respect to the basis.
+
+        Note that this is not the inverse of the matrix returned by
+        ``self.matrix_representation``. It is the (psuedo) inverse of
+        the matrix whose columns are the basis modes.
+
+        Parameters
+        ----------
+        n_basis_modes : positive int, optional (default None)
+            Number of basis modes to be used to compute inverse.
+
+        Returns
+        -------
+        B : numpy ndarray, shape (n_basis_modes, n_features)
+            The inverse matrix.
+        """
+        n_basis_modes = self._validate_input(n_basis_modes)
+
+        return pinv(self.basis_matrix_[:, :n_basis_modes], **kwargs)
+
+    @property
+    def n_basis_modes(self):
+        """Number of basis modes."""
+        return self._n_basis_modes
+
+    @n_basis_modes.setter
+    def n_basis_modes(self, n_basis_modes):
+        self._n_basis_modes = n_basis_modes
+        self.n_components = n_basis_modes

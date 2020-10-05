@@ -5,13 +5,15 @@ This is essentially a dummy basis which just uses raw, unaltered features.
 """
 from warnings import warn
 
+from numpy import identity
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
+from ._base import InvertibleBasis
 from ._base import MatrixMixin
 
 
-class Identity(BaseEstimator, MatrixMixin):
+class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):
     """
     Generate an identity transformation which maps all input features to
     themselves.
@@ -24,8 +26,9 @@ class Identity(BaseEstimator, MatrixMixin):
 
     Attributes
     ----------
-    basis_matrix_ : numpy ndarray, shape (n_features, n_samples)
-        The transpose of the input data.
+    basis_matrix_ : numpy ndarray, shape (n_features, n_basis_modes)
+        The transpose of the first ``n_basis_modes`` examples from the
+        input data.
     """
 
     def __init__(self, n_basis_modes=None):
@@ -67,3 +70,27 @@ class Identity(BaseEstimator, MatrixMixin):
             if self.n_basis_modes < X.shape[0]:
                 warn(f"Only the first {self.n_basis_modes} examples were retained.")
         return self
+
+    def matrix_inverse(self, n_basis_modes=None):
+        """
+        Get the inverse matrix mapping from measurement space to
+        coordinates with respect to the basis.
+
+        Note that this is not the inverse of the matrix returned by
+        ``self.matrix_representation``. It is the (psuedo) inverse of
+        the matrix whose columns are the basis modes.
+
+        Parameters
+        ----------
+        n_basis_modes : positive int, optional (default None)
+            Number of basis modes to be used to compute inverse.
+
+        Returns
+        -------
+        B : numpy ndarray, shape (n_features, n_features)
+            The inverse matrix. In this case B is the identity matrix.
+        """
+        # TODO: validate this
+        n_basis_modes = self._validate_input(n_basis_modes)
+
+        return identity(self.basis_matrix_.shape[0])

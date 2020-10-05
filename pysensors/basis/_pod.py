@@ -3,10 +3,11 @@ POD mode basis class.
 """
 from sklearn.decomposition import TruncatedSVD
 
+from ._base import InvertibleBasis
 from ._base import MatrixMixin
 
 
-class POD(TruncatedSVD, MatrixMixin):
+class POD(TruncatedSVD, InvertibleBasis, MatrixMixin):
     """
     Generate a POD transformation which maps input features to
     POD modes.
@@ -46,7 +47,7 @@ class POD(TruncatedSVD, MatrixMixin):
     def __init__(self, n_basis_modes=10, **kwargs):
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
             super(POD, self).__init__(n_components=n_basis_modes, **kwargs)
-            self.n_basis_modes = n_basis_modes
+            self._n_basis_modes = n_basis_modes
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
 
@@ -63,3 +64,36 @@ class POD(TruncatedSVD, MatrixMixin):
         """
         self.basis_matrix_ = super(POD, self).fit(X).components_.T
         return self
+
+    def matrix_inverse(self, n_basis_modes=None):
+        """
+        Get the inverse matrix mapping from measurement space to
+        coordinates with respect to the basis.
+
+        Note that this is not the inverse of the matrix returned by
+        ``self.matrix_representation``. It is the (psuedo) inverse of
+        the matrix whose columns are the basis modes.
+
+        Parameters
+        ----------
+        n_basis_modes : positive int, optional (default None)
+            Number of basis modes to be used to compute inverse.
+
+        Returns
+        -------
+        B : numpy ndarray, shape (n_basis_modes, n_features)
+            The inverse matrix.
+        """
+        n_basis_modes = self._validate_input(n_basis_modes)
+
+        return self.basis_matrix_[:, :n_basis_modes].T
+
+    @property
+    def n_basis_modes(self):
+        """Number of basis modes."""
+        return self._n_basis_modes
+
+    @n_basis_modes.setter
+    def n_basis_modes(self, n_basis_modes):
+        self._n_basis_modes = n_basis_modes
+        self.n_components = n_basis_modes

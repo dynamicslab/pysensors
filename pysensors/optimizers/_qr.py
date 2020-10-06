@@ -22,9 +22,6 @@ class QR:
         """
 
         # TODO: implement checks on basis_matrix
-
-        # TODO: check whether this transpose should be a conjugate transpose
-        # for full generality
         _, _, self.pivots_ = qr(basis_matrix.conj().T, pivoting=True, **optimizer_kws)
 
         return self.pivots_

@@ -49,11 +49,11 @@ class CCQR(QR):
             )
 
         # Use scipy QR if no sensor costs for efficiency
-        if np.count_nonzero(self.sensor_costs) == 0:
-            return super(CCQR, self).get_sensors(basis_matrix)
+        # if np.count_nonzero(self.sensor_costs) == 0:
+        #     return super(CCQR, self).get_sensors(basis_matrix)
 
         # Initialize helper variables
-        R = basis_matrix.conj().T
+        R = basis_matrix.conj().T.copy()
         p = list(range(n))
 
         k = min(m, n)
@@ -64,7 +64,7 @@ class CCQR(QR):
             i_piv += j
             p[j], p[i_piv] = p[i_piv], p[j]
             # Switch columns
-            R[:, j], R[:, i_piv] = R[:, i_piv], R[:, j]
+            R[:, [j, i_piv]] = R[:, [i_piv, j]]
             # Apply reflector
             R[j:, j:] -= np.outer(u, np.dot(u, R[j:, j:]))
             R[j + 1 :, j] = 0

@@ -139,6 +139,8 @@ class SensorSelector(BaseEstimator):
             self.ranked_sensors_[n_basis_modes:]
         )
 
+        return self
+
     def predict(self, x, **solve_kws):
         """
         Predict values at all positions given measurements at sensor locations.

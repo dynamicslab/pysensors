@@ -48,10 +48,6 @@ class CCQR(QR):
                 f"does not match number of sensors in data ({n})"
             )
 
-        # Use scipy QR if no sensor costs for efficiency
-        # if np.count_nonzero(self.sensor_costs) == 0:
-        #     return super(CCQR, self).get_sensors(basis_matrix)
-
         # Initialize helper variables
         R = basis_matrix.conj().T.copy()
         p = list(range(n))

@@ -37,3 +37,16 @@ def test_ccqr_sensor_placement(data_random):
     # Forbidden sensors should not be included
     chosen_sensors = set(sensors[: (x.shape[1] - len(forbidden_sensors))])
     assert chosen_sensors.isdisjoint(set(forbidden_sensors))
+
+
+def test_ccqr_negative_costs(data_vandermonde):
+    x = data_vandermonde
+
+    desirable_sensors = np.array([20, 55, 99, 100, 150])
+    costs = np.zeros(x.shape[1])
+    costs[desirable_sensors] = -100
+
+    sensors = CCQR(sensor_costs=costs).get_sensors(x.T)
+
+    chosen_sensors = set(sensors[: min(x.shape)])
+    assert all(s in chosen_sensors for s in set(desirable_sensors))

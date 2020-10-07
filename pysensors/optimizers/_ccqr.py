@@ -6,17 +6,35 @@ from ._qr import QR
 class CCQR(QR):
     """
     Greedy cost-constrained QR optimizer for sensor selection.
+
+    This method is based on the following work:
+
+        Clark, Emily, et al.
+        "Greedy sensor placement with cost constraints."
+        IEEE Sensors Journal 19.7 (2018): 2642-2656.
     """
 
     def __init__(self, sensor_costs):
         """
-        TODO
+        Greedy cost-constrained QR optimizer for sensor selection.
+        This algorithm augments the pivot selection criteria used in the
+        QR algorithm (with householder reflectors) to take into account
+        costs associated with each sensors. It is similar to the
+        :class:`pysensors.optimizers.QR` algorithm in that it returns an array
+        of sensor locations ranked by importance, but with a definition of
+        importance that takes sensor costs into account.
 
         Parameters
         ----------
-        sensor_costs: np.ndarray, shape (n_features,)
+        sensor_costs: np.ndarray, shape [n_features,]
             Costs (weights) associated with each sensor.
+            Positive values will encourage sensors to be avoided and
+            negative values will cause them to be preferred.
 
+        Attributes
+        ----------
+        pivots_ : np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
         """
         super(CCQR, self).__init__()
         if np.ndim(sensor_costs) != 1:
@@ -38,6 +56,13 @@ class CCQR(QR):
             represent the measurement data.
         optimizer_kws: dictionary, optional
             Keyword arguments to be passed to the qr method.
+
+        Returns
+        -------
+        sensors: np.ndarray, shape [n_features,]
+            Array of sensors ranked in descending order of importance.
+            Note that if n_features exceeds n_samples, then only the first
+            n_samples entries of sensors are guaranteed to be in ranked order.
         """
 
         n, m = basis_matrix.shape  # We transpose basis_matrix below
@@ -50,15 +75,14 @@ class CCQR(QR):
 
         # Initialize helper variables
         R = basis_matrix.conj().T.copy()
-        p = list(range(n))
-
+        p = np.arange(n)
         k = min(m, n)
 
         for j in range(k):
-            u, i_piv = qrpc_reflector(R[j:, j:], self.sensor_costs[p[j:]])
+            u, i_piv = qr_reflector(R[j:, j:], self.sensor_costs[p[j:]])
             # Track column pivots
             i_piv += j
-            p[j], p[i_piv] = p[i_piv], p[j]
+            p[[j, i_piv]] = p[[i_piv, j]]
             # Switch columns
             R[:, [j, i_piv]] = R[:, [i_piv, j]]
             # Apply reflector
@@ -69,20 +93,37 @@ class CCQR(QR):
         return p
 
 
-def qrpc_reflector(r, cost_function):
+def qr_reflector(r, costs):
     """
-    QRPC_REFLECTOR best reflector with column pivoting and a cost function
+    Get the best (Householder) reflector with column pivoting and
+    a cost function.
 
-    This function generates a Householder reflector
     The pivoting is biased by a cost function, i.e.
-    the pivot is chosen as the argmax of norm(r(:, i)) - cost_function(i)
+    the pivot is chosen as the argmax of :code:`norm(r[:, i]) - costs[i]`,
+    whereas normally it would be chosen as the argmax of :code:`norm(r[:, i])`.
+
+    Parameters
+    ----------
+    r: np.ndarray, shape [n_features, n_examples]
+        Sub-array for which the pivot and reflector are to be found
+
+    costs: np.ndarray, shape [n_examples,]
+        Costs for each column (sensor location) in r
+
+    Returns
+    -------
+    u: np.ndarray, shape [n_features,]
+        Householder reflector.
+
+    i_piv: nonnegative integer
+        Index of the pivot.
     """
 
     # Norm of each column
     dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
 
     # Choose pivot
-    i_piv = np.argmax(dlens - cost_function)
+    i_piv = np.argmax(dlens - costs)
 
     dlen = dlens[i_piv]
 

@@ -17,6 +17,7 @@ from numpy import isnan
 from numpy import mean
 from numpy import nan
 from numpy import sqrt
+from numpy import zeros
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -24,6 +25,7 @@ from pysensors import SensorSelector
 from pysensors.basis import Identity
 from pysensors.basis import POD
 from pysensors.basis import RandomProjection
+from pysensors.optimizers import CCQR
 
 
 def test_not_fitted(data_vandermonde):
@@ -242,3 +244,14 @@ def test_update_n_basis_modes_unfit_basis(data_random):
     model.update_n_basis_modes(n_basis_modes, data)
 
     assert model.basis_matrix_.shape[1] == n_basis_modes
+
+
+def test_ccqr_integration(data_random):
+    data = data_random
+    costs = zeros(data.shape[1])
+    costs[[1, 3, 5]] = 100
+
+    optimizer = CCQR(sensor_costs=costs)
+    model = SensorSelector(optimizer=optimizer).fit(data)
+
+    check_is_fitted(model)

@@ -128,9 +128,9 @@ class SensorSelector(BaseEstimator):
         self._validate_n_sensors()
 
         # Find sparse sensor locations
-        self.ranked_sensors_ = self.optimizer.get_sensors(
+        self.ranked_sensors_ = self.optimizer.fit(
             self.basis_matrix_, **optimizer_kws
-        )
+        ).get_sensors()
 
         # Randomly shuffle sensors after self.basis.n_basis_modes
         rng = np.random.default_rng(seed)

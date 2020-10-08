@@ -1,7 +1,9 @@
 from scipy.linalg import qr
+from sklearn.base import BaseEstimator
+from sklearn.utils.validation import check_is_fitted
 
 
-class QR:
+class QR(BaseEstimator):
     """
     Greedy QR optimizer for sensor selection.
     Ranks sensors in descending order of "importance" by applying
@@ -24,7 +26,7 @@ class QR:
         """
         self.pivots_ = None
 
-    def get_sensors(self, basis_matrix, **optimizer_kws):
+    def fit(self, basis_matrix, **optimizer_kws):
         """
         Parameters
         ----------
@@ -46,4 +48,8 @@ class QR:
         # TODO: implement checks on basis_matrix
         _, _, self.pivots_ = qr(basis_matrix.conj().T, pivoting=True, **optimizer_kws)
 
+        return self
+
+    def get_sensors(self):
+        check_is_fitted(self, "pivots_")
         return self.pivots_

@@ -14,7 +14,7 @@ class CCQR(QR):
         IEEE Sensors Journal 19.7 (2018): 2642-2656.
     """
 
-    def __init__(self, sensor_costs):
+    def __init__(self, sensor_costs=None):
         """
         Greedy cost-constrained QR optimizer for sensor selection.
         This algorithm augments the pivot selection criteria used in the
@@ -26,10 +26,11 @@ class CCQR(QR):
 
         Parameters
         ----------
-        sensor_costs: np.ndarray, shape [n_features,]
+        sensor_costs: np.ndarray, shape [n_features,], optional (default None)
             Costs (weights) associated with each sensor.
             Positive values will encourage sensors to be avoided and
             negative values will cause them to be preferred.
+            If None, costs will all be set to zero.
 
         Attributes
         ----------
@@ -37,14 +38,14 @@ class CCQR(QR):
             Ranked list of sensor locations.
         """
         super(CCQR, self).__init__()
-        if np.ndim(sensor_costs) != 1:
+        if sensor_costs is not None and np.ndim(sensor_costs) != 1:
             raise ValueError(
                 "sensor_costs must be a 1D array, "
                 f"but a {np.ndim(sensor_costs)}D array was given"
             )
         self.sensor_costs = sensor_costs
 
-    def get_sensors(
+    def fit(
         self,
         basis_matrix,
     ):
@@ -66,6 +67,9 @@ class CCQR(QR):
         """
 
         n, m = basis_matrix.shape  # We transpose basis_matrix below
+
+        if self.sensor_costs is None:
+            self.sensor_costs = np.zeros(n)
 
         if len(self.sensor_costs) != n:
             raise ValueError(
@@ -90,7 +94,7 @@ class CCQR(QR):
             R[j + 1 :, j] = 0
 
         self.pivots_ = p
-        return p
+        return self
 
 
 def qr_reflector(r, costs):

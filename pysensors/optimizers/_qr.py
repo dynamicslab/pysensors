@@ -39,10 +39,7 @@ class QR(BaseEstimator):
 
         Returns
         -------
-        sensors: np.ndarray, shape [n_features,]
-            Array of sensors ranked in descending order of importance.
-            Note that if n_features exceeds n_samples, then only the first
-            n_samples entries of sensors are guaranteed to be in ranked order.
+
         """
 
         # TODO: implement checks on basis_matrix
@@ -51,5 +48,15 @@ class QR(BaseEstimator):
         return self
 
     def get_sensors(self):
+        """
+        Get ranked array of sensors.
+
+        Returns
+        -------
+        sensors: np.ndarray, shape [n_features,]
+            Array of sensors ranked in descending order of importance.
+            Note that if n_features exceeds n_samples, then only the first
+            n_samples entries of sensors are guaranteed to be in ranked order.
+        """
         check_is_fitted(self, "pivots_")
         return self.pivots_

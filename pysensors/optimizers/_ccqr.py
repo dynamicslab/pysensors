@@ -60,10 +60,7 @@ class CCQR(QR):
 
         Returns
         -------
-        sensors: np.ndarray, shape [n_features,]
-            Array of sensors ranked in descending order of importance.
-            Note that if n_features exceeds n_samples, then only the first
-            n_samples entries of sensors are guaranteed to be in ranked order.
+        self: a fitted :class:`pysensors.optimizers.CCQR` instance
         """
 
         n, m = basis_matrix.shape  # We transpose basis_matrix below
@@ -94,6 +91,7 @@ class CCQR(QR):
             R[j + 1 :, j] = 0
 
         self.pivots_ = p
+
         return self
 
 

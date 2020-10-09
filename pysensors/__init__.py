@@ -14,6 +14,7 @@ __all__ = [
     "basis",
     "classification",
     "optimizers",
+    "utils",
     # Non-modules:
     "SensorSelector",
 ]

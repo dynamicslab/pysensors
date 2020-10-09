@@ -255,3 +255,11 @@ def test_ccqr_integration(data_random):
     model = SensorSelector(optimizer=optimizer).fit(data)
 
     check_is_fitted(model)
+
+
+def test_sensor_selector_properties(data_random):
+    data = data_random
+    model = SensorSelector().fit(data)
+
+    assert all(model.get_all_sensors() == model.all_sensors)
+    assert all(model.get_selected_sensors() == model.selected_sensors)

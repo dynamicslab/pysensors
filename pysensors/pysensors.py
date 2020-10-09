@@ -212,7 +212,34 @@ class SensorSelector(BaseEstimator):
         check_is_fitted(self, "ranked_sensors_")
         return self.ranked_sensors_[: self.n_sensors]
 
+    @property
+    def selected_sensors(self):
+        """
+        Get the indices of the sensors chosen by the model.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_sensors,)
+            Indices of the sensors chosen by the model
+            (i.e. the sensor locations) ranked in descending order
+            of importance.
+        """
+        return self.get_selected_sensors()
+
     def get_all_sensors(self):
+        """
+        Get a ranked list consisting of all the sensors.
+        The sensors are given in descending order of importance.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_features,)
+            Indices of sensors in descending order of importance.
+        """
+        return self.all_sensors
+
+    @property
+    def all_sensors(self):
         """
         Get a ranked list consisting of all the sensors.
         The sensors are given in descending order of importance.
@@ -248,6 +275,20 @@ class SensorSelector(BaseEstimator):
             )
         else:
             self.n_sensors = n_sensors
+
+    def set_n_sensors(self, n_sensors):
+        """
+        A convenience function accomplishing the same thing as
+        :meth:`set_number_of_sensors`.
+        Set ``n_sensors``, the number of sensors to be used for prediction.
+
+        Parameters
+        ----------
+        n_sensors: int
+            The number of sensors. Must be a positive integer.
+            Cannot exceed the number of available sensors (n_features).
+        """
+        self.set_number_of_sensors(n_sensors)
 
     def update_n_basis_modes(self, n_basis_modes, x=None):
         """
@@ -418,6 +459,10 @@ class SensorSelector(BaseEstimator):
         return error
 
     def _validate_n_sensors(self):
+        """
+        Check that number of sensors does not exceed the maximimum number
+        allowed by the chosen basis.
+        """
         check_is_fitted(self, "basis_matrix_")
 
         # Maximum number of sensors (= dimension of basis vectors)

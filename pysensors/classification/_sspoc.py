@@ -401,6 +401,24 @@ class SSPOC(BaseEstimator):
 
     @property
     def selected_sensors(self):
-        """Get the selected sensors."""
+        """
+        Get the indices of the selected sensors.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_sensors,)
+            Indices of the selected sensors.
+        """
         check_is_fitted(self, "sparse_sensors_")
         return self.sparse_sensors_
+
+    def get_selected_sensors(self):
+        """
+        Convenience function for getting indices of the selected sensors.
+
+        Returns
+        -------
+        sensors: numpy array, shape (n_sensors,)
+            Indices of the selected sensors.
+        """
+        return self.selected_sensors

@@ -263,3 +263,11 @@ def test_update_n_basis_modes_unfit_basis(basis, data_binary_classification):
     model.update_n_basis_modes(n_basis_modes, (x, y), quiet=True)
 
     assert model.basis_matrix_inverse_.shape[0] == n_basis_modes
+
+
+def test_sspoc_selector_equivalence(data_multiclass_classification):
+    x, y, _ = data_multiclass_classification
+
+    model = SSPOC().fit(x, y)
+
+    np.testing.assert_array_equal(model.get_selected_sensors(), model.selected_sensors)

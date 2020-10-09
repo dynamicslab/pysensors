@@ -23,8 +23,8 @@ from sklearn.utils.validation import check_is_fitted
 
 from pysensors import SensorSelector
 from pysensors.basis import Identity
-from pysensors.basis import POD
 from pysensors.basis import RandomProjection
+from pysensors.basis import SVD
 from pysensors.optimizers import CCQR
 
 
@@ -81,7 +81,7 @@ def test_get_all_sensors(data):
 
 
 @pytest.mark.parametrize(
-    "basis", [Identity(), POD(), RandomProjection(n_basis_modes=5)]
+    "basis", [Identity(), SVD(), RandomProjection(n_basis_modes=5)]
 )
 def test_basis_compatibility(data_vandermonde, basis):
     x = data_vandermonde

@@ -1,5 +1,5 @@
 """
-POD mode basis class.
+SVD mode basis class.
 """
 from sklearn.decomposition import TruncatedSVD
 
@@ -7,10 +7,10 @@ from ._base import InvertibleBasis
 from ._base import MatrixMixin
 
 
-class POD(TruncatedSVD, InvertibleBasis, MatrixMixin):
+class SVD(TruncatedSVD, InvertibleBasis, MatrixMixin):
     """
-    Generate a POD transformation which maps input features to
-    POD modes.
+    Generate an SVD transformation which maps input features to
+    SVD modes.
 
     Assumes the data has already been centered (to have mean 0).
 
@@ -46,7 +46,7 @@ class POD(TruncatedSVD, InvertibleBasis, MatrixMixin):
 
     def __init__(self, n_basis_modes=10, **kwargs):
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
-            super(POD, self).__init__(n_components=n_basis_modes, **kwargs)
+            super(SVD, self).__init__(n_components=n_basis_modes, **kwargs)
             self._n_basis_modes = n_basis_modes
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
@@ -62,7 +62,7 @@ class POD(TruncatedSVD, InvertibleBasis, MatrixMixin):
         -------
         self : instance
         """
-        self.basis_matrix_ = super(POD, self).fit(X).components_.T
+        self.basis_matrix_ = super(SVD, self).fit(X).components_.T
         return self
 
     def matrix_inverse(self, n_basis_modes=None):

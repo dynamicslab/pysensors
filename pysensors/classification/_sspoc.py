@@ -132,7 +132,7 @@ class SSPOC(BaseEstimator):
         prefit_basis: boolean, optional (default False)
             Whether or not the basis has already been fit to x.
             For example, you may have already fit and experimented with
-            a ``POD`` object to determine the optimal number of modes. This
+            a ``SVD`` object to determine the optimal number of modes. This
             option allows you to avoid an unnecessary SVD.
 
         refit: boolean, optional (default True)

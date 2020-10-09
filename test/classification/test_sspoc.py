@@ -7,8 +7,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_is_fitted
 
 from pysensors.basis import Identity
-from pysensors.basis import POD
 from pysensors.basis import RandomProjection
+from pysensors.basis import SVD
 from pysensors.classification import SSPOC
 
 
@@ -188,7 +188,7 @@ def test_dummy_predict(data):
     ],
 )
 @pytest.mark.parametrize(
-    "basis", [Identity(), POD(), RandomProjection(n_basis_modes=5)]
+    "basis", [Identity(), SVD(), RandomProjection(n_basis_modes=5)]
 )
 def test_basis_integration(basis, data):
     x, y, _ = data
@@ -212,7 +212,7 @@ def test_coefficient_shape(data, shape):
     assert model.sensor_coef_.shape == shape
 
 
-@pytest.mark.parametrize("basis", [POD, RandomProjection])
+@pytest.mark.parametrize("basis", [SVD, RandomProjection])
 def test_update_n_basis_modes_errors(basis, data_binary_classification):
     x, y, _ = data_binary_classification
     n_basis_modes = 5
@@ -228,7 +228,7 @@ def test_update_n_basis_modes_errors(basis, data_binary_classification):
         model.update_n_basis_modes(x.shape[0] + 1, xy=(x, y))
 
 
-@pytest.mark.parametrize("basis", [POD, RandomProjection])
+@pytest.mark.parametrize("basis", [SVD, RandomProjection])
 def test_update_n_basis_modes_shape(basis, data_binary_classification):
     x, y, _ = data_binary_classification
     n_basis_modes_init = 10
@@ -243,7 +243,7 @@ def test_update_n_basis_modes_shape(basis, data_binary_classification):
     assert model.basis_matrix_inverse_.shape[0] == n_basis_modes
 
 
-@pytest.mark.parametrize("basis", [POD, RandomProjection])
+@pytest.mark.parametrize("basis", [SVD, RandomProjection])
 def test_update_n_basis_modes_refit(basis, data_binary_classification):
     x, y, _ = data_binary_classification
     n_basis_modes = 5
@@ -255,7 +255,7 @@ def test_update_n_basis_modes_refit(basis, data_binary_classification):
     assert model.basis_matrix_inverse_.shape[0] == n_basis_modes + 1
 
 
-@pytest.mark.parametrize("basis", [POD, RandomProjection])
+@pytest.mark.parametrize("basis", [SVD, RandomProjection])
 def test_update_n_basis_modes_unfit_basis(basis, data_binary_classification):
     x, y, _ = data_binary_classification
     n_basis_modes = 5

@@ -1,5 +1,18 @@
 """
-Sparse Sensor Placement Optimization for Classification (SSPOC).
+Sparse Sensor Placement Optimization for Classification (SSPOC) based
+on
+
+    Brunton, Bingni W., et al.
+    "Sparse sensor placement optimization for classification."
+    SIAM Journal on Applied Mathematics 76.5 (2016): 2099-2122.
+
+See also the following paper for improvements on this method
+
+    Mohren, Thomas L., et al.
+    "Neural-inspired sensors enable sparse, efficient classification
+    of spatiotemporal data."
+    Proceedings of the National Academy of Sciences
+    115.42 (2018): 10564-10569.
 """
 import warnings
 

@@ -7,11 +7,11 @@ from setuptools import setup
 
 assert sys.version_info >= (3, 6, 0), "pySensors requires Python 3.6+"
 
-NAME = "pysensors"
+NAME = "python-sensors"
 DESCRIPTION = "Sparse sensor placement"
 URL = "https://github.com/dynamicslab/pysensors"
-EMAIL = "emily.e.clark93@gmail.com, kmanohar@uw.edu, bdesilva@uw.edu"
-AUTHOR = "Emily Clark, Krithika Manohar, Brian de Silva"
+EMAIL = "bdesilva@uw.edu, kmanohar@uw.edu, emily.e.clark93@gmail.com"
+AUTHOR = "Brian de Silva, Krithika Manohar, Emily Clark"
 PYTHON = ">=3.6"
 LICENSE = "MIT"
 CLASSIFIERS = [

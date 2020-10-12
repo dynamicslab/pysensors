@@ -11,11 +11,11 @@ Installation
 Installing with pip
 ^^^^^^^^^^^^^^^^^^^
 
-If you are using Linux or macOS you can install PySensors with pip:
+If you are using Linux or macOS you can install PySensors with pip (note the name you type in here is slightly different "pysensors"):
 
 .. code-block:: bash
 
-  pip install pysensors
+  pip install python-sensors
 
 Installing from source
 ^^^^^^^^^^^^^^^^^^^^^^

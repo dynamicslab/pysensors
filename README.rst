@@ -1,6 +1,6 @@
 PySensors
 =========
-|Build| |PyPI|
+|Build| |RTD| |PyPI|
 
 **PySensors** is a Python package for sparse sensor placement.
 
@@ -95,6 +95,10 @@ References
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests
+
+.. |RTD| image:: https://readthedocs.org/projects/python-sensors/badge/?version=latest
+    :target: https://python-sensors.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. |PyPI| image:: https://badge.fury.io/py/python-sensors.svg
     :target: https://badge.fury.io/py/python-sensors

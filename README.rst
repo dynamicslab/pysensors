@@ -69,7 +69,7 @@ you can run the following to automatically reformat your staged code
 
     pre-commit -a -v
 
-Note that you will then need to re-stage any changes `pre-commit` made to your code.
+Note that you will then need to re-stage any changes ``pre-commit`` made to your code.
 
 Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -87,7 +87,12 @@ References
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
    `[DOI] <10.1109/JSEN.2018.2887044>`__
-   
+
+-  Brunton, Bingni W., Steven L. Brunton, Joshua L. Proctor, and J Nathan Kutz.
+    "Sparse sensor placement optimization for classification."
+    SIAM Journal on Applied Mathematics 76.5 (2016): 2099-2122.
+    `[DOI] <https://doi.org/10.1137/15M1036713>`__
+
 .. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests
 

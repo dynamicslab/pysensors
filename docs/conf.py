@@ -2,8 +2,7 @@ import importlib
 import pathlib
 
 author = "Brian de Silva, Krithika Manohar, Emily Clark"
-project = "python-sensors"  # package name
-shorthand = "pysensors"
+project = "pysensors"  # package name
 
 
 # no need to edit below this line
@@ -26,7 +25,7 @@ extensions = [
     "sphinx_nbexamples",
 ]
 
-apidoc_module_dir = f"../{shorthand}"
+apidoc_module_dir = f"../{project}"
 apidoc_excluded_paths = ["tests"]
 apidoc_toc_file = False
 

@@ -1,9 +1,10 @@
 PySensors
 =========
-|Build| |RTD| |PyPI|
+|Build| |RTD| |PyPI| |Binder|
 
-**PySensors** is a Python package for sparse sensor placement.
+**PySensors** is a Scikit-learn style Python package for the sparse placement of sensors, either for reconstruction or classification tasks.
 
+.. contents:: Table of contents
 
 Installation
 -------------
@@ -11,11 +12,14 @@ Installation
 Installing with pip
 ^^^^^^^^^^^^^^^^^^^
 
-If you are using Linux or macOS you can install PySensors with pip (note the name you type in here is slightly different "pysensors"):
+If you are using Linux or macOS you can install PySensors with pip:
 
 .. code-block:: bash
 
   pip install python-sensors
+
+
+**Note:** the name you type in here **is** ``python-sensors`` and is **not** ``pysensors``.
 
 Installing from source
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -29,6 +33,7 @@ Then, to install the package, run
 
 .. code-block:: bash
 
+  cd pysensors
   pip install .
 
 If you do not have pip you can instead use
@@ -37,21 +42,31 @@ If you do not have pip you can instead use
 
   python setup.py install
 
-If you do not have root access, you should add the ``--user`` option to the above lines.
+If you do not have root access, you should add the ``--user`` option to the ``install`` commands above.
+
+Features
+--------
+The primary PySensors object is the ``SensorSelector`` class, which is used to choose sensor locations optimized for reconstruction tasks. Other implemented objects include
+
+* ``SSPOC`` - a class for sparse sensor selection for classification problems
+* ``basis`` - submodule implementing different bases in which to represent data
+  - ``Identity`` - use raw measurement data
+  - ``SVD`` - efficiently compute first k left singular vectors
+  - ``RandomProjection`` - Gaussian random projections of measurements
+* Convenience functions to aid in the analysis of error as number of sensors or basis modes are varied
 
 Documentation
 -------------
-`PySensors` has a `documentation site <https://python-sensors.readthedocs.io/en/latest/index.html>`__ hosted by readthedocs.
+PySensors has a `documentation site <https://python-sensors.readthedocs.io/en/latest/index.html>`__ hosted by readthedocs.
 Examples are available `online <https://python-sensors.readthedocs.io/en/latest/examples/index.html>`__, as static
-`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as interactive notebooks.
+`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as `interactive notebooks <https://gesis.mybinder.org/binder/v2/gh/dynamicslab/pysensors/654e8144e44bcdc4e481b59a36c496033ef90bf6>`__.
 
 Community guidelines
 --------------------
 
-
 Contributing examples
 ^^^^^^^^^^^^^^^^^^^^^
-If you have used `PySensors` to solve an interesting problem, please consider submitting an example Jupyter notebook showcasing
+If you have used PySensors to solve an interesting problem, please consider submitting an example Jupyter notebook showcasing
 your work!
 
 Contributing code
@@ -68,7 +83,7 @@ This will allow you to run unit tests and automatically format your code. To be 
 
     pytest
 
-We recommed using ``pre-commit`` to format your code. Once you have staged changes to commit
+We recommend using ``pre-commit`` to format your code. Once you have staged changes to commit
 
 .. code-block:: bash
 
@@ -78,7 +93,7 @@ you can run the following to automatically reformat your staged code
 
 .. code-block:: bash
 
-    pre-commit -a -v
+    pre-commit
 
 Note that you will then need to re-stage any changes ``pre-commit`` made to your code.
 
@@ -92,12 +107,12 @@ References
    "Data-driven sparse sensor placement for reconstruction: Demonstrating the
    benefits of exploiting known patterns."
    IEEE Control Systems Magazine 38, no. 3 (2018): 63-86.
-   `[DOI] <10.1109/MCS.2018.2810460>`__
+   `[DOI] <https://doi.org/10.1109/MCS.2018.2810460>`__
 
 -  Clark, Emily, Travis Askham, Steven L. Brunton, and J. Nathan Kutz.
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
-   `[DOI] <10.1109/JSEN.2018.2887044>`__
+   `[DOI] <https://doi.org/10.1109/JSEN.2018.2887044>`__
 
 -  Brunton, Bingni W., Steven L. Brunton, Joshua L. Proctor, and J Nathan Kutz.
     "Sparse sensor placement optimization for classification."
@@ -113,3 +128,6 @@ References
 
 .. |PyPI| image:: https://badge.fury.io/py/python-sensors.svg
     :target: https://badge.fury.io/py/python-sensors
+
+.. |Binder| image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/examples/master

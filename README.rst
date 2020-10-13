@@ -39,9 +39,20 @@ If you do not have pip you can instead use
 
 If you do not have root access, you should add the ``--user`` option to the above lines.
 
+Documentation
+-------------
+`PySensors` has a `documentation site <https://python-sensors.readthedocs.io/en/latest/index.html>`__ hosted by readthedocs.
+Examples are available `online <https://python-sensors.readthedocs.io/en/latest/examples/index.html>`__, as static
+`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as interactive notebooks.
 
 Community guidelines
 --------------------
+
+
+Contributing examples
+^^^^^^^^^^^^^^^^^^^^^
+If you have used `PySensors` to solve an interesting problem, please consider submitting an example Jupyter notebook showcasing
+your work!
 
 Contributing code
 ^^^^^^^^^^^^^^^^^

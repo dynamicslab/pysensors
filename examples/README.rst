@@ -36,3 +36,7 @@ ocean at any given point.
 ----------------------------------------------------------------------------------------------------
 Reproduces an example from `Manohar et al. (2018) <https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8361090>`_
 where sensor locations are learned for a monomial basis for the task of reconstruction.
+
+
+Full table of contents
+----------------------

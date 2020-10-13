@@ -81,12 +81,12 @@ References
    "Data-driven sparse sensor placement for reconstruction: Demonstrating the
    benefits of exploiting known patterns."
    IEEE Control Systems Magazine 38, no. 3 (2018): 63-86.
-   `[DOI] <10.1109/MCS.2018.2810460>`_
+   `[DOI] <10.1109/MCS.2018.2810460>`__
 
 -  Clark, Emily, Travis Askham, Steven L. Brunton, and J. Nathan Kutz.
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
-   `[DOI] <10.1109/JSEN.2018.2887044>`_
+   `[DOI] <10.1109/JSEN.2018.2887044>`__
    
 .. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests

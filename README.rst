@@ -130,4 +130,4 @@ References
     :target: https://badge.fury.io/py/python-sensors
 
 .. |Binder| image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/examples/master
+    :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/master

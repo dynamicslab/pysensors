@@ -41,11 +41,11 @@ jobs:
     #   with:
     #     token: ${{ secrets.CODECOV_TOKEN }}
     #     file: ./coverage.xml
-    # - name: Execute feature notebook with papermill
-    #   run: |
-    #     pip install papermill
-    #     cd examples
-    #     papermill --report-mode pysensors_overview.ipynb out.json
+    - name: Execute feature notebook with papermill
+      run: |
+        pip install papermill
+        cd examples
+        papermill --report-mode pysensors_overview.ipynb out.json
     - uses: actions/cache@v1
       with:
         path: ~/.cache/pip

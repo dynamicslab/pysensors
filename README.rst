@@ -28,31 +28,29 @@ reconstruction problems.
 
 Take representative examples of the types of data to be reconstructed (in this case polynomials)
 
-..code-block:: python
+.. code-block:: python
   
   x = numpy.linspace(0, 1, 1001)
   data = numpy.vander(x, 11).T  # Select 
 
 and feed them into a `SensorSelector`
 
-..code-block:: python
+.. code-block:: python
 
   model = pysensors.Sensorselector(n_sensors=10)
   model.fit(x)
 
 Use the `predict` method to reconstruct a new function sampled at the chosen sensor locations:
 
-..code-block:: python
+.. code-block:: python
 
   f = numpy.abs(x[method.selected_sensors]**2 - 0.5)
   f_pred = model.predict(f)
 
-.. figure:: ../docs/figures/vandermonde.png
+.. figure:: docs/figures/vandermonde.png
   :align: center
   :alt: A plot showing the function to be reconstructed, the learned sensor locations, and the reconstruction.
   :figclass: align-center
-
-  A plot showing the function to be reconstructed (black, dashed), the learned sensor locations (blue, circles), and the reconstruction (blue, solid).
 
 Classification
 ^^^^^^^^^^^^^^

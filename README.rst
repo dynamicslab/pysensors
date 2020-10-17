@@ -6,6 +6,82 @@ PySensors
 
 .. contents:: Table of contents
 
+Sparse sensor placement
+-----------------------
+
+Sparse sensor placement concerns the problem of selecting a small subset
+of sensor or measurement locations in a way that allows one to perform
+some task nearly as well as if one had access to measurements at *every*
+location.
+
+PySensors provides objects designed for the tasks of *reconstruction* and
+*classification*.
+
+
+Reconstruction
+^^^^^^^^^^^^^^
+Reconstruction deals with predicting the values of a quantity of interest at different locations other than those where sensors are located.
+For example, one might predict the temperature at a point in the middle of a lake based on temperature readings taken at various other positions in the lake.
+
+PySensors provides the `SensorSelector` class to aid in the solution of
+reconstruction problems.
+
+Take representative examples of the types of data to be reconstructed (in this case polynomials)
+
+..code-block:: python
+  
+  x = numpy.linspace(0, 1, 1001)
+  data = numpy.vander(x, 11).T  # Select 
+
+and feed them into a `SensorSelector`
+
+..code-block:: python
+
+  model = pysensors.Sensorselector(n_sensors=10)
+  model.fit(x)
+
+Use the `predict` method to reconstruct a new function sampled at the chosen sensor locations:
+
+..code-block:: python
+
+  f = numpy.abs(x[method.selected_sensors]**2 - 0.5)
+  f_pred = model.predict(f)
+
+.. figure:: ../docs/figures/vandermonde.png
+  :align: center
+  :alt: A plot showing the function to be reconstructed, the learned sensor locations, and the reconstruction.
+  :figclass: align-center
+
+  A plot showing the function to be reconstructed (black, dashed), the learned sensor locations (blue, circles), and the reconstruction (blue, solid).
+
+Classification
+^^^^^^^^^^^^^^
+Classification is the problem of predicting which category an example belongs to, given a set of training data (e.g. determining whether digital photos are of dogs or cats).
+The `SSPOC` class is used to solve classification problems.
+Users familiar with Scikit-learn will find it intuitive:
+
+.. code-block:: python
+
+  model = pysensors.classification.SSPOC()
+  model.fit(x, y)  # Learn sensor locations and fit a linear classifier
+  y_pred = model.predict(x_test[:, model.selected_sensors])  #  Get predictions
+
+See our set of `classification examples <https://python-sensors.readthedocs.io/en/latest/examples/classification.html>`__ for more information.
+
+Bases
+^^^^^
+The basis in which measurement data are represented can have a dramatic
+effect on performance. PySensors implements the three bases most commonly
+used for sparse sensor placement: raw measurements, SVD/POD/PCA modes, and random projections. Bases can be easily incorporated into `SensorSelector` and `SSPOC` classes:
+
+.. code-block:: python
+
+  basis = pysensors.basis.SVD(n_basis_modes=20)
+  recon_model = pysensors.SensorSelector(basis=basis)
+  class_model = pysensors.classification.SSPOC(basis=basis)
+
+See `this example <https://python-sensors.readthedocs.io/en/latest/examples/basis_comparison.html>`__ for further discussion of these options.
+
 Installation
 -------------
 

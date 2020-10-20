@@ -97,7 +97,30 @@ class SSPOC(BaseEstimator):
 
     Examples
     --------
-    TODO
+    >>> from sklearn.metrics import accuracy_score
+    >>> from sklearn.datasets import make_classification
+    >>> from pysensors.classification import SSPOC
+    >>>
+    >>> x, y = make_classification(n_classes=3, n_informative=3, random_state=10)
+    >>>
+    >>> model = SSPOC(n_sensors=10, l1_penalty=0.03)
+    >>> model.fit(x, y, quiet=True)
+    SSPOC(basis=Identity(n_basis_modes=100),
+          classifier=LinearDiscriminantAnalysis(), l1_penalty=0.03, n_sensors=10)
+    >>> print(model.selected_sensors)
+    [10 13  6 19 17 16 15 14 12 11]
+    >>>
+    >>> acc = accuracy_score(y, model.predict(x[:, model.selected_sensors]))
+    >>> print("Accuracy:", acc)
+    Accuracy: 0.66
+    >>>
+    >>> model.update_sensors(n_sensors=5, xy=(x, y), quiet=True)
+    >>> print(model.selected_sensors)
+    [10 13  6 19 17]
+    >>>
+    >>> acc = accuracy_score(y, model.predict(x[:, model.selected_sensors]))
+    >>> print("Accuracy:", acc)
+    Accuracy: 0.6
     """
 
     def __init__(
@@ -120,13 +143,7 @@ class SSPOC(BaseEstimator):
         self.n_basis_modes = None
 
     def fit(
-        self,
-        x,
-        y,
-        quiet=False,
-        prefit_basis=False,
-        refit=True,
-        **optimizer_kws,
+        self, x, y, quiet=False, prefit_basis=False, refit=True, **optimizer_kws,
     ):
         """
         Fit the SSPOC model, determining which sensors are relevant.
@@ -327,8 +344,7 @@ class SSPOC(BaseEstimator):
                 )
                 if (
                     method(
-                        np.abs(self.sensor_coef_[sorted_sensors[-1], :]),
-                        **method_kws,
+                        np.abs(self.sensor_coef_[sorted_sensors[-1], :]), **method_kws,
                     )
                     == 0
                     and warn

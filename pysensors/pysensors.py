@@ -57,7 +57,26 @@ class SensorSelector(BaseEstimator):
 
     Examples
     --------
-    TODO
+    >>> import numpy as np
+    >>> from pysensors import SensorSelector
+    >>>
+    >>> x = np.linspace(0, 1, 501)
+    >>> monomials = np.vander(x, 15).T
+    >>>
+    >>> model = SensorSelector(n_sensors=5)
+    >>> model.fit(monomials)
+    SensorSelector(basis=Identity(n_basis_modes=15), n_sensors=5, optimizer=QR())
+    >>> print(model.selected_sensors)
+    [500 377   0 460 185]
+    >>> print(x[model.selected_sensors])
+    [1.    0.754 0.    0.92  0.37 ]
+    >>> model.set_n_sensors(7)
+    >>> print(x[model.selected_sensors])
+    [1.    0.754 0.    0.92  0.37  0.572 0.134]
+    >>> f = np.sin(3*x)
+    >>> f_pred = model.predict(f[model.selected_sensors])
+    >>> print(np.linalg.norm(f - f_pred))
+    0.022405698005838044
     """
 
     def __init__(self, basis=None, optimizer=None, n_sensors=None):
@@ -386,9 +405,7 @@ class SensorSelector(BaseEstimator):
             )
         else:
             return score_function(
-                x,
-                self.predict(x[:, sensors], **solve_kws),
-                **score_kws,
+                x, self.predict(x[:, sensors], **solve_kws), **score_kws,
             )
 
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):

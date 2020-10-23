@@ -42,7 +42,7 @@ Your paper should include:
 * Acknowledgment of any financial support."
 
 See also the [review checklist](https://joss.readthedocs.io/en/latest/review_checklist.html#software-paper) to get an idea of what the reviewers are looking for.
-
+<!-- 
 ## Compiling this document
 
 Make sure you have [pandoc](https://pandoc.org/) installed.
@@ -66,39 +66,26 @@ Here are some other example JOSS papers:
 
 * [Example on JOSS website](https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography)
 * [pyomeca](https://joss.theoj.org/papers/10.21105/joss.02431) - this one is a bit long, but shows how figures can be incorporated into a JOSS submission
-* [All published papers](https://joss.theoj.org/papers/published)
+* [All published papers](https://joss.theoj.org/papers/published) -->
 
 # Summary
-TODO: write summary section
 
-Scientists have long quantified empirical observations by developing mathematical models that characterize the observations, have some measure of interpretability, and are capable of making predictions.
-Dynamical systems models in particular have been widely used to study, explain, and predict system behavior in a wide range of application areas, with examples ranging from Newton's laws of classical mechanics to the Michaelis-Menten kinetics for modeling enzyme kinetics.
-While governing laws and equations were traditionally derived by hand, the current growth of available measurement data and resulting emphasis on data-driven modeling motivates algorithmic approaches for model discovery.
-A number of such approaches have been developed in recent years and have generated widespread interest, including Eureqa [@Schmidt81], sure independence screening and sparsifying operator [@PhysRevMaterials.2.083802], and the sparse identification of nonlinear dynamics (SINDy) [@brunton2016pnas].
-Maximizing the impact of these model discovery methods requires tools to make them widely accessible to scientists across domains and at various levels of mathematical expertise.
+Successful predictive modeling and control of engineering and natural processes is often entirely determined by in situ measurements and feedback from sensors. 
+However, deploying sensors into complex environments in manufacturing, geophysical and biological processes is often expensive and challenging. 
+Furthermore, modeling outcomes are extremely sensitive to the location and number of these sensors, motivating the optimization of sensor placements for different decision-making tasks. 
+In general, choosing the globally optimal placement within the search space of a large-scale complex system is an intractable computation, in which the number of possible placements grows combinatorially with the number of candidates. 
+While sensor placements have traditionally been guided by expert knowledge and first principles models, the explosion in system complexity, data collection and data-driven modeling motivates automated algorithms for optimizing sensor placements.
 
-`PySINDy` is a Python package for the discovery of governing dynamical systems models from data.
-In particular, `PySINDy` provides tools for applying the SINDy approach to model discovery [@brunton2016pnas].
-Given data in the form of state measurements $\mathbf{x}(t) \in \mathbb{R}^n$, the SINDy method seeks a function $\mathbf{f}$ such that
-$$\frac{d}{dt}\mathbf{x}(t) = \mathbf{f}(\mathbf{x}(t)).$$
-SINDy poses this model discovery as a sparse regression problem, wherein relevant terms in $\mathbf{f}$ are selected from a library of candidate functions.
-Thus, SINDy models balance accuracy and efficiency, resulting in parsimonious models that avoid overfitting while remaining interpretable and generalizable.
-This approach is straightforward to understand and can be readily customized using different sparse regression algorithms or library functions.
+A number of automated sensor placement methods have been developed in recent years, designed to optimize outcomes in the design of experiments, convex [@joshi2008sensor;@brunton2016sparse] and submodular objective functions [@summers2015submodularity], information theoretic criteria [@krause2008near], optimal control, and reduced order modeling [@willcox2006unsteady;@manohar2018data;@clark2018greedy].
+Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists across various domains and at various levels of mathematical expertise.
+
+`PySensors` is a Python package for the scalable optimization of sensor placements from data. In particular, `PySensors` provides tools for sparse sensor placement optimization approaches that employ data-driven dimensionality reduction [@brunton2016sparse;@manohar2018data]. This approach results in near-optimal placements for various decision-making tasks and can be readily customized using different optimization algorithms and objective functions.
+
 
 The `PySensors` package can be used by both researchers looking to advance the state of the art and practitioners seeking simple sparse sensor selection methods for their applications of interest.
-Simple methods and abundant examples help new users to hit the ground running.
+Straightforward methods and abundant examples help new users to hit the ground running.
 At the same time modular classes leave flexibility for users to experiment with and plug in new sensor selection algorithms or dimensionality reduction techniques.
-Users of `scikit-learn` will find `Pysensors` syntax familiar and intuitive.
-The package is fully compatible with `scikit-learn` and follows object-oriented design principles.
-
-The SINDy method has been widely applied for model identification in applications such as chemical reaction dynamics [@Hoffmann2018], nonlinear optics [@Sorokina2016oe], thermal fluids [@Loiseau2019data], plasma convection [@Dam2017pf], numerical algorithms [@Thaler2019jcp], and structural modeling [@lai2019sparse].
-It has also been extended to handle  more complex modeling scenarios such as partial differential equations [@Schaeffer2017prsa;@Rudy2017sciadv], systems with inputs or control [@Kaiser2018prsa], corrupt or limited data [@tran2017exact;@schaeffer2018extracting], integral formulations [@Schaeffer2017pre;@Reinbold2020pre], physical constraints [@Loiseau2017jfm], tensor representations [@Gelss2019mindy], and stochastic systems [@boninsegna2018sparse].
-However, there is not a definitive standard implementation or package for applying SINDy.
-Versions of SINDy have been implemented within larger projects such as `sparsereg` [@markus_quade_sparsereg], but no specific implementation has emerged as the most widely adopted and most versions implement only a limited set of features.
-Researchers have thus typically written their own implementations, resulting in duplicated effort and a lack of standardization.
-This not only makes it more difficult to apply SINDy to scientific data sets, but also makes it more challenging to benchmark extensions to the method against the original and makes such extensions less accessible to end users.
-The `PySINDy` package provides a dedicated central codebase where many of the basic SINDy features are implemented, allowing for easy use and standardization.
-This also makes it straightforward for users to extend the package in a way such that new developments are available to a wider user base.
+Users of `scikit-learn` will find `Pysensors` objects familiar, intuitive, and compatible with existing `scikit-learn` routines such as cross-validation.
 
 
 # Features
@@ -106,12 +93,12 @@ This also makes it straightforward for users to extend the package in a way such
 `PySensors` enables the sparse placement of sensors for two classes of problems: reconstruction and classification.
 For reconstruction problems the package implements a unified `SensorSelector` class, with methods for efficiently analyzing the effects data or sensor quantity have on reconstruction performance.
 Often different sensor locations impose variable costs, e.g. if measuring sea-surface temperature, it may be more expensive to place buoys/sensors in the middle of the ocean than close to shore.
-These costs can be taken into account during sensor selection via a built-in cost-sensitive optimization routine [@clark2018cost].
-For classification tasks, the package implements the Sparse Sensor Placement Optimization for Classification (SSPOC) algorithm [@brunton2016sspoc], allowing one to optimize sensor placement for classification accuracy.
+These costs can be taken into account during sensor selection via a built-in cost-sensitive optimization routine [@clark2018greedy].
+For classification tasks, the package implements the Sparse Sensor Placement Optimization for Classification (SSPOC) algorithm [@brunton2016sparse], allowing one to optimize sensor placement for classification accuracy.
 This SSPOC implementation is fully general in the sense that it can be used in conjunction with any linear classifier.
-Additionally, `PySensors` provides methods to enable straightforward exploration of the impacts of primary hyperparameters.
+Additionally, `PySensors` provides methods to enable straightforward exploration of the impacts of primary hyperparameters like the number of sensors or basis modes.
 
-It is well known [@manohar2018sparse] that the basis in which one represents measurement data can have a pronounced effect on the sensors that are selected and the quality of the reconstruction.
+It is well known [@manohar2018data] that the basis in which one represents measurement data can have a pronounced effect on the sensors that are selected and the quality of the reconstruction.
 Users can readily switch between different bases typically employed for sparse sensor selection, including PCA modes and random projections.
 Because `PySensors` was built with `scikit-learn` compatibility in mind, it is easy to use cross-validation to select among possible choices of bases, basis modes, and other hyperparameters.
 
@@ -119,16 +106,11 @@ Finally, included with `PySensors` is a large suite of examples, implemented as 
 Some of the examples are written in a tutorial format and introduce new users to the objects, methods, and syntax of the package.
 Other examples demonstrate intermediate-level concepts such as how to visualize model parameters and performance, how to combine `scikit-learn` and `PySensors` objects, selecting appropriate parameter values via cross-validation, and other best-practices.
 Further notebooks use `PySensors` to solve challenging real-world problems.
-The notebooks reproduce many of the examples from the papers upon which the package is based [@manohar2018sparse;@clark2018cost;@brunton2016sspoc].
+The notebooks reproduce many of the examples from the papers upon which the package is based [@manohar2018data;@clark2018greedy;@brunton2016sparse].
 To help users begin applying `PySensors` to their own datasets even faster, interactive versions of every notebook are available on Binder.
 Overall, the examples will compress the learning curve of learning a new software package. 
 
 # Acknowledgments
 TODO: write acknowledgments section
-
-This project is a fork of [`sparsereg`](https://github.com/Ohjeah/sparsereg) [@markus_quade_sparsereg].
-SLB acknowledges funding support from the Air Force Office of Scientific Research (AFOSR FA9550-18-1-0200) and the Army Research Office (ARO W911NF-19-1-0045).
-JNK acknowledges support from the Air Force Office of Scientific Research (AFOSR FA9550-17-1-0329).
-This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant Number DGE-1256082.
 
 # References

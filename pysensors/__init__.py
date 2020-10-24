@@ -6,9 +6,9 @@ try:
 except DistributionNotFound:
     pass
 
-
 from .classification import SSPOC
 from .reconstruction import SSPOR
+
 
 __all__ = [
     # Modules:

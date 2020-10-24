@@ -37,7 +37,7 @@ jobs:
         pip install codecov
     - name: Test with pytest
       run: |
-        python3 -m pytest tests
+        pytest tests
     # - name: Upload coverage to Codecov
     #   uses: codecov/codecov-action@v1
     #   with:

@@ -339,7 +339,10 @@ class SSPOC(BaseEstimator):
             # (we don't need to sort the whole list)
             if np.ndim(self.sensor_coef_) == 1:
                 sorted_sensors = np.argsort(-np.abs(self.sensor_coef_))
-                if np.abs(self.sensor_coef_[sorted_sensors[-1]]) == 0 and warn:
+                if (
+                    np.abs(self.sensor_coef_[sorted_sensors[n_sensors - 1]]) == 0
+                    and warn
+                ):
                     warnings.warn(
                         "Some uninformative sensors were selected. "
                         "Consider decreasing n_sensors"
@@ -350,7 +353,7 @@ class SSPOC(BaseEstimator):
                 )
                 if (
                     method(
-                        np.abs(self.sensor_coef_[sorted_sensors[-1], :]),
+                        np.abs(self.sensor_coef_[sorted_sensors[n_sensors - 1], :]),
                         **method_kws,
                     )
                     == 0

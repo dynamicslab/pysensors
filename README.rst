@@ -1,6 +1,6 @@
 PySensors
 =========
-|Build| |RTD| |PyPI| |Binder|
+|Build| |RTD| |PyPI| |Codecov| |Binder|
 
 **PySensors** is a Scikit-learn style Python package for the sparse placement of sensors, either for reconstruction or classification tasks.
 
@@ -202,6 +202,9 @@ References
 
 .. |PyPI| image:: https://badge.fury.io/py/python-sensors.svg
     :target: https://badge.fury.io/py/python-sensors
+
+.. |Codecov| image:: https://codecov.io/gh/dynamicslab/pysensors/branch/master/graph/badge.svg?token=3JE6G5GDR7
+    :target: https://codecov.io/gh/dynamicslab/pysensors
 
 .. |Binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/master

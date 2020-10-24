@@ -7,14 +7,17 @@ except DistributionNotFound:
     pass
 
 
-from .pysensors import SensorSelector
+from .classification import SSPOC
+from .reconstruction import SSPOR
 
 __all__ = [
     # Modules:
     "basis",
     "classification",
+    "reconstruction",
     "optimizers",
     "utils",
     # Non-modules:
-    "SensorSelector",
+    "SSPOR",
+    "SSPOC",
 ]

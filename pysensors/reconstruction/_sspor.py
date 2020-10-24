@@ -1,6 +1,3 @@
-"""
-SensorSelector object definition.
-"""
 import warnings
 
 import numpy as np
@@ -9,20 +6,21 @@ from scipy.linalg import solve
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
-from .basis import Identity
-from .optimizers import QR
-from .utils import validate_input
+from ..basis import Identity
+from ..optimizers import QR
+from ..utils import validate_input
 
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
 
-class SensorSelector(BaseEstimator):
+class SSPOR(BaseEstimator):
     """
-    A model for selecting the best sensor locations for state reconstruction.
+    Sparse Sensor Placement Optimization for Reconstruction:
+    a model for selecting the best sensor locations for state reconstruction.
 
     Given a basis in which to represent the state (e.g. PCA modes) along with
-    measurement data, a :class:`SensorSelector` instance produces a list of
+    measurement data, a :class:`SSPOR` instance produces a list of
     sensor locations (a permutation of the numbers 0, 1, ...,
     :code:`n_input_features` - 1) ranked in descending order of importance.
     One can then select the top k sensors and take future measurements at
@@ -40,9 +38,9 @@ class SensorSelector(BaseEstimator):
 
     n_sensors: int, optional (default n_input_features)
         Number of sensors to select. Note that
-        ``s = SensorSelector(n_sensors=10); s.fit(x)``
+        ``s = SSPOR(n_sensors=10); s.fit(x)``
         is equivalent to
-        ``s = SensorSelector(); s.fit(x); s.set_number_of_sensors(10)``.
+        ``s = SSPOR(); s.fit(x); s.set_number_of_sensors(10)``.
 
     Attributes
     ----------
@@ -58,14 +56,14 @@ class SensorSelector(BaseEstimator):
     Examples
     --------
     >>> import numpy as np
-    >>> from pysensors import SensorSelector
+    >>> from pysensors import SSPOR
     >>>
     >>> x = np.linspace(0, 1, 501)
     >>> monomials = np.vander(x, 15).T
     >>>
-    >>> model = SensorSelector(n_sensors=5)
+    >>> model = SSPOR(n_sensors=5)
     >>> model.fit(monomials)
-    SensorSelector(basis=Identity(n_basis_modes=15), n_sensors=5, optimizer=QR())
+    SSPOR(basis=Identity(n_basis_modes=15), n_sensors=5, optimizer=QR())
     >>> print(model.selected_sensors)
     [500 377   0 460 185]
     >>> print(x[model.selected_sensors])
@@ -96,7 +94,7 @@ class SensorSelector(BaseEstimator):
 
     def fit(self, x, quiet=False, prefit_basis=False, seed=None, **optimizer_kws):
         """
-        Fit the SensorSelector model, determining which sensors are relevant.
+        Fit the SSPOR model, determining which sensors are relevant.
 
         Parameters
         ----------
@@ -124,7 +122,7 @@ class SensorSelector(BaseEstimator):
 
         Returns
         -------
-        self: a fitted :class:`SensorSelector` instance
+        self: a fitted :class:`SSPOR` instance
         """
 
         # Fit basis functions to data
@@ -311,7 +309,7 @@ class SensorSelector(BaseEstimator):
 
     def update_n_basis_modes(self, n_basis_modes, x=None):
         """
-        Re-fit the SensorSelector object using a different value of
+        Re-fit the :class:`SSPOR` object using a different value of
         ``n_basis_modes``.
 
         This method allows one to relearn sensor locations for a

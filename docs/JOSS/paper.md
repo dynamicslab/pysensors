@@ -39,15 +39,18 @@ In general, choosing the globally optimal placement within the search space of a
 While sensor placement has traditionally been guided by expert knowledge and first principles models, increases in system complexity, emerging sensor technologies, and innovations in data-driven modeling strategies motivates automated algorithms for optimizing sensor placements.
 
 A number of automated sensor placement methods have been developed in recent years, designed to optimize outcomes in the design of experiments [@Boyd2004convexbook;@joshi2008sensor], convex [@joshi2008sensor;@brunton2016sparse] and submodular objective functions [@summers2015submodularity], information theoretic and Bayesian criteria [@Caselton1984spl;@krause2008near;@Lindley1956ams;@Sebastiani2000jrss;@Paninski2005nc], optimal control [@Dhingra2014cdc;@Munz2014ieeetac;@Zare2018arxiv;@Manohar2018arxivB], for sampling and estimating signals over graphs [@Ribeiro2010sigcomm;@DiLorenzo2016ieee;@Chen2016ieee;@Chepuri2016sam], and reduced order modeling [@Barrault2004crm;@willcox2006unsteady;@Chaturantabut2010siamjsc;@Chaturantabut2012siamjna;@drmac2016siam;@manohar2018data;@clark2018greedy].
-Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists and engineers across various domains and at various levels of mathematical expertise and sophistication.
 
-`PySensors` is a Python package for the scalable optimization of sensor placements from data. In particular, `PySensors` provides tools for sparse sensor placement optimization approaches that employ data-driven dimensionality reduction  [@brunton2016sparse;@manohar2018data]. This approach results in near-optimal placements for various decision-making tasks and can be readily customized using different optimization algorithms and objective functions.
+`PySensors` is a Python package for the scalable optimization of sensor placement from data. In particular, `PySensors` provides tools for sparse sensor placement optimization approaches that employ data-driven dimensionality reduction  [@brunton2016sparse;@manohar2018data]. This approach results in near-optimal placements for various decision-making tasks and can be readily customized using different optimization algorithms and objective functions.
 
 The `PySensors` package can be used by both researchers looking to advance state-of-the-art methods and practitioners seeking simple sparse sensor selection methods for their applications of interest.
 Straightforward methods and abundant examples help new users to quickly and efficiently leverage existing methods to their advantage.
 At the same time, modular classes leave flexibility for users to experiment with and plug in new sensor selection algorithms or dimensionality reduction techniques.
 Users of `scikit-learn` will find `PySensors` objects familiar, intuitive, and compatible with existing `scikit-learn` routines such as cross-validation.
 
+# Statement of need
+Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists and engineers across various domains and at various levels of mathematical expertise and sophistication.
+The only other package in this domain of which we are aware is `Chama` [@klise2017sensor]. While both `Chama` and `PySensors` enable sparse sensor placement optimization, `Chama` is geared towards detection whereas `PySensors` is aimed at reconstruction and classification tasks.
+As such, there are marked differences in the objective functions optimized by the two packages.
 
 # Features
 

@@ -5,7 +5,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-assert sys.version_info >= (3, 6, 0), "pySensors requires Python 3.6+"
+assert sys.version_info >= (3, 6, 0), "pysensors requires Python 3.6+"
 
 NAME = "python-sensors"
 DESCRIPTION = "Sparse sensor placement"

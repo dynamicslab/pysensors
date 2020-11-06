@@ -38,14 +38,12 @@ Furthermore, modeling outcomes are extremely sensitive to the location and numbe
 In general, choosing the globally optimal placement within the search space of a large-scale complex system is an intractable computation, in which the number of possible placements grows combinatorially with the number of candidates. 
 While sensor placement has traditionally been guided by expert knowledge and first principles models, increases in system complexity, emerging sensor technologies, and innovations in data-driven modeling strategies motivates automated algorithms for optimizing sensor placements.
 
-A number of automated sensor placement methods have been developed in recent years, designed to optimize outcomes in the design of experiments [@Boyd2004convexbook;@joshi2008sensor], convex [@joshi2008sensor;@brunton2016sparse] and submodular objective functions [@summers2015submodularity], information theoretic and Bayesian criteria [@Caselton1984spl;@krause2008near;@Lindley1956ams;@Sebastiani2000jrss;@Paninski2005nc], optimal control [@Dhingra2014cdc;@Munz2014ieeetac;@Zare2018arxiv;@Manohar2018arxivB], for sampling and estimating signals over graphs [@Ribeiro2010sigcomm;@DiLorenzo2016ieee;@Chen2016ieee;@Chepuri2016sam], and reduced order modeling [@Barrault2004crm;@willcox2006unsteady;@Chaturantabut2010siamjsc;@Chaturantabut2012siamjna;@drmac2016siam;@manohar2018data;@clark2018greedy].
-
 `PySensors` is a Python package for the scalable optimization of sensor placement from data. In particular, `PySensors` provides tools for sparse sensor placement optimization approaches that employ data-driven dimensionality reduction  [@brunton2016sparse;@manohar2018data]. This approach results in near-optimal placements for various decision-making tasks and can be readily customized using different optimization algorithms and objective functions.
 
 The `PySensors` package can be used by both researchers looking to advance state-of-the-art methods and practitioners seeking simple sparse sensor selection methods for their applications of interest.
 Straightforward methods and abundant examples help new users to quickly and efficiently leverage existing methods to their advantage.
 At the same time, modular classes leave flexibility for users to experiment with and plug in new sensor selection algorithms or dimensionality reduction techniques.
-Users of `scikit-learn` will find `PySensors` objects familiar, intuitive, and compatible with existing `scikit-learn` routines such as cross-validation.
+Users of `scikit-learn` will find `PySensors` objects familiar, intuitive, and compatible with existing `scikit-learn` routines such as cross-validation [@scikit-learn].
 
 # Statement of need
 Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists and engineers across various domains and at various levels of mathematical expertise and sophistication.
@@ -56,7 +54,7 @@ As such, there are marked differences in the objective functions optimized by th
 
 `PySensors` enables the sparse placement of sensors for two classes of problems: reconstruction and classification.
 For reconstruction problems the package implements a unified `SensorSelector` class, with methods for efficiently analyzing the effects that data or sensor quantity have on reconstruction performance [@manohar2018data]. 
-Sensor selection is based on the computationally efficient and flexible QR algorithm [@duersch2015true;@martinsson2015blocked;@Martinsson2017siamjsc], which has recently been used for hyper-reduction in reduced-order modeling [@drmac2016siam] and for sparse sensor selection [@manohar2018data]. 
+Sensor selection is based on the computationally efficient QR algorithm.
 Often different sensor locations impose variable costs, e.g. if measuring sea-surface temperature, it may be more expensive to place buoys/sensors in the middle of the ocean than close to shore.
 These costs can be taken into account during sensor selection via a built-in cost-sensitive optimization routine [@clark2018greedy].
 For classification tasks, the package implements the Sparse Sensor Placement Optimization for Classification (SSPOC) algorithm [@brunton2016sparse], allowing one to optimize sensor placement for classification accuracy. 

@@ -23,8 +23,7 @@ Reconstruction
 Reconstruction deals with predicting the values of a quantity of interest at different locations other than those where sensors are located.
 For example, one might predict the temperature at a point in the middle of a lake based on temperature readings taken at various other positions in the lake.
 
-PySensors provides the `SensorSelector` class to aid in the solution of
-reconstruction problems.
+PySensors provides the ``SSPOR`` (Sparse Sensor Placement Optimization for Reconstruction) class to aid in the solution of reconstruction problems.
 
 Take representative examples of the types of data to be reconstructed (in this case polynomials)
 
@@ -33,14 +32,14 @@ Take representative examples of the types of data to be reconstructed (in this c
   x = numpy.linspace(0, 1, 1001)
   data = numpy.vander(x, 11).T  # Select 
 
-and feed them into a `SensorSelector`
+and feed them to a ``SSPOR`` instance
 
 .. code-block:: python
 
-  model = pysensors.Sensorselector(n_sensors=10)
+  model = pysensors.reconstruction.SSPOR(n_sensors=10)
   model.fit(x)
 
-Use the `predict` method to reconstruct a new function sampled at the chosen sensor locations:
+Use the ``predict`` method to reconstruct a new function sampled at the chosen sensor locations:
 
 .. code-block:: python
 
@@ -55,7 +54,7 @@ Use the `predict` method to reconstruct a new function sampled at the chosen sen
 Classification
 ^^^^^^^^^^^^^^
 Classification is the problem of predicting which category an example belongs to, given a set of training data (e.g. determining whether digital photos are of dogs or cats).
-The `SSPOC` class is used to solve classification problems.
+The ``SSPOC`` (Sparse Sensor Placement Optimization for Classification) class is used to solve classification problems.
 Users familiar with Scikit-learn will find it intuitive:
 
 .. code-block:: python
@@ -70,12 +69,12 @@ Bases
 ^^^^^
 The basis in which measurement data are represented can have a dramatic
 effect on performance. PySensors implements the three bases most commonly
-used for sparse sensor placement: raw measurements, SVD/POD/PCA modes, and random projections. Bases can be easily incorporated into `SensorSelector` and `SSPOC` classes:
+used for sparse sensor placement: raw measurements, SVD/POD/PCA modes, and random projections. Bases can be easily incorporated into ``SSPOR`` and ``SSPOC`` classes:
 
 .. code-block:: python
 
   basis = pysensors.basis.SVD(n_basis_modes=20)
-  recon_model = pysensors.SensorSelector(basis=basis)
+  recon_model = pysensors.reconstruction.SSPOR(basis=basis)
   class_model = pysensors.classification.SSPOC(basis=basis)
 
 See `this example <https://python-sensors.readthedocs.io/en/latest/examples/basis_comparison.html>`__ for further discussion of these options.
@@ -120,9 +119,8 @@ If you do not have root access, you should add the ``--user`` option to the ``in
 
 Features
 --------
-The primary PySensors object is the ``SensorSelector`` class, which is used to choose sensor locations optimized for reconstruction tasks. Other implemented objects include
+The primary PySensors objects are the ``SSPOR`` and ``SSPOC`` classes, which are used to choose sensor locations optimized for reconstruction and classification tasks, respectively. Other implemented objects include
 
-* ``SSPOC`` - a class for sparse sensor selection for classification problems
 * ``basis`` - submodule implementing different bases in which to represent data
   - ``Identity`` - use raw measurement data
   - ``SVD`` - efficiently compute first k left singular vectors

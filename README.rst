@@ -30,20 +30,20 @@ Take representative examples of the types of data to be reconstructed (in this c
 .. code-block:: python
   
   x = numpy.linspace(0, 1, 1001)
-  data = numpy.vander(x, 11).T  # Select 
+  data = numpy.vander(x, 11).T  # Create an array whose rows are powers of x
 
-and feed them to a ``SSPOR`` instance
+feed them to a ``SSPOR`` instance with 10 sensors, and 
 
 .. code-block:: python
 
   model = pysensors.reconstruction.SSPOR(n_sensors=10)
-  model.fit(x)
+  model.fit(data)
 
 Use the ``predict`` method to reconstruct a new function sampled at the chosen sensor locations:
 
 .. code-block:: python
 
-  f = numpy.abs(x[method.selected_sensors]**2 - 0.5)
+  f = numpy.abs(x[model.selected_sensors]**2 - 0.5)
   f_pred = model.predict(f)
 
 .. figure:: docs/figures/vandermonde.png
@@ -122,9 +122,11 @@ Features
 The primary PySensors objects are the ``SSPOR`` and ``SSPOC`` classes, which are used to choose sensor locations optimized for reconstruction and classification tasks, respectively. Other implemented objects include
 
 * ``basis`` - submodule implementing different bases in which to represent data
+
   - ``Identity`` - use raw measurement data
   - ``SVD`` - efficiently compute first k left singular vectors
   - ``RandomProjection`` - Gaussian random projections of measurements
+
 * Convenience functions to aid in the analysis of error as number of sensors or basis modes are varied
 
 Documentation

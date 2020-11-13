@@ -1,1 +1,0 @@
-pip install jupyter matplotlib netCDF4 notebook pandas seaborn

@@ -1,1 +1,1 @@
-python3 -m pip install -r requirements-examples.txt
+pip install jupyter matplotlib netCDF4 notebook pandas seaborn

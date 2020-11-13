@@ -183,15 +183,15 @@ References
    IEEE Control Systems Magazine 38, no. 3 (2018): 63-86.
    `[DOI] <https://doi.org/10.1109/MCS.2018.2810460>`__
 
+-  Brunton, Bingni W., Steven L. Brunton, Joshua L. Proctor, and J Nathan Kutz.
+   "Sparse sensor placement optimization for classification."
+   SIAM Journal on Applied Mathematics 76.5 (2016): 2099-2122.
+   `[DOI] <https://doi.org/10.1137/15M1036713>`__
+
 -  Clark, Emily, Travis Askham, Steven L. Brunton, and J. Nathan Kutz.
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
    `[DOI] <https://doi.org/10.1109/JSEN.2018.2887044>`__
-
--  Brunton, Bingni W., Steven L. Brunton, Joshua L. Proctor, and J Nathan Kutz.
-    "Sparse sensor placement optimization for classification."
-    SIAM Journal on Applied Mathematics 76.5 (2016): 2099-2122.
-    `[DOI] <https://doi.org/10.1137/15M1036713>`__
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests

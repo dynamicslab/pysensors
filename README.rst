@@ -142,6 +142,10 @@ Examples are available `online <https://python-sensors.readthedocs.io/en/latest/
 Community guidelines
 --------------------
 
+Getting support
+^^^^^^^^^^^^^^^
+You may create an issue for any questions that aren't answered by the `documentation <https://python-sensors.readthedocs.io/en/latest/index.html>`__ or `examples <https://python-sensors.readthedocs.io/en/latest/examples/index.html>`__.
+
 Contributing examples
 ^^^^^^^^^^^^^^^^^^^^^
 If you have used PySensors to solve an interesting problem, please consider submitting an example Jupyter notebook showcasing

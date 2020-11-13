@@ -133,7 +133,11 @@ Documentation
 -------------
 PySensors has a `documentation site <https://python-sensors.readthedocs.io/en/latest/index.html>`__ hosted by readthedocs.
 Examples are available `online <https://python-sensors.readthedocs.io/en/latest/examples/index.html>`__, as static
-`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as `interactive notebooks <https://gesis.mybinder.org/binder/v2/gh/dynamicslab/pysensors/654e8144e44bcdc4e481b59a36c496033ef90bf6>`__.
+`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as `interactive notebooks <https://gesis.mybinder.org/binder/v2/gh/dynamicslab/pysensors/654e8144e44bcdc4e481b59a36c496033ef90bf6>`__. To run the example notebooks locally you should install the dependencies in ``requirements-examples.txt``:
+
+.. code-block:: bash
+
+  pip install -r requirements-examples.txt
 
 Community guidelines
 --------------------

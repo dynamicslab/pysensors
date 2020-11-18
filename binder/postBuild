@@ -1,0 +1,2 @@
+pip install -r requirements-examples.txt
+pip install -e .

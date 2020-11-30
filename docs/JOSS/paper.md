@@ -50,6 +50,12 @@ Maximizing the impact of sensor placement algorithms requires tools to make them
 The only other package in this domain of which we are aware is `Chama` [@klise2017sensor]. While both `Chama` and `PySensors` enable sparse sensor placement optimization, `Chama` is geared towards detection whereas `PySensors` is aimed at reconstruction and classification tasks.
 As such, there are marked differences in the objective functions optimized by the two packages.
 
+Reconstruction and classification tasks often arise in the modeling, prediction, and control of complex processes in geophysics, fluid dynamics, biology, and manufacturing. 
+The goal of reconstruction is to estimate high-dimensional signals **x** from linear measurements stored in a vector **y** = **Cx**. Each measurement y<sub>i</sub> = **c**<sub>i</sub><sup>T</sup>**x** results from the action of available sensors **c**<sub>i</sub>, which are collected in the measurement operator **C**.
+Sensor placement optimization seeks the subset of available sensors that minimizes reconstruction error in the objective function
+J(**C**)= ||**x** - **P(C,&Phi;) y**||<sup>2</sup>, where **P(C,&Phi;)** is the reconstruction map and **&Phi;** is a dimensionality reducing transformation. `PySensors` exploits dimensionality reduction techniques such as principal component analysis and random projections to build the reconstruction map, and reduces sensor placement optimization to a matrix pivoting algorithm. Sensor placement for classification uses a similar objective function based on reconstructing decision boundaries between classes in a lower-dimensional space. 
+
+
 # Features
 
 `PySensors` enables the sparse placement of sensors for two classes of problems: reconstruction and classification.
@@ -75,6 +81,6 @@ To help users begin applying `PySensors` to their own datasets even faster, inte
 Together with comprehensive documentation, the examples will compress the learning curve of learning a new software package. 
 
 # Acknowledgments
-The authors acknowledge support from the Air Force Office of Scientific Research (AFOSR FA9550-19-1-0386) and The Boeing Corporation.  JNK acknowledges support from the Air Force Office of Scientific Research (AFOSR FA9550-19-1-0011)
+The authors acknowledge support from the Air Force Office of Scientific Research (AFOSR FA9550-19-1-0386) and The Boeing Corporation. The work of KM is supported by the National Science Foundation Mathematical Sciences Postdoctoral Research Fellowship (award 1803663). JNK acknowledges support from the Air Force Office of Scientific Research (AFOSR FA9550-19-1-0011)
 
 # References

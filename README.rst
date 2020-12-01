@@ -82,10 +82,14 @@ See `this example <https://python-sensors.readthedocs.io/en/latest/examples/basi
 Installation
 -------------
 
+Dependencies
+^^^^^^^^^^^^
+The high-level dependencies for PySensors are Linux or macOS and Python 3.6-3.8. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
+
 Installing with pip
 ^^^^^^^^^^^^^^^^^^^
 
-If you are using Linux or macOS you can install PySensors with pip:
+If you are using Linux or macOS you can install PySensors with pip from the command line/terminal:
 
 .. code-block:: bash
 
@@ -93,6 +97,8 @@ If you are using Linux or macOS you can install PySensors with pip:
 
 
 **Note:** the name you type in here **is** ``python-sensors`` and is **not** ``pysensors``.
+
+Once you have run the line above, you are ready to get started with PySensors. Have a look at the examples in our `documentation <https://github.com/dynamicslab/pysensors#documentation>`__ to see what PySensors can do. 
 
 Installing from source
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -116,6 +122,7 @@ If you do not have pip you can instead use
   python setup.py install
 
 If you do not have root access, you should add the ``--user`` option to the ``install`` commands above.
+
 
 Features
 --------

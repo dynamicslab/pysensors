@@ -51,9 +51,9 @@ The only other package in this domain of which we are aware is `Chama` [@klise20
 As such, there are marked differences in the objective functions optimized by the two packages.
 
 Reconstruction and classification tasks often arise in the modeling, prediction, and control of complex processes in geophysics, fluid dynamics, biology, and manufacturing. 
-The goal of reconstruction is to estimate high-dimensional signals **x** from linear measurements stored in a vector **y** = **Cx**. Each measurement y<sub>i</sub> = **c**<sub>i</sub><sup>T</sup>**x** results from the action of available sensors **c**<sub>i</sub>, which are collected in the measurement operator **C**.
+The goal of reconstruction is to estimate high-dimensional signals $\mathbf{x}$ (bold symbols denote vectors) from linear measurements stored in a vector $\mathbf{y} = \mathbf{Cx}$. Each measurement $y_i = \mathbf{c}_i^\top \mathbf{x}$ results from the action of available sensors $\mathbf{c}_i$, which are collected in the measurement operator $\mathbf{C}$.
 Sensor placement optimization seeks the subset of available sensors that minimizes reconstruction error in the objective function
-J(**C**)= ||**x** - **P(C,&Phi;) y**||<sup>2</sup>, where **P(C,&Phi;)** is the reconstruction map and **&Phi;** is a dimensionality reducing transformation. `PySensors` exploits dimensionality reduction techniques such as principal component analysis and random projections to build the reconstruction map, and reduces sensor placement optimization to a matrix pivoting algorithm. Sensor placement for classification uses a similar objective function based on reconstructing decision boundaries between classes in a lower-dimensional space. 
+$J(\mathbf{C})= \|\mathbf{x} - \mathbf{P}(\mathbf{C}, \mathbf{\Phi}) \mathbf{y}\|^2$, where $\mathbf{P}(\mathbf{C},\mathbf{\Phi})$ is the reconstruction map and $\mathbf{\Phi}$ is a dimensionality reducing transformation. `PySensors` exploits dimensionality reduction techniques such as principal component analysis and random projections to build the reconstruction map, and reduces sensor placement optimization to a matrix pivoting algorithm. Sensor placement for classification uses a similar objective function based on reconstructing decision boundaries between classes in a lower-dimensional space. 
 
 
 # Features

@@ -1,10 +1,12 @@
+import warnings
+
 from numpy import ndim
 from sklearn.linear_model import MultiTaskLasso
 from sklearn.linear_model import OrthogonalMatchingPursuit
 
 
 def constrained_binary_solve(
-    w, psi, fit_intercept=True, normalize=True, precompute="auto"
+    w, psi, quiet=False, fit_intercept=True, normalize=True, precompute="auto"
 ):
     if ndim(w) != 1:
         raise ValueError(
@@ -14,11 +16,19 @@ def constrained_binary_solve(
     model = OrthogonalMatchingPursuit(
         tol=0, fit_intercept=fit_intercept, normalize=normalize, precompute=precompute
     )
-    model.fit(psi, w)
+
+    if quiet:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            model.fit(psi, w)
+    else:
+        model.fit(psi, w)
+
     return model.coef_
 
 
-def constrained_multiclass_solve(w, psi, alpha=1.0, **lasso_kws):
+def constrained_multiclass_solve(w, psi, alpha=1.0, quiet=False, **lasso_kws):
     """
     Solve
 
@@ -28,5 +38,13 @@ def constrained_multiclass_solve(w, psi, alpha=1.0, **lasso_kws):
         \\text{subject to} \\|w - \\psi s\\|_2^2 \\leq tol
     """
     model = MultiTaskLasso(alpha=alpha, **lasso_kws)
-    model.fit(psi, w)
+
+    if quiet:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            model.fit(psi, w)
+    else:
+        model.fit(psi, w)
+
     return model.coef_.T

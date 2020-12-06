@@ -20,6 +20,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.dummy import DummyClassifier
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
@@ -228,6 +229,7 @@ class SSPOC(BaseEstimator):
         if quiet:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
+                warnings.filterwarnings("ignore", category=ConvergenceWarning)
                 self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
         else:
             self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
@@ -236,10 +238,16 @@ class SSPOC(BaseEstimator):
 
         n_classes = len(set(y[:]))
         if n_classes == 2:
-            s = constrained_binary_solve(w, self.basis_matrix_inverse_, **optimizer_kws)
+            s = constrained_binary_solve(
+                w, self.basis_matrix_inverse_, quiet=quiet, **optimizer_kws
+            )
         else:
             s = constrained_multiclass_solve(
-                w, self.basis_matrix_inverse_, alpha=self.l1_penalty, **optimizer_kws
+                w,
+                self.basis_matrix_inverse_,
+                alpha=self.l1_penalty,
+                quiet=quiet,
+                **optimizer_kws,
             )
 
         if self.threshold is None:
@@ -413,7 +421,15 @@ class SSPOC(BaseEstimator):
         if xy is not None:
             if self.n_sensors > 0:
                 x, y = xy
-                self.classifier.fit(x[:, self.sparse_sensors_], y)
+
+                if quiet:
+                    # Suppress warnings arising from no sensors being selected
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=UserWarning)
+                        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+                        self.classifier.fit(x[:, self.sparse_sensors_], y)
+                else:
+                    self.classifier.fit(x[:, self.sparse_sensors_], y)
                 self.refit_ = True
             else:
                 warnings.warn("No selected sensors; model was not refit.")

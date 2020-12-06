@@ -315,7 +315,7 @@ class SSPOR(BaseEstimator):
         """
         self.set_number_of_sensors(n_sensors)
 
-    def update_n_basis_modes(self, n_basis_modes, x=None):
+    def update_n_basis_modes(self, n_basis_modes, x=None, quiet=False):
         """
         Re-fit the :class:`SSPOR` object using a different value of
         ``n_basis_modes``.
@@ -336,6 +336,9 @@ class SSPOR(BaseEstimator):
         x: numpy array, shape (n_examples, n_features), optional (default None)
             Only used if ``n_basis_modes`` exceeds the number of available
             basis modes for the already fit basis.
+
+        quiet: boolean, optional (default False)
+            Whether or not to suppress warnings during refitting.
         """
         if not isinstance(n_basis_modes, INT_DTYPES) or n_basis_modes <= 0:
             raise ValueError("n_basis_modes must be a positive integer")
@@ -359,7 +362,7 @@ class SSPOR(BaseEstimator):
         else:
             self.n_basis_modes = n_basis_modes
             self.basis.n_basis_modes = n_basis_modes
-            self.fit(x, prefit_basis=False)
+            self.fit(x, prefit_basis=False, quiet=quiet)
 
     def score(self, x, y=None, score_function=None, score_kws={}, solve_kws={}):
         """

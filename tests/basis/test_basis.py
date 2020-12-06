@@ -1,4 +1,6 @@
 """Unit tests for basis classes"""
+import warnings
+
 import numpy as np
 import pytest
 from sklearn.exceptions import NotFittedError
@@ -51,19 +53,22 @@ def test_random_projection_random_state(data_vandermonde):
 
 @pytest.mark.parametrize("basis", [Identity, SVD, RandomProjection])
 def test_n_basis_modes(basis, data_random):
-    with pytest.raises(ValueError):
-        b = basis(n_basis_modes=0)
-    with pytest.raises(ValueError):
-        b = basis(n_basis_modes=1.2)
-    with pytest.raises(ValueError):
-        b = basis(n_basis_modes="1")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning)
 
-    data = data_random
-    n_basis_modes = 5
-    b = basis(n_basis_modes=n_basis_modes)
-    b.fit(data)
+        with pytest.raises(ValueError):
+            b = basis(n_basis_modes=0)
+        with pytest.raises(ValueError):
+            b = basis(n_basis_modes=1.2)
+        with pytest.raises(ValueError):
+            b = basis(n_basis_modes="1")
 
-    assert b.matrix_representation().shape[1] == n_basis_modes
+        data = data_random
+        n_basis_modes = 5
+        b = basis(n_basis_modes=n_basis_modes)
+        b.fit(data)
+
+        assert b.matrix_representation().shape[1] == n_basis_modes
 
 
 @pytest.mark.parametrize("basis", [Identity, SVD])

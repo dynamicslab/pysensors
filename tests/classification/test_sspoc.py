@@ -170,6 +170,7 @@ def test_predict_accuracy(data, baseline_accuracy):
 )
 def test_dummy_predict(data):
     x, y, l1_penalty = data
+
     model = SSPOC(l1_penalty=l1_penalty).fit(x, y, quiet=True)
     model.update_sensors(n_sensors=0, xy=(x, y), quiet=True)
 

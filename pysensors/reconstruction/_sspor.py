@@ -131,9 +131,11 @@ class SSPOR(BaseEstimator):
         else:
             x = validate_input(x)
 
-            with warnings.catch_warnings():
-                action = "ignore" if quiet else "default"
-                warnings.filterwarnings(action, category=UserWarning)
+            if quiet:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    self.basis.fit(x)
+            else:
                 self.basis.fit(x)
 
         # Get matrix representation of basis
@@ -403,9 +405,7 @@ class SSPOR(BaseEstimator):
             )
         else:
             return score_function(
-                x,
-                self.predict(x[:, sensors], **solve_kws),
-                **score_kws,
+                x, self.predict(x[:, sensors], **solve_kws), **score_kws,
             )
 
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):

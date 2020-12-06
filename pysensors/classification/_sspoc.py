@@ -143,13 +143,7 @@ class SSPOC(BaseEstimator):
         self.n_basis_modes = None
 
     def fit(
-        self,
-        x,
-        y,
-        quiet=False,
-        prefit_basis=False,
-        refit=True,
-        **optimizer_kws,
+        self, x, y, quiet=False, prefit_basis=False, refit=True, **optimizer_kws,
     ):
         """
         Fit the SSPOC model, determining which sensors are relevant.
@@ -189,9 +183,11 @@ class SSPOC(BaseEstimator):
         else:
             x = validate_input(x)
 
-            with warnings.catch_warnings():
-                action = "ignore" if quiet else "default"
-                warnings.filterwarnings(action, category=UserWarning)
+            if quiet:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    self.basis.fit(x)
+            else:
                 self.basis.fit(x)
 
         # Get matrix representation of basis - this is \Psi^T in the paper
@@ -200,9 +196,11 @@ class SSPOC(BaseEstimator):
         )
 
         # Find weight vector
-        with warnings.catch_warnings():
-            action = "ignore" if quiet else "default"
-            warnings.filterwarnings(action, category=UserWarning)
+        if quiet:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
+        else:
             self.classifier.fit(np.matmul(x, self.basis_matrix_inverse_.T), y)
 
         w = np.squeeze(self.classifier.coef_).T

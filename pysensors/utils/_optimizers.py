@@ -21,10 +21,11 @@ def constrained_binary_solve(
 def constrained_multiclass_solve(w, psi, alpha=1.0, **lasso_kws):
     """
     Solve
+
     .. math::
 
-        \\text{argmin}_s \\|s\\|_0 \
-        \\text{subject to} \\|w - psi s\\|_2^2 \\leq tol
+        \\text{argmin}_s \\|s\\|_0 \\\\
+        \\text{subject to} \\|w - \\psi s\\|_2^2 \\leq tol
     """
     model = MultiTaskLasso(alpha=alpha, **lasso_kws)
     model.fit(psi, w)

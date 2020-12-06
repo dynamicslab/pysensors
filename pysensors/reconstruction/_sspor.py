@@ -26,6 +26,12 @@ class SSPOR(BaseEstimator):
     One can then select the top k sensors and take future measurements at
     that limited set of locations.
 
+    The overall time complexity of fitting a :class:`SSPOR` object is
+    :code:`O(n_basis_modes * n_input_features * n_input_features)`
+    plus the cost for fitting the basis. Different bases have different
+    complexities. The space complexity is
+    :code:`O(n_basis_modes * n_input_features)`.
+
     Parameters
     ----------
     basis: basis object, optional (default :class:`pysensors.basis.Identity`)

@@ -38,6 +38,35 @@ class SSPOC(BaseEstimator):
     As the name suggests, this class can be used to select optimal sensor
     locations (measurement locations) for classification tasks.
 
+    The time complexity of the SSPOC algorithm can be decomposed as
+
+    .. math::
+
+        C_{total} = C_{basis} + C_{classification} + C_{optimization}
+
+    * :math:`C_{basis}`: the complexity of fitting the selected basis object
+      and producing the matrix inverse. The matrix inverse is "free" to compute
+      for :class:`pysensors.basis.Identity` and :class:`pysensors.basis.SVD`.
+      For :class:`pysensors.basis.RandomProjection` the complexity is that
+      of calling :code:`numpy.linalg.pinv` on a matrix of size
+      :code:`n_input_features * n_basis_modes`.
+    * :math:`C_{classification}`: the cost of fitting the chosen classifier
+      to :code:`n_examples` examples with :code:`n_basis_modes` features.
+    * :math:`C_{optimization}`: the cost of solving the sensor optimization
+      problem. For binary classification we use
+      :code:`sklearn.linear_model.OrthogonalMatchingPursuit`.
+      For multi-class classification we use
+      :code:`sklearn.linear_model.MultiTaskLasso`.
+      The costs for each depend on the fit options that are specified.
+      In both cases there are :code:`n_basis_modes` examples
+      with :code:`n_features` features.
+
+    The space complexity likewise depends on the same three factors.
+    Generally, the basis requires :code:`O(n_basis_modes * n_features)`
+    space. The space requirements for classification and optimization depend
+    on the particular algorithms being employed. See the Scikit-learn
+    documentation for specifics.
+
     See the following reference for more information:
 
         Brunton, Bingni W., et al.

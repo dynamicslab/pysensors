@@ -6,6 +6,9 @@ from ._qr import QR
 class CCQR(QR):
     """
     Greedy cost-constrained QR optimizer for sensor selection.
+    Ranks sensors in descending order of "importance" based on
+    reconstruction performance and sensor cost. Uses a cost-sensitive
+    version of the QR algorithm.
 
     This method is based on the following work:
 
@@ -46,8 +49,7 @@ class CCQR(QR):
         self.sensor_costs = sensor_costs
 
     def fit(
-        self,
-        basis_matrix,
+        self, basis_matrix,
     ):
         """
         Parameters

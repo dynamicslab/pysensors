@@ -49,7 +49,8 @@ class CCQR(QR):
         self.sensor_costs = sensor_costs
 
     def fit(
-        self, basis_matrix,
+        self,
+        basis_matrix,
     ):
         """
         Parameters

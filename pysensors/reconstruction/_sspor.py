@@ -414,7 +414,9 @@ class SSPOR(BaseEstimator):
             )
         else:
             return score_function(
-                x, self.predict(x[:, sensors], **solve_kws), **score_kws,
+                x,
+                self.predict(x[:, sensors], **solve_kws),
+                **score_kws,
             )
 
     def reconstruction_error(self, x_test, sensor_range=None, score=None, **solve_kws):

@@ -173,7 +173,13 @@ class SSPOC(BaseEstimator):
         self.n_basis_modes = None
 
     def fit(
-        self, x, y, quiet=False, prefit_basis=False, refit=True, **optimizer_kws,
+        self,
+        x,
+        y,
+        quiet=False,
+        prefit_basis=False,
+        refit=True,
+        **optimizer_kws,
     ):
         """
         Fit the SSPOC model, determining which sensors are relevant.

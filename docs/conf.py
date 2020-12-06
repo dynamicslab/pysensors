@@ -26,7 +26,7 @@ extensions = [
 ]
 
 apidoc_module_dir = f"../{project}"
-apidoc_excluded_paths = ["tests"]
+apidoc_excluded_paths = ["tests", "version.py"]
 apidoc_toc_file = False
 
 autodoc_default_options = {"members": True}

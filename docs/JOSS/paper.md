@@ -35,7 +35,7 @@ bibliography: paper.bib
 Successful predictive modeling and control of engineering and natural processes is often entirely determined by *in situ* measurements and feedback from sensors [@Brunton2019book]. 
 However, deploying sensors into complex environments, including in application areas such as manufacturing [@Manohar2018jms], geophysical environments [@Yildirim:2009], and biological processes [@colvert2017local;@Mohren2018pnas], is often expensive and challenging. 
 Furthermore, modeling outcomes are extremely sensitive to the location and number of these sensors, motivating optimization strategies for the principled placement of  sensors for different decision-making tasks. 
-In general, choosing the globally optimal placement within the search space of a large-scale complex system is an intractable computation, in which the number of possible placements grows exponentially with the number of candidates. 
+In general, choosing the globally optimal placement within the search space of a large-scale complex system is an intractable computation, in which the number of possible placements grows combinatorially with the number of candidates [@ko1995exact]. 
 While sensor placement has traditionally been guided by expert knowledge and first principles models, increases in system complexity, emerging sensor technologies, and innovations in data-driven modeling strategies motivates automated algorithms for optimizing sensor placements.
 
 `PySensors` is a Python package for the scalable optimization of sensor placement from data. In particular, `PySensors` provides tools for sparse sensor placement optimization approaches that employ data-driven dimensionality reduction  [@brunton2016sparse;@manohar2018data]. This approach results in near-optimal placements for various decision-making tasks and can be readily customized using different optimization algorithms and objective functions.
@@ -46,14 +46,19 @@ At the same time, modular classes leave flexibility for users to experiment with
 Users of `scikit-learn` will find `PySensors` objects familiar, intuitive, and compatible with existing `scikit-learn` routines such as cross-validation [@scikit-learn].
 
 # Statement of need
-Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists and engineers across various domains and at various levels of mathematical expertise and sophistication.
-The only other package in this domain of which we are aware is `Chama` [@klise2017sensor]. While both `Chama` and `PySensors` enable sparse sensor placement optimization, `Chama` is geared towards detection whereas `PySensors` is aimed at reconstruction and classification tasks.
-As such, there are marked differences in the objective functions optimized by the two packages.
+Maximizing the impact of sensor placement algorithms requires tools to make them accessible to scientists and engineers across various domains and at various levels of mathematical expertise and sophistication. `PySensors` unifies the algorithms developed in the papers [@manohar2018data;@clark2018greedy;@brunton2016sparse] and their accompanying codes `SSPOR_pub` and `SSPOC_pub` into one software package. The only other packages in this domain of which we are aware are `Chama` [@klise2017sensor] and `Polire` [@narayanan2020toolkit]. While these packages and `PySensors` all enable sparse sensor placement optimization, `Chama` and `Polire` are geared towards detection and Gaussian process models respectively, whereas `PySensors` is aimed at reconstruction and classification tasks.
+As such, there are marked differences in the objective functions optimized by `PySensors` and its precursors.
 
 Reconstruction and classification tasks often arise in the modeling, prediction, and control of complex processes in geophysics, fluid dynamics, biology, and manufacturing. 
-The goal of reconstruction is to estimate high-dimensional signals $\mathbf{x}$ (bold symbols denote vectors) from linear measurements stored in a vector $\mathbf{y} = \mathbf{Cx}$. Each measurement $y_i = \mathbf{c}_i^\top \mathbf{x}$ results from the action of available sensors $\mathbf{c}_i$, which are collected in the measurement operator $\mathbf{C}$.
-Sensor placement optimization seeks the subset of available sensors that minimizes reconstruction error in the objective function
-$J(\mathbf{C})= \|\mathbf{x} - \mathbf{P}(\mathbf{C}, \mathbf{\Phi}) \mathbf{y}\|^2$, where $\mathbf{P}(\mathbf{C},\mathbf{\Phi})$ is the reconstruction map and $\mathbf{\Phi}$ is a dimensionality reducing transformation. `PySensors` exploits dimensionality reduction techniques such as principal component analysis and random projections to build the reconstruction map, and reduces sensor placement optimization to a matrix pivoting algorithm. Sensor placement for classification uses a similar objective function based on reconstructing decision boundaries between classes in a lower-dimensional space. 
+The goal of reconstruction is to recover a high-dimensional signal $\mathbf{x}\in\mathbb{R}^N$ from a limited number of $p$ measurements $\mathbf{y}_ i = \mathbf{c}_ i^T \mathbf{x}$, where each $\mathbf{c}_ i$ represents the action of a sensor. `PySensors` optimizes a set of $p$ sensors out of $N$ candidate $\mathbf{c}_ i^T$ (rows of a measurement matrix $\mathbf{C}:\mathbf{y} = \mathbf{Cx}$) that minimize reconstruction error in a data-dependent basis $\mathbf{\Phi}\in\mathbb{R}^{N\times r}$
+$$  \mathbf{C}_ \star=  \underset{\mathbf{C}\in\mathbb{R}^{p\times N}}{\arg\min} \|\mathbf{x} - \mathbf{\Phi}(\mathbf{C\Phi})^{\dagger} \mathbf{y}\|_ 2^2, $$
+where $\dagger$ denotes the Moore-Penrose pseudoinverse. The key innovation is that the reconstruction map $\mathbf{\Phi}(\mathbf{C\Phi})^{\dagger}$ first recovers the low-dimensional representation $\mathbf{x}_ r: \mathbf{x} = \mathbf{\Phi x}_ r$, ultimately reducing sensor placement to a matrix pivoting operation [@manohar2018data]. The basis $\mathbf{\Phi}$ is explicitly computed from the data using powerful dimensionality reduction techniques: principal components analysis (PCA) and random projections. PCA extracts the dominant spatial correlations or _principal components_, which are the leading eigenvectors of the data covariance matrix. It is computed using the matrix singular value decomposition (SVD) and is closely related to proper orthogonal decompostion; POD modes and principal components are equivalent. 
+Other basis choices are possible, such as dynamic mode decomposition for extracting temporally correlated features [@manohar2019optimized].
+Similarly, sensor placement for classification [@brunton2016sparse] optimizes the sparsest vector $\mathbf{s}_ \star$ that reconstructs interclass decision boundaries $\mathbf{w}: \mathbf{\Phi}^T\mathbf{s} = \mathbf{w}$ in the low-dimensional feature space.
+In this case, the optimal sensor locations are determined by the nonzero components of $\mathbf{s}_ \star$.
+
+
+
 
 
 # Features
@@ -68,9 +73,9 @@ The algorithm is related to compressed sensing optimization [@Candes2006cpam;@Do
 This SSPOC implementation is fully general in the sense that it can be used in conjunction with any linear classifier. 
 Additionally, `PySensors` provides methods to enable straightforward exploration of the impacts of primary hyperparameters like the number of sensors or basis modes.
 
-It is well known [@manohar2018data] that the basis in which one represents measurement data can have a pronounced effect on the sensors that are selected and the quality of the reconstruction.
-Users can readily switch between different bases typically employed for sparse sensor selection, including principal component analysis (PCA) modes and random projections.
-Because `PySensors` was built with `scikit-learn` compatibility in mind, it is easy to use cross-validation to select among possible choices of bases, basis modes, and other hyper-parameters.
+It is well known [@manohar2018data] that the basis in which one represents measurement data can have a pronounced effect on the sensors that are selected and the quality of the reconstruction. 
+Users can readily switch between different bases typically employed for sparse sensor selection, including POD modes and random projections.
+Because `PySensors` was built with `scikit-learn` compatibility in mind, it is easy to use cross-validation to select among possible choices of bases, basis modes, and other hyperparameters.
 
 Finally, included with `PySensors` is a large suite of examples, implemented as Jupyter notebooks.
 Some of the examples are written in a tutorial format and introduce new users to the objects, methods, and syntax of the package.

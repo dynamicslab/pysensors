@@ -32,9 +32,9 @@ bibliography: paper.bib
 
 # Summary
 
-Successful predictive modeling and control of engineering and natural processes is often entirely determined by *in situ* measurements and feedback from sensors [@Brunton2019book]. 
+Successful predictive modeling and control of engineering and natural processes is often entirely determined by *in situ* measurements and feedback from sensors [@Brunton2019book], which provide measurements of the state of these processes at specific points in space and time.
 However, deploying sensors into complex environments, including in application areas such as manufacturing [@Manohar2018jms], geophysical environments [@Yildirim:2009], and biological processes [@colvert2017local;@Mohren2018pnas], is often expensive and challenging. 
-Furthermore, modeling outcomes are extremely sensitive to the location and number of these sensors, motivating optimization strategies for the principled placement of  sensors for different decision-making tasks. 
+Furthermore, modeling outcomes are extremely sensitive to the location and number of these sensors, motivating optimization strategies for the principled placement of sensors for different decision-making tasks.
 In general, choosing the globally optimal placement within the search space of a large-scale complex system is an intractable computation, in which the number of possible placements grows combinatorially with the number of candidates [@ko1995exact]. 
 While sensor placement has traditionally been guided by expert knowledge and first principles models, increases in system complexity, emerging sensor technologies, and innovations in data-driven modeling strategies motivates automated algorithms for optimizing sensor placements.
 

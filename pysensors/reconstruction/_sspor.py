@@ -349,7 +349,7 @@ class SSPOR(BaseEstimator):
             and n_basis_modes <= self.basis.n_basis_modes
         ):
             self.n_basis_modes = n_basis_modes
-            self.fit(x, prefit_basis=True)
+            self.fit(x, prefit_basis=True, quiet=quiet)
 
         elif x is None:
             raise ValueError(

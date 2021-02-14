@@ -25,7 +25,7 @@ affiliations:
    index: 3
  - name: Department of Biology, University of Washington
    index: 4
-date: 24 October 2020
+date: 13 February 2021
 bibliography: paper.bib
 ---
 
@@ -52,10 +52,10 @@ In addition to these two packages, researchers and practitioners have made avail
 Currently, researchers seeking to employ modern sensor placement methods must choose between implementing them from scratch or manually augmenting existing unpolished codes.
 
 Reconstruction and classification tasks often arise in the modeling, prediction, and control of complex processes in geophysics, fluid dynamics, biology, and manufacturing. 
-The goal of reconstruction is to recover a high-dimensional signal $\mathbf{x}\in\mathbb{R}^N$ from a limited number of $p$ measurements $\mathbf{y}_ i = \mathbf{c}_ i^\top \mathbf{x}$, where each $\mathbf{c}_ i$ represents the action of a sensor. `PySensors` optimizes a set of $p$ sensors out of $N$ candidates $\mathbf{c}_ i^\top$ (rows of a measurement matrix $\mathbf{C}:\mathbf{y} = \mathbf{Cx}$) that minimize reconstruction error in a data-dependent basis $\mathbf{\Phi}\in\mathbb{R}^{N\times r}$
-$$  \mathbf{C}_ \star=  \underset{\mathbf{C}\in\mathbb{R}^{p\times N}}{\arg\min} \|\mathbf{x} - \mathbf{\Phi}(\mathbf{C\Phi})^{\dagger} \mathbf{y}\|_ 2^2, $$
-where $\dagger$ denotes the Moore-Penrose pseudoinverse. The key innovation is to recover the low-dimensional representation $\mathbf{x}_ r: \mathbf{x} = \mathbf{\Phi x}_ r$ via the reconstruction map $\mathbf{\Phi}(\mathbf{C\Phi})^{\dagger}$, ultimately reducing sensor placement to a highly efficient matrix pivoting operation [@manohar2018data]. Similarly, sensor placement for classification [@brunton2016sparse] optimizes the sparsest vector $\mathbf{s}_ \star$ that reconstructs interclass decision boundaries $\mathbf{w}: \mathbf{\Phi}^\top\mathbf{s} = \mathbf{w}$ in the low-dimensional feature space.
-In this case, the optimal sensor locations are determined by the nonzero components of $\mathbf{s}_ \star$.
+The goal of _reconstruction_ is to recover a high-dimensional signal $\mathbf{x}\in\mathbb{R}^N$ from a limited number of $p$ measurements $y_ i = \mathbf{c}_ i^\top \mathbf{x}$, where each $\mathbf{c}_ i \in \mathbb{R}^N$ represents the action of a sensor. For example, $\mathbf{c}_ i^\top = [1, 0, 0, \dots, 0]$ represents a sensor which takes a point measurement of the first dimension of the signal $\mathbf{x}$.  `PySensors` selects a set of $p$ sensors out of $N$ candidates $\mathbf{c}_ i^\top$ (rows of a measurement matrix $\mathbf{C}:\mathbf{y} = \mathbf{Cx}$) that minimize reconstruction error in a data-dependent basis $\mathbf{\Phi}\in\mathbb{R}^{N\times r}$
+$$  \mathbf{C}^ \star=  \underset{\mathbf{C}\in\mathbb{R}^{p\times N}}{\arg\min} \|\mathbf{x} - \mathbf{\Phi}(\mathbf{C\Phi})^{\dagger} \mathbf{y}\|_ 2^2, $$
+where $\dagger$ denotes the Moore-Penrose pseudoinverse. The key innovation is to recover the low-dimensional representation $\mathbf{x}_ r \in \mathbb{R}^r$ satisfying $\mathbf{x} = \mathbf{\Phi x}_ r$ via the reconstruction map $\mathbf{\Phi}(\mathbf{C\Phi})^{\dagger}$, ultimately reducing sensor placement to a highly efficient matrix pivoting operation [@manohar2018data]. Similarly, sensor placement for _classification_ [@brunton2016sparse] optimizes the sparsest vector $\mathbf{s}^ \star$ that reconstructs $\mathbf{w}: \mathbf{\Phi}^\dagger\mathbf{s} = \mathbf{w}$ in the low-dimensional feature space, where $\mathbf{w}$ is the the set of weights learned by a linear classifier fit to $\mathbf{x}_ r$.
+In this case, the optimal sensor locations are determined by the nonzero components of $\mathbf{s}^ \star$.
 
 The basis $\mathbf{\Phi}$ is explicitly computed from the data using powerful dimensionality reduction techniques such as principal components analysis (PCA) and random projections, which enable significant compression of most signals to $r\ll N$ dimensions. PCA extracts the dominant spatial correlations or _principal components_, the leading eigenvectors of the data covariance matrix. It is computed using the matrix singular value decomposition (SVD) and is closely related to proper orthogonal decomposition (POD); POD modes and principal components are equivalent. 
 Other basis choices are possible, such as dynamic mode decomposition for extracting temporally correlated features [@manohar2019optimized].

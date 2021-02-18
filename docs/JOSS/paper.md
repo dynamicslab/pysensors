@@ -6,16 +6,21 @@ tags:
 authors:
   - name: Brian M. de Silva
     affiliation: 1
+    orcid: 0000-0003-0944-900X
   - name: Krithika Manohar
     affiliation: 2
+    orcid: 0000-0002-1582-6767
   - name: Emily Clark
     affiliation: 3
   - name: Bingni W. Brunton
     affiliation: 4
+    orcid: 0000-0002-4831-3466
   - name: J. Nathan Kutz
     affiliation: 1
+    orcid: 0000-0002-6004-2275
   - name: Steven L. Brunton
     affiliation: 2
+    orcid: 0000-0002-6565-5118
 affiliations:
  - name: Department of Applied Mathematics, University of Washington
    index: 1

@@ -15,12 +15,12 @@ authors:
   - name: Bingni W. Brunton
     affiliation: 4
     orcid: 0000-0002-4831-3466
-  - name: J. Nathan Kutz
-    affiliation: 1
-    orcid: 0000-0002-6004-2275
   - name: Steven L. Brunton
     affiliation: 2
     orcid: 0000-0002-6565-5118
+  - name: J. Nathan Kutz
+    affiliation: 1
+    orcid: 0000-0002-6004-2275
 affiliations:
  - name: Department of Applied Mathematics, University of Washington
    index: 1

@@ -1,6 +1,6 @@
 PySensors
 =========
-|Build| |RTD| |PyPI| |Codecov| |Binder| |Zenodo|
+|Build| |RTD| |PyPI| |Codecov| |Binder| |JOSS| |Zenodo|
 
 **PySensors** is a Scikit-learn style Python package for the sparse placement of sensors, either for reconstruction or classification tasks.
 
@@ -192,6 +192,34 @@ Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you find a bug in the code or want to request a new feature, please open an issue.
 
+Citing PySensors
+----------------
+We have published a short paper in the Journal of Open Source Software (JOSS). You can find the paper [here](https://joss.theoj.org/papers/10.21105/joss.02828).
+
+If you use PySensors in your work, please consider citing it using:
+
+.. code-block:: text
+
+    de Silva et al., (2021). PySensors: A Python package for sparse sensor placement. Journal of Open Source Software, 6(58), 2828, https://doi.org/10.21105/joss.02828``
+
+Bibtex:
+
+.. code-block:: text
+
+  @article{de Silva2021,
+    doi = {10.21105/joss.02828},
+    url = {https://doi.org/10.21105/joss.02828},
+    year = {2021},
+    publisher = {The Open Journal},
+    volume = {6},
+    number = {58},
+    pages = {2828},
+    author = {Brian M. de Silva and Krithika Manohar and Emily Clark and Bingni W. Brunton and J. Nathan Kutz and Steven L. Brunton},
+    title = {PySensors: A Python package for sparse sensor placement},
+    journal = {Journal of Open Source Software}
+  }
+
+
 References
 ------------
 -  Manohar, Krithika, Bingni W. Brunton, J. Nathan Kutz, and Steven L. Brunton.
@@ -225,6 +253,9 @@ References
 
 .. |Binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/master
+
+.. |JOSS| image:: https://joss.theoj.org/papers/10.21105/joss.02828/status.svg
+    :target: https://doi.org/10.21105/joss.02828
     
 .. |Zenodo| image:: https://zenodo.org/badge/260577702.svg
     :target: https://zenodo.org/badge/latestdoi/260577702

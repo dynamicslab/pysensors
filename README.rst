@@ -15,7 +15,11 @@ some task nearly as well as if one had access to measurements at *every*
 location.
 
 PySensors provides objects designed for the tasks of *reconstruction* and
-*classification*.
+*classification*. See Manohar et al. (2018) for more information about
+the PySensors approach to reconstruction problems and Brunton et al.
+(2016) for classification. de Silva et al. (2021) contains a full
+literature review along with examples and additional tips for
+using PySensors effectively.
 
 
 Reconstruction
@@ -194,7 +198,7 @@ If you find a bug in the code or want to request a new feature, please open an i
 
 Citing PySensors
 ----------------
-We have published a short paper in the Journal of Open Source Software (JOSS). You can find the paper [here](https://joss.theoj.org/papers/10.21105/joss.02828).
+We have published a short paper in the Journal of Open Source Software (JOSS). You can find the paper `here  <https://joss.theoj.org/papers/10.21105/joss.02828>`__.
 
 If you use PySensors in your work, please consider citing it using:
 
@@ -222,6 +226,11 @@ Bibtex:
 
 References
 ------------
+-  de Silva, Brian M., Krithika Manohar, Emily Clark, Bingni W. Brunton,
+   Steven L. Brunton, J. Nathan Kutz.
+   "PySensors: A Python package for sparse sensor placement."
+   arXiv preprint arXiv:2102.13476 (2021). `[arXiv] <https://arxiv.org/abs/2102.13476>`__
+
 -  Manohar, Krithika, Bingni W. Brunton, J. Nathan Kutz, and Steven L. Brunton.
    "Data-driven sparse sensor placement for reconstruction: Demonstrating the
    benefits of exploiting known patterns."

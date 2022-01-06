@@ -171,6 +171,7 @@ class SSPOC(BaseEstimator):
         self.threshold = threshold
         self.l1_penalty = l1_penalty
         self.n_basis_modes = None
+        self.refit_ = False
 
     def fit(
         self,

@@ -6,6 +6,7 @@ This is essentially a dummy basis which just uses raw, unaltered features.
 from warnings import warn
 
 from numpy import identity
+import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
@@ -52,7 +53,8 @@ class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):
         -------
         self : instance
         """
-
+        # Store original data
+        self.original_data = X
         # Note that we take a transpose here, so columns correspond to examples
         if self.n_basis_modes is None:
             self.basis_matrix_ = check_array(X).T.copy()
@@ -65,10 +67,10 @@ class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):
                     )
                 )
 
-            self.basis_matrix_ = check_array(X)[: self.n_basis_modes, :].T.copy()
+            self.basis_matrix_ = np.eye(X.shape[1])[:,:self.n_basis_modes] #check_array(X)[: self.n_basis_modes, :].T.copy()
 
-            if self.n_basis_modes < X.shape[0]:
-                warn(f"Only the first {self.n_basis_modes} examples were retained.")
+            # if self.n_basis_modes < X.shape[0]:
+            #     warn(f"Only the first {self.n_basis_modes} examples were retained.")
         return self
 
     def matrix_inverse(self, n_basis_modes=None):

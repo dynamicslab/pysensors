@@ -11,7 +11,7 @@ from sklearn import metrics
 from sklearn.model_selection import train_test_split
 
 import pysensors as ps
-# from ..pysensors.optimizers._ccqr import CCQR
+# from pysensors.optimizers._ccqr import CCQR
 
 
 # In[2]:
@@ -70,8 +70,8 @@ n_features = X.shape[1]
 
 #Find all sensor locations using built in QR optimizer
 max_const_sensors = 230
-n_const_sensors = 10
-n_sensors = 405
+n_const_sensors = 0
+n_sensors = 399
 optimizer  = ps.optimizers.QR()
 model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
 model.fit(X)
@@ -84,7 +84,7 @@ print(all_sensors)
 
 
 #Define Constrained indices
-a = np.unravel_index(all_sensors, (64,64))
+a = np.unravel_index(all_sensors, (imageSize,imageSize))
 print(a)
 a_array = np.transpose(a)
 print(a_array.shape)
@@ -111,7 +111,7 @@ constrained_sensors_tuple = np.transpose(constrained_sensors_array)
 
 #print(constrained_sensors_tuple)
 #print(len(constrained_sensors_tuple))
-idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (64,64))
+idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (imageSize,imageSize))
 
 #print(len(idx_constrained))
 #print(constrained_sensorsx)
@@ -174,7 +174,7 @@ class GQR(QR):
 
     def fit(
         self,
-        basis_matrix, idx_constrained, const_sensors,
+        basis_matrix, idx_constrained, const_sensors
     ):
         """
         Parameters
@@ -278,12 +278,9 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
 
         didx = np.isin(piv[j:],lin_idx,invert=True)
         dlens[didx] = 0
-
-    # otherwise don't do anything
     else:
         didx = np.isin(piv[j:],lin_idx,invert=False)
         dlens[didx] = 0
-         #dlens[lin_idx-j] = 0
     return dlens
 
 
@@ -304,23 +301,14 @@ print(all_sensors1[:n_const_sensors])
 
 print(np.array_equal(np.sort(all_sensors),np.sort(all_sensors1)))
 
-
-# In[11]:
-
-
-# xmin = 40
-# xmax = 64
-# ymin = 0
-# ymax = 10
-
-
 # In[12]:
 
 
 top_sensors = model1.get_selected_sensors()
-imageSize = X.shape[1]
-yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(imageSize))
-xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(imageSize))
+print(top_sensors)
+## TODO: this can be done using ravel and unravel more elegantly
+yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(n_features))
+xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(n_features))
 
 img = np.zeros(n_features)
 img[top_sensors[n_const_sensors:]] = 16

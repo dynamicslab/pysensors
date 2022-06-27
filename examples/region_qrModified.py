@@ -70,8 +70,8 @@ n_features = X.shape[1]
 
 #Find all sensor locations using built in QR optimizer
 max_const_sensors = 230
-n_const_sensors = 0
-n_sensors = 399
+n_const_sensors = 2
+n_sensors = 20
 optimizer  = ps.optimizers.QR()
 model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
 model.fit(X)

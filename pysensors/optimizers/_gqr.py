@@ -84,7 +84,7 @@ class GQR(QR):
             # Norm of each column
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             dlens_updated = f_region(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors) #Handling constrained region sensor placement problem
-            
+
             # Choose pivot
             i_piv = np.argmax(dlens_updated)
           
@@ -151,7 +151,16 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
         dlens[didx] = 0
     return dlens
 
-def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, all_sensors):
+    # a = np.isin(piv[j],lin_idx)
+    
+    # if  np.count_nonzero(a) < const_sensors:
+    #     dlens = dlens 
+    # else: 
+    #     didx = np.isin(piv[j:],lin_idx,invert=False)
+    #     dlens[didx] = 0
+    # return dlens
+
+def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
     """
     Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
 
@@ -175,7 +184,7 @@ def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, all_sensors):
     """
     n_features = len(all_sensors)
     imageSize = int(np.sqrt(n_features))
-    a = np.unravel_index(all_sensors, (imageSize,imageSize))
+    a = np.unravel_index(all_sensors, (nx,ny))
     constrained_sensorsx = []
     constrained_sensorsy = []
     for i in range(n_features):
@@ -190,7 +199,17 @@ def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, all_sensors):
     if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
         idx_constrained = []
     else:
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (imageSize,imageSize))
+        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
+    return idx_constrained
+
+def getConstrainedSensorsIndicesLinear(xmin,xmax,ymin,ymax,df):
+    x = df['X (m)'].to_numpy()
+    n_features = x.shape[0]
+    y = df['Y (m)'].to_numpy()
+    idx_constrained = []
+    for i in range(n_features):
+        if (x[i] >= xmin and x[i] <= xmax) and (y[i] >= ymin and y[i] <= ymax):
+            idx_constrained.append(i)
     return idx_constrained
 
 def boxConstraints(position,lowerBound,upperBound,):
@@ -222,6 +241,8 @@ if __name__ == '__main__':
     n_row, n_col = 2, 3
     n_components = n_row * n_col
     image_shape = (64, 64)
+    nx = 64
+    ny = 64
 
     def plot_gallery(title, images, n_col=n_col, n_row=n_row, cmap=plt.cm.gray):
         '''Function for plotting faces'''
@@ -241,8 +262,8 @@ if __name__ == '__main__':
 
     #Find all sensor locations using built in QR optimizer
     max_const_sensors = 230
-    n_const_sensors = 7
-    n_sensors = 50
+    n_const_sensors = 2
+    n_sensors = 200
     optimizer  = ps.optimizers.QR()
     model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
     model.fit(X)
@@ -254,7 +275,12 @@ if __name__ == '__main__':
     xmax = 40
     ymin = 25
     ymax = 45
-    sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,all_sensors) #Constrained column indices 
+    sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices 
+
+    # didx = np.isin(all_sensors,sensors_constrained,invert=False)
+    # const_index = np.nonzero(didx)
+    # j = 
+
 
     ##Plotting the constrained region
     # ax = plt.subplot()

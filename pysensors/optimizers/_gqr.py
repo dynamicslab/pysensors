@@ -27,7 +27,7 @@ class GQR(QR):
 
     @ authors: Niharika Karnik (@nkarnik2999), Mohammad Abdo (@Jimmy-INL), and Krithika Manohar (@kmanohar)
     """
-    def __init__(self,idx_constrained,n_sensors,const_sensors):
+    def __init__(self,idx_constrained,n_sensors,const_sensors,all_sensors):
         """
         Attributes
         ----------
@@ -44,6 +44,7 @@ class GQR(QR):
         self.constrainedIndices = idx_constrained
         self.nSensors = n_sensors
         self.nConstrainedSensors = const_sensors
+        self.all_sensorloc = all_sensors
 
     def fit(
         self,
@@ -83,7 +84,7 @@ class GQR(QR):
             r = R[j:, j:]
             # Norm of each column
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
-            dlens_updated = f_region(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors) #Handling constrained region sensor placement problem
+            dlens_updated = f_region_optimal(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors,self.all_sensorloc,self.nSensors) #Handling constrained region sensor placement problem
 
             # Choose pivot
             i_piv = np.argmax(dlens_updated)
@@ -151,14 +152,21 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
         dlens[didx] = 0
     return dlens
 
-    # a = np.isin(piv[j],lin_idx)
-    
-    # if  np.count_nonzero(a) < const_sensors:
-    #     dlens = dlens 
-    # else: 
-    #     didx = np.isin(piv[j:],lin_idx,invert=False)
-    #     dlens[didx] = 0
-    # return dlens
+def f_region_optimal(lin_idx, dlens, piv, j, const_sensors,all_sensors,n_sensors):
+    counter = 0
+    mask = np.isin(all_sensors,lin_idx,invert=False)
+    const_idx = all_sensors[mask]
+    updated_lin_idx = const_idx[const_sensors:]
+    for i in range(n_sensors):
+        if np.isin(all_sensors[i],lin_idx,invert=False):
+            counter += 1
+            if counter < const_sensors:
+                dlens = dlens
+            else:
+                didx = np.isin(piv[j:],updated_lin_idx,invert=False)
+                dlens[didx] = 0
+    return dlens
+
 
 def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
     """
@@ -167,13 +175,13 @@ def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
     Parameters
         ----------
         xmin: int, 
-            "Fill"
+            Lower bound for the x-axis constraint
         xmax : int,
-            "Fill"
+            Upper bound for the x-axis constraint
         ymin : int,
-            "Fill"
+            Lower bound for the y-axis constraint
         ymax : int
-            "Fill"
+            Upper bound for the y-axis constraint
         all_sensors : np.ndarray, shape [n_features]
             Ranked list of sensor locations.
 
@@ -296,7 +304,7 @@ if __name__ == '__main__':
     # plt.title('Constrained region');
 
     ## Fit the dataset with the optimizer GQR
-    optimizer1 = GQR(sensors_constrained,n_sensors,n_const_sensors)
+    optimizer1 = GQR(sensors_constrained,n_sensors,n_const_sensors,all_sensors)
     model1 = ps.SSPOR(optimizer = optimizer1, n_sensors = n_sensors)
     model1.fit(X)
     all_sensors1 = model1.get_all_sensors()
@@ -304,12 +312,12 @@ if __name__ == '__main__':
     top_sensors = model1.get_selected_sensors()
     print(top_sensors)
     ## TODO: this can be done using ravel and unravel more elegantly
-    yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(n_features))
-    xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(n_features))
+    #yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(n_features))
+    #xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(n_features))
 
     img = np.zeros(n_features)
-    img[top_sensors[n_const_sensors:]] = 16
-    plt.plot(xConstrained,yConstrained,'*r')
+    img[top_sensors] = 16
+    #plt.plot(xConstrained,yConstrained,'*r')
     plt.plot([xmin,xmin],[ymin,ymax],'r')
     plt.plot([xmin,xmax],[ymax,ymax],'r')
     plt.plot([xmax,xmax],[ymin,ymax],'r')

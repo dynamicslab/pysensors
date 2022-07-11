@@ -35,7 +35,7 @@ class GQR(QR):
             Ranked list of sensor locations.
         idx_constrained : np.ndarray, shape [No. of constrained locations]
             Column Indices of the sensors in the constrained locations.
-        n_sensors : integer, 
+        n_sensors : integer,
             Total number of sensors
         const_sensors : integer,
             Total number of sensors required by the user in the constrained region.
@@ -88,7 +88,7 @@ class GQR(QR):
 
             # Choose pivot
             i_piv = np.argmax(dlens_updated)
-          
+
             dlen = dlens_updated[i_piv]
 
             if dlen > 0:
@@ -174,7 +174,7 @@ def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
 
     Parameters
         ----------
-        xmin: int, 
+        xmin: int,
             Lower bound for the x-axis constraint
         xmax : int,
             Upper bound for the x-axis constraint
@@ -187,7 +187,7 @@ def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
 
         Returns
         -------
-        idx_constrained : np.darray, shape [No. of constrained locations] 
+        idx_constrained : np.darray, shape [No. of constrained locations]
             Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
     """
     n_features = len(all_sensors)
@@ -232,7 +232,6 @@ def functionalConstraint(position, func_response,func_input, freeTerm):
 
 
 if __name__ == '__main__':
-    pass
     faces = datasets.fetch_olivetti_faces(shuffle=True)
     X = faces.data
 
@@ -278,16 +277,16 @@ if __name__ == '__main__':
 
     all_sensors = model.get_all_sensors()
 
-    ##Constrained sensor location on the grid: 
+    ##Constrained sensor location on the grid:
     xmin = 20
     xmax = 40
     ymin = 25
     ymax = 45
-    sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices 
+    sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices
 
     # didx = np.isin(all_sensors,sensors_constrained,invert=False)
     # const_index = np.nonzero(didx)
-    # j = 
+    # j =
 
 
     ##Plotting the constrained region

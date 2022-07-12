@@ -71,8 +71,8 @@ class GQR(QR):
         if self.nSensors > n_features - max_const_sensors + self.nConstrainedSensors:
             raise IOError ("n_sensors cannot be larger than n_features - all possible locations in the constrained area + allowed constrained sensors")
         if self.nSensors > n_samples + self.nConstrainedSensors: ## Handling zero constraint?
-            raise IOError ("Currently n_sensors should be less than number of samples + number of constrained sensors,\
-                           got: n_sensors = {}, n_samples + const_sensors = {} + {} = {}".format(n_sensors,n_samples,self.nConstrainedSensors,n_samples+self.nConstrainedSensors))
+            raise IOError ("Currently n_sensors should be less than min(number of samples, number of modes) + number of constrained sensors,\
+                           got: n_sensors = {}, n_samples + const_sensors = {} + {} = {}".format(self.nSensors,n_samples,self.nConstrainedSensors,n_samples+self.nConstrainedSensors))
 
         # Initialize helper variables
         R = basis_matrix.conj().T.copy()
@@ -85,6 +85,7 @@ class GQR(QR):
             # Norm of each column
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             dlens_updated = f_region_optimal(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors,self.all_sensorloc,self.nSensors) #Handling constrained region sensor placement problem
+            #dlens_updated = f_region(self.constrainedIndices,dlens,p,j,self.nConstrainedSensors)
 
             # Choose pivot
             i_piv = np.argmax(dlens_updated)

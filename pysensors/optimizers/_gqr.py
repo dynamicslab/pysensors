@@ -41,6 +41,7 @@ class GQR(QR):
             Total number of sensors required by the user in the constrained region.
         """
         self.pivots_ = None
+        self.optimality = None
         self.constrainedIndices = idx_constrained
         self.nSensors = n_sensors
         self.nConstrainedSensors = const_sensors
@@ -112,7 +113,8 @@ class GQR(QR):
             R[j + 1 :, j] = 0
 
         self.pivots_ = p
-
+        self.optimality = np.trace(np.real(R))
+        print("The trace(R) = {}".format(self.optimality))
 
         return self
 

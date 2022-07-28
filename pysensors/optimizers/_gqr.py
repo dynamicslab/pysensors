@@ -27,7 +27,7 @@ class GQR(QR):
 
     @ authors: Niharika Karnik (@nkarnik2999), Mohammad Abdo (@Jimmy-INL), and Krithika Manohar (@kmanohar)
     """
-    def __init__(self,idx_constrained,n_sensors,const_sensors,all_sensors):
+    def __init__(self,idx_constrained,n_sensors,n_const_sensors,all_sensors):
         """
         Attributes
         ----------
@@ -37,14 +37,14 @@ class GQR(QR):
             Column Indices of the sensors in the constrained locations.
         n_sensors : integer,
             Total number of sensors
-        const_sensors : integer,
+        n_const_sensors : integer,
             Total number of sensors required by the user in the constrained region.
         """
         self.pivots_ = None
         self.optimality = None
         self.constrainedIndices = idx_constrained
         self.nSensors = n_sensors
-        self.nConstrainedSensors = const_sensors
+        self.nConstrainedSensors = n_const_sensors
         self.all_sensorloc = all_sensors
 
     def fit(
@@ -121,7 +121,7 @@ class GQR(QR):
 ## TODO: why not a part of the class?
 
 #function for mapping sensor locations with constraints
-def f_region(lin_idx, dlens, piv, j, const_sensors):
+def f_region(lin_idx, dlens, piv, j, n_const_sensors): ##Will first force sensors into constrained region
     #num_sensors should be fixed for each custom constraint (for now)
     #num_sensors must be <= size of constraint region
     """
@@ -135,7 +135,7 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
             Array which contains the norm of columns of basis matrix.
         piv: np.ndarray, shape [n_features]
             Ranked list of sensor locations.
-        const_sensors: int,
+        n_const_sensors: int,
             Number of sensors to be placed in the constrained area.
         j: int,
             Iterative variable in the QR algorithm.
@@ -144,7 +144,7 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
         -------
         dlens : np.darray, shape [Variable based on j] with constraints mapped into it.
     """
-    if j < const_sensors: # force sensors into constraint region
+    if j < n_const_sensors: # force sensors into constraint region
         #idx = np.arange(dlens.shape[0])
         #dlens[np.delete(idx, lin_idx)] = 0
 
@@ -155,7 +155,31 @@ def f_region(lin_idx, dlens, piv, j, const_sensors):
         dlens[didx] = 0
     return dlens
 
-def f_region_optimal(lin_idx, dlens, piv, j, const_sensors,all_sensors,n_sensors):
+def f_region_optimal(lin_idx, dlens, piv, j, const_sensors,all_sensors,n_sensors): ##Optimal sensor placement with constraints (will place sensors in  the order of QR)
+    """
+    Function for mapping constrained sensor locations with the QR procedure (Optimally).
+
+    Parameters
+        ----------
+        lin_idx: np.ndarray, shape [No. of constrained locations]
+            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+        dlens: np.ndarray, shape [Variable based on j]
+            Array which contains the norm of columns of basis matrix.
+        piv: np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
+        j: int,
+            Iterative variable in the QR algorithm.
+        const_sensors: int,
+            Number of sensors to be placed in the constrained area.
+        all_sensors: np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
+        n_sensors: integer,
+            Total number of sensors
+
+        Returns
+        -------
+        dlens : np.darray, shape [Variable based on j] with constraints mapped into it.
+    """
     counter = 0
     mask = np.isin(all_sensors,lin_idx,invert=False)
     const_idx = all_sensors[mask]
@@ -171,159 +195,97 @@ def f_region_optimal(lin_idx, dlens, piv, j, const_sensors,all_sensors,n_sensors
     return dlens
 
 
-def getConstraindSensorsIndices(xmin, xmax, ymin, ymax, nx, ny, all_sensors):
-    """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
 
-    Parameters
-        ----------
-        xmin: int,
-            Lower bound for the x-axis constraint
-        xmax : int,
-            Upper bound for the x-axis constraint
-        ymin : int,
-            Lower bound for the y-axis constraint
-        ymax : int
-            Upper bound for the y-axis constraint
-        all_sensors : np.ndarray, shape [n_features]
-            Ranked list of sensor locations.
+# if __name__ == '__main__':
+#     faces = datasets.fetch_olivetti_faces(shuffle=True)
+#     X = faces.data
 
-        Returns
-        -------
-        idx_constrained : np.darray, shape [No. of constrained locations]
-            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
-    """
-    n_features = len(all_sensors)
-    imageSize = int(np.sqrt(n_features))
-    a = np.unravel_index(all_sensors, (nx,ny))
-    constrained_sensorsx = []
-    constrained_sensorsy = []
-    for i in range(n_features):
-        if (a[0][i] >= xmin and a[0][i] <= xmax) and (a[1][i] >= ymin and a[1][i] <= ymax):  # x<10 and y>40
-            constrained_sensorsx.append(a[0][i])
-            constrained_sensorsy.append(a[1][i])
+#     n_samples, n_features = X.shape
+#     print('Number of samples:', n_samples)
+#     print('Number of features (sensors):', n_features)
 
-    constrained_sensorsx = np.array(constrained_sensorsx)
-    constrained_sensorsy = np.array(constrained_sensorsy)
-    constrained_sensors_array = np.stack((constrained_sensorsy, constrained_sensorsx), axis=1)
-    constrained_sensors_tuple = np.transpose(constrained_sensors_array)
-    if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
-        idx_constrained = []
-    else:
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
-    return idx_constrained
+#     # Global centering
+#     X = X - X.mean(axis=0)
 
-def getConstrainedSensorsIndicesLinear(xmin,xmax,ymin,ymax,df):
-    x = df['X (m)'].to_numpy()
-    n_features = x.shape[0]
-    y = df['Y (m)'].to_numpy()
-    idx_constrained = []
-    for i in range(n_features):
-        if (x[i] >= xmin and x[i] <= xmax) and (y[i] >= ymin and y[i] <= ymax):
-            idx_constrained.append(i)
-    return idx_constrained
+#     # Local centering
+#     X -= X.mean(axis=1).reshape(n_samples, -1)
 
-def boxConstraints(position,lowerBound,upperBound,):
-    for i,xi in enumerate(position):
-        f1 = position[i] - lowerBound[i]
-        f2 = upperBound[i] - position [i]
-    return +1 if (f1 and f2 > 0) else -1
+#     n_row, n_col = 2, 3
+#     n_components = n_row * n_col
+#     image_shape = (64, 64)
+#     nx = 64
+#     ny = 64
 
-def functionalConstraint(position, func_response,func_input, freeTerm):
-    g = func_response + func_input + freeTerm
-    return g
+#     def plot_gallery(title, images, n_col=n_col, n_row=n_row, cmap=plt.cm.gray):
+#         '''Function for plotting faces'''
+#         plt.figure(figsize=(2. * n_col, 2.26 * n_row))
+#         plt.suptitle(title, size=16)
+#         for i, comp in enumerate(images):
+#             plt.subplot(n_row, n_col, i + 1)
+#             vmax = max(comp.max(), -comp.min())
+#             plt.imshow(comp.reshape(image_shape), cmap=cmap,
+#                     interpolation='nearest',
+#                     vmin=-vmax, vmax=vmax)
+#             plt.xticks(())
+#             plt.yticks(())
+#         plt.subplots_adjust(0.01, 0.05, 0.99, 0.93, 0.04, 0.)
+
+#    # plot_gallery("First few centered faces", X[:n_components])
+
+#     #Find all sensor locations using built in QR optimizer
+#     max_const_sensors = 230
+#     n_const_sensors = 2
+#     n_sensors = 200
+#     optimizer  = ps.optimizers.QR()
+#     model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
+#     model.fit(X)
+
+#     all_sensors = model.get_all_sensors()
+
+#     ##Constrained sensor location on the grid:
+#     xmin = 20
+#     xmax = 40
+#     ymin = 25
+#     ymax = 45
+#     sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices
+
+#     # didx = np.isin(all_sensors,sensors_constrained,invert=False)
+#     # const_index = np.nonzero(didx)
+#     # j =
 
 
-if __name__ == '__main__':
-    faces = datasets.fetch_olivetti_faces(shuffle=True)
-    X = faces.data
+#     ##Plotting the constrained region
+#     # ax = plt.subplot()
+#     # #Plot constrained space
+#     # img = np.zeros(n_features)
+#     # img[sensors_constrained] = 1
+#     # im = plt.imshow(img.reshape(image_shape),cmap=plt.cm.binary)
+#     # # create an axes on the right side of ax. The width of cax will be 5%
+#     # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+#     # divider = make_axes_locatable(ax)
+#     # cax = divider.append_axes("right", size="5%", pad=0.05)
+#     # plt.colorbar(im, cax=cax)
+#     # plt.title('Constrained region');
 
-    n_samples, n_features = X.shape
-    print('Number of samples:', n_samples)
-    print('Number of features (sensors):', n_features)
+#     ## Fit the dataset with the optimizer GQR
+#     optimizer1 = GQR(sensors_constrained,n_sensors,n_const_sensors,all_sensors)
+#     model1 = ps.SSPOR(optimizer = optimizer1, n_sensors = n_sensors)
+#     model1.fit(X)
+#     all_sensors1 = model1.get_all_sensors()
 
-    # Global centering
-    X = X - X.mean(axis=0)
+#     top_sensors = model1.get_selected_sensors()
+#     print(top_sensors)
+#     ## TODO: this can be done using ravel and unravel more elegantly
+#     #yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(n_features))
+#     #xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(n_features))
 
-    # Local centering
-    X -= X.mean(axis=1).reshape(n_samples, -1)
-
-    n_row, n_col = 2, 3
-    n_components = n_row * n_col
-    image_shape = (64, 64)
-    nx = 64
-    ny = 64
-
-    def plot_gallery(title, images, n_col=n_col, n_row=n_row, cmap=plt.cm.gray):
-        '''Function for plotting faces'''
-        plt.figure(figsize=(2. * n_col, 2.26 * n_row))
-        plt.suptitle(title, size=16)
-        for i, comp in enumerate(images):
-            plt.subplot(n_row, n_col, i + 1)
-            vmax = max(comp.max(), -comp.min())
-            plt.imshow(comp.reshape(image_shape), cmap=cmap,
-                    interpolation='nearest',
-                    vmin=-vmax, vmax=vmax)
-            plt.xticks(())
-            plt.yticks(())
-        plt.subplots_adjust(0.01, 0.05, 0.99, 0.93, 0.04, 0.)
-
-   # plot_gallery("First few centered faces", X[:n_components])
-
-    #Find all sensor locations using built in QR optimizer
-    max_const_sensors = 230
-    n_const_sensors = 2
-    n_sensors = 200
-    optimizer  = ps.optimizers.QR()
-    model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
-    model.fit(X)
-
-    all_sensors = model.get_all_sensors()
-
-    ##Constrained sensor location on the grid:
-    xmin = 20
-    xmax = 40
-    ymin = 25
-    ymax = 45
-    sensors_constrained = getConstraindSensorsIndices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices
-
-    # didx = np.isin(all_sensors,sensors_constrained,invert=False)
-    # const_index = np.nonzero(didx)
-    # j =
-
-
-    ##Plotting the constrained region
-    # ax = plt.subplot()
-    # #Plot constrained space
-    # img = np.zeros(n_features)
-    # img[sensors_constrained] = 1
-    # im = plt.imshow(img.reshape(image_shape),cmap=plt.cm.binary)
-    # # create an axes on the right side of ax. The width of cax will be 5%
-    # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    # divider = make_axes_locatable(ax)
-    # cax = divider.append_axes("right", size="5%", pad=0.05)
-    # plt.colorbar(im, cax=cax)
-    # plt.title('Constrained region');
-
-    ## Fit the dataset with the optimizer GQR
-    optimizer1 = GQR(sensors_constrained,n_sensors,n_const_sensors,all_sensors)
-    model1 = ps.SSPOR(optimizer = optimizer1, n_sensors = n_sensors)
-    model1.fit(X)
-    all_sensors1 = model1.get_all_sensors()
-
-    top_sensors = model1.get_selected_sensors()
-    print(top_sensors)
-    ## TODO: this can be done using ravel and unravel more elegantly
-    #yConstrained = np.floor(top_sensors[:n_const_sensors]/np.sqrt(n_features))
-    #xConstrained = np.mod(top_sensors[:n_const_sensors],np.sqrt(n_features))
-
-    img = np.zeros(n_features)
-    img[top_sensors] = 16
-    #plt.plot(xConstrained,yConstrained,'*r')
-    plt.plot([xmin,xmin],[ymin,ymax],'r')
-    plt.plot([xmin,xmax],[ymax,ymax],'r')
-    plt.plot([xmax,xmax],[ymin,ymax],'r')
-    plt.plot([xmin,xmax],[ymin,ymin],'r')
-    plt.imshow(img.reshape(image_shape),cmap=plt.cm.binary)
-    plt.title('n_sensors = {}, n_constr_sensors = {}'.format(n_sensors,n_const_sensors))
-    plt.show()
+#     img = np.zeros(n_features)
+#     img[top_sensors] = 16
+#     #plt.plot(xConstrained,yConstrained,'*r')
+#     plt.plot([xmin,xmin],[ymin,ymax],'r')
+#     plt.plot([xmin,xmax],[ymax,ymax],'r')
+#     plt.plot([xmax,xmax],[ymin,ymax],'r')
+#     plt.plot([xmin,xmax],[ymin,ymin],'r')
+#     plt.imshow(img.reshape(image_shape),cmap=plt.cm.binary)
+#     plt.title('n_sensors = {}, n_constr_sensors = {}'.format(n_sensors,n_const_sensors))
+#     plt.show()

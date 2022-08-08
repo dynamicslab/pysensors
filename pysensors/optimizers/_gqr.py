@@ -241,22 +241,23 @@ if __name__ == '__main__':
    # plot_gallery("First few centered faces", X[:n_components])
 
     #Find all sensor locations using built in QR optimizer
-    max_const_sensors = 230
-    n_const_sensors = 2
-    n_sensors = 200
+    #max_const_sensors = 230
+    n_const_sensors = 3
+    n_sensors = 10
+    n_modes = 11
+    basis = ps.basis.SVD(n_basis_modes=n_modes)
     optimizer  = ps.optimizers.QR()
-    model = ps.SSPOR(optimizer=optimizer, n_sensors=n_sensors)
+    model = ps.SSPOR(basis = basis, optimizer=optimizer, n_sensors=n_sensors)
     model.fit(X)
 
     all_sensors = model.get_all_sensors()
 
     ##Constrained sensor location on the grid:
-    xmin = 20
-    xmax = 40
-    ymin = 25
-    ymax = 45
+    xmin = 0
+    xmax = 64
+    ymin = 10
+    ymax = 30
     sensors_constrained = ps.utils._constraints.get_constraind_sensors_indices(xmin,xmax,ymin,ymax,nx,ny,all_sensors) #Constrained column indices
-
     # didx = np.isin(all_sensors,sensors_constrained,invert=False)
     # const_index = np.nonzero(didx)
     # j =
@@ -277,7 +278,7 @@ if __name__ == '__main__':
 
     ## Fit the dataset with the optimizer GQR
     optimizer1 = GQR(sensors_constrained,n_sensors,n_const_sensors,all_sensors, constraint_option = "exact_n_const_sensors")
-    model1 = ps.SSPOR(optimizer = optimizer1, n_sensors = n_sensors)
+    model1 = ps.SSPOR(basis = basis, optimizer = optimizer1, n_sensors = n_sensors)
     model1.fit(X)
     all_sensors1 = model1.get_all_sensors()
 

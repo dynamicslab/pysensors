@@ -95,6 +95,8 @@ class GQR(QR):
                 dlens_updated = norm_calc_max_n_const_sensors(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors,self.all_sensorloc,self.nSensors) 
             elif self.constraint_option == "exact_n_const_sensors" : 
                 dlens_updated = norm_calc_exact_n_const_sensors(self.constrainedIndices,dlens,p,j,self.nConstrainedSensors)
+            elif self.constraint_option == "predetermined_end":
+                dlens_updated = predetermined_norm_calc(self.constrainedIndices, dlens, p, j, self.nConstrainedSensors, self.nSensors)
 
             # Choose pivot
             i_piv = np.argmax(dlens_updated)
@@ -200,6 +202,38 @@ def norm_calc_max_n_const_sensors(lin_idx, dlens, piv, j, const_sensors,all_sens
             else:
                 didx = np.isin(piv[j:],updated_lin_idx,invert=False)
                 dlens[didx] = 0
+    return dlens
+
+def predetermined_norm_calc(lin_idx, dlens, piv, j, n_const_sensors, n_sensors):
+    """
+    Function for mapping constrained sensor locations with the QR procedure.
+
+    Parameters
+        ----------
+        lin_idx: np.ndarray, shape [No. of constrained locations]
+            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+        dlens: np.ndarray, shape [Variable based on j]
+            Array which contains the norm of columns of basis matrix.
+        piv: np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
+        n_const_sensors: int,
+            Number of sensors to be placed in the constrained area.
+        j: int,
+            Iterative variable in the QR algorithm.
+
+        Returns
+        -------
+        dlens : np.darray, shape [Variable based on j] with constraints mapped into it.
+    """
+    if (n_sensors - n_const_sensors) <= j <= n_sensors: # force sensors into constraint region
+        #idx = np.arange(dlens.shape[0])
+        #dlens[np.delete(idx, lin_idx)] = 0
+
+        didx = np.isin(piv[j:],lin_idx,invert=True)
+        dlens[didx] = 0
+    else:
+        didx = np.isin(piv[j:],lin_idx,invert=False)
+        dlens[didx] = 0
     return dlens
 
 

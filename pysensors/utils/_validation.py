@@ -23,14 +23,11 @@ def determinant(top_sensors, n_features, basis_matrix):
     """
     
     c = np.zeros([len(top_sensors),n_features])
-    print(c.shape)
     for i in range(len(top_sensors)):
         c[i,top_sensors[i]] = 1
-    print(c)
     phi = basis_matrix
     optimality = np.linalg.det((c@phi).T @ (c@phi))
-    print(optimality)
-    return (c,phi,optimality)
+    return optimality
 
 def relative_reconstruction_error(data, prediction):
     """
@@ -47,6 +44,5 @@ def relative_reconstruction_error(data, prediction):
         error_val : Float, 
             The relative error calculated.
     """
-    error_val = (np.linalg.norm((data - prediction)/np.linalg.norm(data)))*100
-    print(error_val)
+    error_val = (np.linalg.norm((data - prediction)/(data)))*100
     return (error_val)

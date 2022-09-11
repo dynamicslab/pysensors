@@ -259,7 +259,7 @@ class SSPOC(BaseEstimator):
 
         if self.threshold is None:
             # Chosen as in Brunton et al. (2016)
-            threshold = np.sqrt(np.sum(s ** 2)) / (
+            threshold = np.sqrt(np.sum(s**2)) / (
                 2 * self.basis_matrix_inverse_.shape[0] * n_classes
             )
         else:

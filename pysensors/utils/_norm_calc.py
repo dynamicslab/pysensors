@@ -109,48 +109,61 @@ def predetermined_norm_calc(lin_idx, dlens, piv, j, n_const_sensors, n_sensors):
         dlens[didx] = 0
     return dlens
 
-def f_radii_constraint(j,dlens,dlens_old,piv,nx,ny,r):
-    a = np.unravel_index(piv, (nx,ny))
-    n_features = len(piv)
+def f_radii_constraint(j,dlens,dlens_old,piv,nx,ny,r, all_sensors, n_sensors):
     if j == 1:
-        x_cord = a[0][j-1]
-        y_cord = a[1][j-1]
-        #print(x_cord, y_cord)
-        constrained_sensorsx = []
-        constrained_sensorsy = []
-        for i in range(n_features):
-            if ((a[0][i]-x_cord)**2 + (a[1][i]-y_cord)**2) < r**2: 
-                constrained_sensorsx.append(a[0][i])
-                constrained_sensorsy.append(a[1][i])
-        constrained_sensorsx = np.array(constrained_sensorsx)
-        constrained_sensorsy = np.array(constrained_sensorsy)
-        constrained_sensors_array = np.stack((constrained_sensorsy, constrained_sensorsx), axis=1)
-        constrained_sensors_tuple = np.transpose(constrained_sensors_array)
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
-#         print(idx_constrained)
+        idx_constrained = get_constraind_sensors_indices_radii(j,piv,r, nx,ny, all_sensors)
+        print(idx_constrained)
         didx = np.isin(piv[j:],idx_constrained,invert= False)
         dlens[didx] = 0
         return dlens
-    else: 
+    else:
         result = np.where(dlens_old == 0)[0]
         result_list = result.tolist()
-        result_list = [x - 1 for x in result_list]
+        result_list = [x + (j-1) for x in result_list]
         result_array = np.array(result_list)
-        x_cord = a[0][j-1]
-        y_cord = a[1][j-1]
-        #print(x_cord, y_cord)
-        constrained_sensorsx = []
-        constrained_sensorsy = []
-        for i in range(n_features):
-            if ((a[0][i]-x_cord)**2 + (a[1][i]-y_cord)**2) < r**2: 
-                constrained_sensorsx.append(a[0][i])
-                constrained_sensorsy.append(a[1][i])
-        constrained_sensorsx = np.array(constrained_sensorsx)
-        constrained_sensorsy = np.array(constrained_sensorsy)
-        constrained_sensors_array = np.stack((constrained_sensorsy, constrained_sensorsx), axis=1)
-        constrained_sensors_tuple = np.transpose(constrained_sensors_array)
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
-        t = np.concatenate((idx_constrained,result_array), axis = 0)
+        print(result_array)
+       
+        idx_constrained1 = get_constraind_sensors_indices_radii(j,piv,r, nx,ny, all_sensors)
+        t = np.concatenate((idx_constrained1,result_array), axis = 0)
         didx = np.isin(piv[j:],t,invert= False)
         dlens[didx] = 0
         return dlens
+
+def get_constraind_sensors_indices_radii(j,piv,r, nx,ny, all_sensors):
+    """
+    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
+
+    Parameters
+        ----------
+        all_sensors : np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
+
+        Returns
+        -------
+        idx_constrained : np.darray, shape [No. of constrained locations]
+            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+    """
+    n_features = len(all_sensors)
+    image_size = int(np.sqrt(n_features))
+    a = np.unravel_index(piv, (nx,ny))
+    t = np.unravel_index(all_sensors, (nx,ny))
+    x_cord = a[0][j-1]
+    y_cord = a[1][j-1]
+    #print(x_cord,y_cord)
+    constrained_sensorsx = []
+    constrained_sensorsy = []
+    for i in range(n_features):
+        if ((t[0][i]-x_cord)**2 + (t[1][i]-y_cord)**2) < r**2:
+            constrained_sensorsx.append(t[0][i])
+            constrained_sensorsy.append(t[1][i])
+
+    constrained_sensorsx = np.array(constrained_sensorsx)
+    constrained_sensorsy = np.array(constrained_sensorsy)
+    constrained_sensors_array = np.stack((constrained_sensorsx, constrained_sensorsy), axis=1)
+    constrained_sensors_tuple = np.transpose(constrained_sensors_array)
+    if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
+        idx_constrained = []
+    else:
+        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
+    return idx_constrained
+    

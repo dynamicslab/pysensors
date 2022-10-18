@@ -7,6 +7,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
+from ..optimizers import CCQR
 from ..optimizers import QR
 from ..utils import validate_input
 
@@ -149,7 +150,8 @@ class SSPOR(BaseEstimator):
             n_basis_modes=self.n_basis_modes
         )
 
-        # Check that n_sensors doesn't exceed dimension of basis vectors
+        # Check that n_sensors doesn't exceed dimension of basis vectors and
+        # that it doesn't exceed the number of samples when using the CCQR optimizer.
         self._validate_n_sensors()
 
         # Find sparse sensor locations
@@ -489,7 +491,8 @@ class SSPOR(BaseEstimator):
     def _validate_n_sensors(self):
         """
         Check that number of sensors does not exceed the maximimum number
-        allowed by the chosen basis.
+        allowed by the chosen basis. Also check for potential conflicts between
+        number of sensors and the optimizer.
         """
         check_is_fitted(self, "basis_matrix_")
 
@@ -502,4 +505,15 @@ class SSPOR(BaseEstimator):
                 "n_sensors cannot exceed number of available sensors: {}".format(
                     max_sensors
                 )
+            )
+
+        # If n_sensors exceeds n_samples, the cost-constrained QR algorithm may
+        # place sensors in constrained areas.
+        if (
+            isinstance(self.optimizer, CCQR)
+            and self.n_sensors > self.basis_matrix_.shape[1]
+        ):
+            warnings.warn(
+                "Number of sensors exceeds number of samples, which may cause CCQR to "
+                "select sensors in constrained regions."
             )

@@ -38,7 +38,7 @@ def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_senso
     constrained_sensorsx = []
     constrained_sensorsy = []
     for i in range(n_features):
-        if (a[0][i] >= x_min and a[0][i] <= x_max) and (a[1][i] >= y_min and a[1][i] <= y_max):  
+        if (a[0][i] >= x_min and a[0][i] <= x_max) and (a[1][i] >= y_min and a[1][i] <= y_max):
             constrained_sensorsx.append(a[0][i])
             constrained_sensorsy.append(a[1][i])
 
@@ -68,7 +68,7 @@ def get_constrained_sensors_indices_linear(x_min,x_max,y_min,y_max,df):
             Upper bound for the y-axis constraint
         df : pandas.DataFrame
             A dataframe containing the features  and samples
-        
+
         Returns
         -------
         idx_constrained : np.darray, shape [No. of constrained locations]
@@ -90,11 +90,11 @@ def box_constraints(position,lower_bound,upper_bound,):
     Parameters
         ----------
         position: ##TODO: FILL
-            
+
         lower_bound : ##TODO: FILL
-           
+
         upper_bound : ##TODO: FILL
-        
+
         Returns
         -------
         idx_constrained : np.darray, shape [No. of constrained locations]       ##TODO: CHECK IF CORRECT
@@ -112,17 +112,36 @@ def functional_constraints(position, func_response,func_input, free_term):
     Parameters
         ----------
         position: ##TODO : FILL
-            
+
         func_response : ##TODO : FILL
-            
+
         func_input: ##TODO : FILL
-            
+
         free_term : ##TODO : FILL
-        
+
         Returns
         -------
         g : ##TODO : FILL
-            
+
     """
     g = func_response + func_input + free_term
     return g
+
+# __constraintType = {}
+# __constraintType['swapMutator']       = swapMutator
+# __constraintType['scrambleMutator']   = scrambleMutator
+# __constraintType['bitFlipMutator']    = bitFlipMutator
+# __constraintType['inversionMutator']  = inversionMutator
+# __constraintType['randomMutator']     = randomMutator
+
+
+# def returnInstance(cls, name):
+#   """
+#     Method designed to return class instance:
+#     @ In, cls, class type
+#     @ In, name, string, name of class
+#     @ Out, __crossovers[name], instance of class
+#   """
+#   if name not in __constraintType:
+#     cls.raiseAnError (IOError, "{} CONSTRAINT NOT IMPLEMENTED!!!!!".format(name))
+#   return __constraintType[name]

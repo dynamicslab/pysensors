@@ -6,11 +6,7 @@ from ._base import MatrixMixin
 
 class Custom(InvertibleBasis, MatrixMixin):
     """
-<<<<<<< HEAD
-    Use a custom transformation to maps input features to
-=======
-    Generate a custom transformation which maps input features to
->>>>>>> 1ccd23fafed0ca39dac6cde204efa228d133df1c
+    Use a custom transformation to map input features to
     custom modes.
 
     Assumes the data has already been centered (to have mean 0).

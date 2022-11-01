@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pysensors as ps
 from matplotlib.patches import Circle
-
+from pysensors.utils._norm_calc import returnInstance as normCalcReturnInstance
 
 class GQR(QR):
     """
@@ -91,6 +91,7 @@ class GQR(QR):
             self.all_sensors = None
         if 'constraint_option' in optimizer_kws.keys():
             self.constraint_option = optimizer_kws['constraint_option']
+            self._norm_calc_Instance = normCalcReturnInstance(self,self.constraint_option)
         else:
             self.constraint_option = None
         if 'nx' in optimizer_kws.keys():
@@ -127,34 +128,36 @@ class GQR(QR):
 
             # Norm of each column
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
+            dlens_updated = self._norm_calc_Instance(self.constrainedIndices, dlens, p, j, self.nConstrainedSensors, all_sensors=self.all_sensors, n_sensors=self.n_sensors, nx=self._nx, ny=self._ny, r=self._r)
+            i_piv = np.argmax(dlens_updated)
+            dlen = dlens_updated[i_piv]
+            # if self.constraint_option == "max_n_const_sensors" :
+            #     dlens_updated = ps.utils._norm_calc.norm_calc_max_n_const_sensors(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors,self.all_sensorloc,self.n_sensors)
+            #     i_piv = np.argmax(dlens_updated)
+            #     dlen = dlens_updated[i_piv]
+            # elif self.constraint_option == "exact_n_const_sensors" :
+            #     dlens_updated = ps.utils._norm_calc.norm_calc_exact_n_const_sensors(self.constrainedIndices,dlens,p,j,self.nConstrainedSensors)
+            #     i_piv = np.argmax(dlens_updated)
+            #     dlen = dlens_updated[i_piv]
+            # elif self.constraint_option == "predetermined_end":
+            #     dlens_updated = ps.utils._norm_calc.predetermined_norm_calc(self.constrainedIndices, dlens, p, j, self.nConstrainedSensors, self.n_sensors)
+            #     i_piv = np.argmax(dlens_updated)
+            #     dlen = dlens_updated[i_piv]
+            # elif self.constraint_option == "radii_constraints":
 
-            if self.constraint_option == "max_n_const_sensors" :
-                dlens_updated = ps.utils._norm_calc.norm_calc_max_n_const_sensors(self.constrainedIndices,dlens,p,j, self.nConstrainedSensors,self.all_sensorloc,self.n_sensors)
-                i_piv = np.argmax(dlens_updated)
-                dlen = dlens_updated[i_piv]
-            elif self.constraint_option == "exact_n_const_sensors" :
-                dlens_updated = ps.utils._norm_calc.norm_calc_exact_n_const_sensors(self.constrainedIndices,dlens,p,j,self.nConstrainedSensors)
-                i_piv = np.argmax(dlens_updated)
-                dlen = dlens_updated[i_piv]
-            elif self.constraint_option == "predetermined_end":
-                dlens_updated = ps.utils._norm_calc.predetermined_norm_calc(self.constrainedIndices, dlens, p, j, self.nConstrainedSensors, self.n_sensors)
-                i_piv = np.argmax(dlens_updated)
-                dlen = dlens_updated[i_piv]
-            elif self.constraint_option == "radii_constraints":
+            #     if j == 0:
+            #         i_piv = np.argmax(dlens)
+            #         dlen = dlens[i_piv]
+            #         dlens_old = dlens
+            #     else:
 
-                if j == 0:
-                    i_piv = np.argmax(dlens)
-                    dlen = dlens[i_piv]
-                    dlens_old = dlens
-                else:
-
-                    dlens_updated = ps.utils._norm_calc.f_radii_constraint(j,dlens,dlens_old,p,self._nx,self._ny,self._r,self.all_sensorloc, self.n_sensors) #( self.radius,self._nx,self._ny,self.all_sensorloc,dlens,p,j)
-                    i_piv = np.argmax(dlens_updated)
-                    dlen = dlens_updated[i_piv]
-                    dlens_old = dlens_updated
-            else:
-                i_piv = np.argmax(dlens)
-                dlen = dlens[i_piv]
+            #         dlens_updated = ps.utils._norm_calc.f_radii_constraint(j,dlens,dlens_old,p,self._nx,self._ny,self._r,self.all_sensorloc, self.n_sensors) #( self.radius,self._nx,self._ny,self.all_sensorloc,dlens,p,j)
+            #         i_piv = np.argmax(dlens_updated)
+            #         dlen = dlens_updated[i_piv]
+            #         dlens_old = dlens_updated
+            # else:
+            #     i_piv = np.argmax(dlens)
+            #     dlen = dlens[i_piv]
 
             # Choose pivot
             # i_piv = np.argmax(dlens_updated)

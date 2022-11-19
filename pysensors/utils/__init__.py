@@ -7,10 +7,9 @@ from ._constraints import box_constraints
 from ._constraints import functional_constraints
 from ._validation import determinant
 from ._validation import relative_reconstruction_error
-from ._norm_calc import norm_calc_exact_n_const_sensors
-from ._norm_calc import norm_calc_max_n_const_sensors
-from ._norm_calc import predetermined_norm_calc
-from ._norm_calc import f_radii_constraint
+from ._norm_calc import exact_n
+from ._norm_calc import max_n
+from ._norm_calc import predetermined
 
 __all__ = [
     "constrained_binary_solve",
@@ -22,8 +21,9 @@ __all__ = [
     "functional_constraints",
     "determinant",
     "relative_reconstruction_error",
-    "norm_calc_exact_n_const_sensors",
-    "norm_calc_max_n_const_sensors",
-    "predetermined_norm_calc",
-    "f_radii_constraint"
+    # "norm_calc_exact_n_const_sensors",
+    # "norm_calc_max_n_const_sensors",
+    # "predetermined_norm_calc",
+    "exact_n",
+    "max_n"
 ]

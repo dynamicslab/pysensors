@@ -69,7 +69,7 @@ class GQR(QR):
 
         Returns
         -------
-        self: a fitted :class:`pysensors.optimizers.QR` instance
+        self: a fitted :class:`pysensors.optimizers.GQR` instance
         """
         [setattr(self,name,optimizer_kws.get(name,getattr(self,name))) for name in optimizer_kws.keys()]
         self._norm_calc_Instance = normCalcReturnInstance(self, self.constraint_option)

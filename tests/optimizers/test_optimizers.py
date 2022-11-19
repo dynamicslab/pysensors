@@ -110,6 +110,7 @@ def test_gqr_exact_constrainted_case1(data_random):
 
     # try to compare these using the validation metrics
 
+## TODO
 def test_gqr_max_constrained():
     pass
 

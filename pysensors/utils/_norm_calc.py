@@ -3,7 +3,9 @@ Various utility functions for calculating the norm and providing dlens_updated b
 """
 
 import numpy as np
-from ..utils._constraints import get_constraind_sensors_indices_radii
+
+def unconstrained(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
+    return dlens
 
 def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): ##Will first force sensors into constrained region
     # num_sensors should be fixed for each custom constraint (for now)
@@ -106,6 +108,7 @@ def predetermined(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     return dlens
 
 __norm_calc_type = {}
+__norm_calc_type[''] = unconstrained
 __norm_calc_type['exact_n_const_sensors'] = exact_n
 __norm_calc_type['max_n_const_sensors'] = max_n
 __norm_calc_type['predetermined_norm_calc'] = predetermined
@@ -123,5 +126,5 @@ def returnInstance(cls, name):
     __norm_calc_type[name], instance of class
   """
   if name not in __norm_calc_type:
-    cls.raiseAnError (IOError, "{} NOT IMPLEMENTED!!!!!".format(name))
+    raise NotImplementedError("{} NOT IMPLEMENTED!!!!!".format(name))
   return __norm_calc_type[name]

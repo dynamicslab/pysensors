@@ -6,7 +6,6 @@ This is essentially a dummy basis which just uses raw, unaltered features.
 from warnings import warn
 
 from numpy import identity
-import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 

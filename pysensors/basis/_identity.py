@@ -52,7 +52,7 @@ class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):
         -------
         self : instance
         """
-        
+
 	# Note that we take a transpose here, so columns correspond to examples
         if self.n_basis_modes is None:
             self.basis_matrix_ = check_array(X).T.copy()

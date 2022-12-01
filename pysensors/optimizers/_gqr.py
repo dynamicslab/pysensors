@@ -19,7 +19,7 @@ class GQR(QR):
     reconstruction performance. This is an extension that requires a more intrusive
     access to the QR optimizer to facilitate a more adaptive optimization. This is a generalized version of cost constraints
     in the sense that users can allow n constrained sensors in the constrained area.
-    if n = 0 this converges to the CCQR results.
+    if n = 0 this converges to the CCQR results. If no constraints it converges to QR results.
 
     See the following reference for more information
         Manohar, Krithika, et al.
@@ -49,12 +49,12 @@ class GQR(QR):
         """
         self.pivots_ = None
         self.idx_constrained = []
-        self.n_sensors = 10
+        self.n_sensors = 0
         self.n_const_sensors = 0
         self.all_sensors = []
         self.constraint_option = ''
-        self.nx = 64
-        self.ny = 64
+        self.nx = None
+        self.ny = None
         self.r = 1
 
     def fit(self,basis_matrix=None,**optimizer_kws):

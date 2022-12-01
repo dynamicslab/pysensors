@@ -42,14 +42,16 @@ class GQR(QR):
         n_const_sensors : integer,
             Total number of sensors required by the user in the constrained region.
         all_sensors : np.ndarray, shape [n_features]
-            Optimall placed list of sensors obtained from QR pivoting algorithm.
+            Optimally placed list of sensors obtained from QR pivoting algorithm.
         constraint_option : string,
             max_n_const_sensors : The number of sensors in the constrained region should be less than or equal to n_const_sensors.
             exact_n_const_sensors : The number of sensors in the constrained region should be exactly equal to n_const_sensors.
+        nx, ny : integer,
+            X, Y dimensions of the grid.
         """
         self.pivots_ = None
         self.idx_constrained = []
-        self.n_sensors = 0
+        self.n_sensors = None
         self.n_const_sensors = 0
         self.all_sensors = []
         self.constraint_option = ''
@@ -75,13 +77,6 @@ class GQR(QR):
         self._norm_calc_Instance = normCalcReturnInstance(self, self.constraint_option)
         n_features, n_samples = basis_matrix.shape  # We transpose basis_matrix below
         max_const_sensors = len(self.idx_constrained) # Maximum number of sensors allowed in the constrained region
-
-        ## Assertions and checks:
-        # if self.n_sensors > n_features - max_const_sensors + self.nConstrainedSensors:
-        #     raise IOError ("n_sensors cannot be larger than n_features - all possible locations in the constrained area + allowed constrained sensors")
-        # if self.n_sensors > n_samples + self.nConstrainedSensors: ## Handling zero constraint?
-        #     raise IOError ("Currently n_sensors should be less than min(number of samples, number of modes) + number of constrained sensors,\
-        #                    got: n_sensors = {}, n_samples + const_sensors = {} + {} = {}".format(self.n_sensors,n_samples,self.nConstrainedSensors,n_samples+self.nConstrainedSensors))
 
         # Initialize helper variables
         R = basis_matrix.conj().T.copy()

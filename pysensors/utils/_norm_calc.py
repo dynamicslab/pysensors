@@ -30,9 +30,23 @@ def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): ##Will first for
     -------
     dlens : np.darray, shape [Variable based on j] with constraints mapped into it.
     """
-    didx = np.isin(piv[j:],lin_idx,invert=j<n_const_sensors)
-    dlens[didx] = 0
-    return dlens
+    if 'all_sensors' in kwargs.keys():
+        all_sensors = kwargs['all_sensors']
+    else:
+        all_sensors = []
+    if 'n_sensors' in kwargs.keys():
+        n_sensors = kwargs['n_sensors']
+    else:
+        n_sensors = len(all_sensors)
+    for i in range(n_sensors):
+        if np.isin(all_sensors[:n_sensors],lin_idx,invert=False).sum() < n_const_sensors:
+            if n_sensors >= j > (n_sensors - (n_const_sensors-1)):
+                didx = np.isin(piv[j:],lin_idx,invert=True)
+                dlens[didx] = 0
+        else:
+            max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs)
+    return(dlens)
+
 
 def max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     """
@@ -109,9 +123,9 @@ def predetermined(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
 
 __norm_calc_type = {}
 __norm_calc_type[''] = unconstrained
-__norm_calc_type['exact_n_const_sensors'] = exact_n
-__norm_calc_type['max_n_const_sensors'] = max_n
-__norm_calc_type['predetermined_norm_calc'] = predetermined
+__norm_calc_type['exact_n'] = exact_n
+__norm_calc_type['max_n'] = max_n
+__norm_calc_type['predetermined'] = predetermined
 
 def returnInstance(cls, name):
   """

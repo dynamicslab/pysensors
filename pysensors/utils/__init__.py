@@ -6,6 +6,8 @@ from ._constraints import get_constrained_sensors_indices_linear
 from ._norm_calc import exact_n
 from ._norm_calc import max_n
 from ._norm_calc import predetermined
+from ._validation import determinant
+from ._validation import relative_reconstruction_error
 
 __all__ = [
     "constrained_binary_solve",
@@ -17,5 +19,7 @@ __all__ = [
     "functional_constraints",
     "exact_n",
     "max_n",
-    "predetermined"
+    "predetermined",
+    "determinant",
+    "relative_reconstruction_error"
 ]

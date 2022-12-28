@@ -38,15 +38,15 @@ def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): ##Will first for
         n_sensors = kwargs['n_sensors']
     else:
         n_sensors = len(all_sensors)
+    count = np.count_nonzero(np.isin(all_sensors[:n_sensors],lin_idx,invert=False))
     for i in range(n_sensors):
         if np.isin(all_sensors[:n_sensors],lin_idx,invert=False).sum() < n_const_sensors:
-            if n_sensors >= j > (n_sensors - (n_const_sensors-1)):
+            if n_sensors > j >= (n_sensors - (n_const_sensors - count)):
                 didx = np.isin(piv[j:],lin_idx,invert=True)
                 dlens[didx] = 0
         else:
             max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs)
     return(dlens)
-
 
 def max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     """

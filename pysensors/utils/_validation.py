@@ -2,7 +2,7 @@
 Various utility functions for validation and computing reconstruction scores and errors.
 """
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import lil_matrix
 
 def determinant(top_sensors, n_features, basis_matrix):
     """
@@ -24,14 +24,20 @@ def determinant(top_sensors, n_features, basis_matrix):
 
     p = len(top_sensors) # Number of sensors
     n,r = np.shape(basis_matrix) # state dimension X Number of modes
-    c = csr_matrix((p,n),dtype=np.int8)
+    c = lil_matrix((p,n),dtype=np.int8)
 
     for i in range(p):
         c[i,top_sensors[i]] = 1
     phi = basis_matrix
-    # optimality = np.linalg.det(( c @ phi).T @ (c@phi)) #np.log(np.linalg.det(phi.T @ c.T)) np.log(np.linalg.det((c@phi).T @ (c@phi)))
-    optimality = abs(np.linalg.det(c @ phi)) if p==r else abs(np.linalg.det(( c @ phi).T @ (c @ phi)))
-    # optimality = abs(np.linalg.det(c @ phi))
+    theta = c @ phi
+    if p==r:
+        M_gamma = theta
+    elif p > r:
+        M_gamma = theta.T @ theta
+    else:# TODO
+        # raise an error that p cannot be less than r
+        pass
+    optimality = abs(np.linalg.det(M_gamma))
     return optimality
 
 def relative_reconstruction_error(data, prediction):

@@ -72,7 +72,7 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
             idx_constrained.append(i)
     return idx_constrained
 
-def functional_constraints(functionHandler, idx, xLoc, yLoc,kwargs):
+def functional_constraints(functionHandler, idx,kwargs):
     """
     Function for evaluating the functional constraints.
 
@@ -85,6 +85,8 @@ def functional_constraints(functionHandler, idx, xLoc, yLoc,kwargs):
     ------
 
     """
+    shape = kwargs['shape']
+    xLoc,yLoc = get_coordinates_from_indices(idx,shape)
     functionName = os.path.basename(functionHandler).strip('.py')
     dirName = os.path.dirname(functionHandler)
     sys.path.insert(0,os.path.expanduser(dirName))
@@ -93,7 +95,7 @@ def functional_constraints(functionHandler, idx, xLoc, yLoc,kwargs):
     g = func(xLoc, yLoc,**kwargs)
     return g
 
-def constraints_eval(constraints,senID,xLoc,yLoc,**kwargs):
+def constraints_eval(constraints,senID,**kwargs):
     """_summary_
 
     Args:
@@ -102,7 +104,7 @@ def constraints_eval(constraints,senID,xLoc,yLoc,**kwargs):
     nConstraints = len(constraints)
     G = np.zeros((len(senID),nConstraints))
     for i in range(nConstraints):
-        G[:,i] = functional_constraints(constraints[i],senID,xLoc,yLoc,kwargs)
+        G[:,i] = functional_constraints(constraints[i],senID,kwargs)
     return G
 
 def get_functionalConstraind_sensors_indices(senID,g):
@@ -168,7 +170,7 @@ if __name__ == '__main__':
     yAllUnc = np.floor(all_sensors0/np.sqrt(n_features))
 
     # sensors_constrained = ps.utils._constraints.get_constraind_sensors_indices(xmin,xmax,ymin,ymax,nx,ny,all_sensors0) #Constrained column indices
-    G = ps.utils._constraints.constraints_eval(constList,top_sensors0,xTopUnc,yTopUnc)
+    G = ps.utils._constraints.constraints_eval(constList,top_sensors0,shape=(64,64))
     idx_constrainedConst,ranks = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,0])
     idx_constrainedConst2,rank2 = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,1])
 
@@ -196,5 +198,5 @@ if __name__ == '__main__':
 
     const3 = '/Users/abdomg/projects/Sparse_Sensing_in_NDTs_LDRD/notebooks/myBoxConstraint.py'
     constList2 =[const3]
-    constr_kws = {'xmin':10,'xmax':30,'ymin':20,'ymax':40}
-    G2 = ps.utils._constraints.constraints_eval(constList2,all_sensors0,xAllUnc,yAllUnc,**constr_kws)
+    constr_kws = {'xmin':10,'xmax':30,'ymin':20,'ymax':40,'shape':(64,64)}
+    G2 = ps.utils._constraints.constraints_eval(constList2,all_sensors0,**constr_kws)

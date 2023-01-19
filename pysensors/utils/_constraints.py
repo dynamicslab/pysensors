@@ -85,14 +85,22 @@ def functional_constraints(functionHandler, idx,kwargs):
     ------
 
     """
-    shape = kwargs['shape']
-    xLoc,yLoc = get_coordinates_from_indices(idx,shape)
+    if 'shape' in kwargs.keys():
+        shape = kwargs['shape']
+        xLoc,yLoc = get_coordinates_from_indices(idx,shape)
+        print(xLoc,yLoc)
+    elif 'data' in kwargs.keys():
+        data = kwargs['data']
+        xLoc,yLoc =  get_indices_from_dataframe(data)
+        print(xLoc,yLoc)
+
     functionName = os.path.basename(functionHandler).strip('.py')
     dirName = os.path.dirname(functionHandler)
     sys.path.insert(0,os.path.expanduser(dirName))
     module = __import__(functionName)
     func = getattr(module, functionName)
     g = func(xLoc, yLoc,**kwargs)
+    print(g)
     return g
 
 def constraints_eval(constraints,senID,**kwargs):
@@ -136,6 +144,11 @@ def get_coordinates_from_indices(idx,shape):
 def get_indices_from_coordinates(corrdinates,shape):
     return np.ravel_multi_index(corrdinates,shape,order='F')
 
+def get_indices_from_dataframe(df):
+    x = df['X (m)'].to_numpy()
+    y = df['Y (m)'].to_numpy()
+    return(x,y)
+
 if __name__ == '__main__':
 
     import pysensors as ps
@@ -170,13 +183,13 @@ if __name__ == '__main__':
     yAllUnc = np.floor(all_sensors0/np.sqrt(n_features))
 
     # sensors_constrained = ps.utils._constraints.get_constraind_sensors_indices(xmin,xmax,ymin,ymax,nx,ny,all_sensors0) #Constrained column indices
-    G = ps.utils._constraints.constraints_eval(constList,top_sensors0,shape=(64,64))
-    idx_constrainedConst,ranks = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,0])
-    idx_constrainedConst2,rank2 = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,1])
+    G = constraints_eval(constList,top_sensors0,shape=(64,64))
+    idx_constrainedConst,ranks = get_functionalConstraind_sensors_indices(top_sensors0,G[:,0])
+    idx_constrainedConst2,rank2 = get_functionalConstraind_sensors_indices(top_sensors0,G[:,1])
 
     idx_constrainedConst.extend(idx_constrainedConst2)
     ranks.extend(rank2)
-    idx_constr_sorted, ranks = ps.utils._constraints.order_constrained_sensors(idx_constrainedConst,ranks)
+    idx_constr_sorted, ranks = order_constrained_sensors(idx_constrainedConst,ranks)
 
     n_const_sensors0 = 1
     optimizer1 = ps.optimizers.GQR()

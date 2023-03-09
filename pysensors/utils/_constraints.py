@@ -72,6 +72,42 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
             idx_constrained.append(i)
     return idx_constrained
 
+def get_constrained_sensors_indices_distance(j,piv,r, nx,ny, all_sensors):
+    """
+    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
+    Parameters
+        ----------
+        all_sensors : np.ndarray, shape [n_features]
+            Ranked list of sensor locations.
+        Returns
+        -------
+        idx_constrained : np.darray, shape [No. of constrained locations]
+            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+    """
+    n_features = len(all_sensors)
+    image_size = int(np.sqrt(n_features))
+    a = np.unravel_index(piv, (nx,ny))
+    t = np.unravel_index(all_sensors, (nx,ny))
+    x_cord = a[0][j-1]
+    y_cord = a[1][j-1]
+    #print(x_cord,y_cord)
+    constrained_sensorsx = []
+    constrained_sensorsy = []
+    for i in range(n_features):
+        if ((t[0][i]-x_cord)**2 + (t[1][i]-y_cord)**2) < r**2:
+            constrained_sensorsx.append(t[0][i])
+            constrained_sensorsy.append(t[1][i])
+
+    constrained_sensorsx = np.array(constrained_sensorsx)
+    constrained_sensorsy = np.array(constrained_sensorsy)
+    constrained_sensors_array = np.stack((constrained_sensorsx, constrained_sensorsy), axis=1)
+    constrained_sensors_tuple = np.transpose(constrained_sensors_array)
+    if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
+        idx_constrained = []
+    else:
+        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
+    return idx_constrained
+
 def functional_constraints(functionHandler, idx,kwargs):
     """
     Function for evaluating the functional constraints.

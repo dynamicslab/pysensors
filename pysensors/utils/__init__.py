@@ -7,9 +7,10 @@ from ._constraints import constraints_eval
 from ._constraints import functional_constraints
 from ._constraints import get_coordinates_from_indices
 from ._constraints import get_indices_from_coordinates
-from ._norm_calc_final import exact_n
-from ._norm_calc_final import max_n
-from ._norm_calc_final import predetermined
+from ._constraints import get_constrained_sensors_indices_distance
+from ._norm_calc import exact_n
+from ._norm_calc import max_n
+from ._norm_calc import predetermined
 from ._validation import determinant
 from ._validation import relative_reconstruction_error
 

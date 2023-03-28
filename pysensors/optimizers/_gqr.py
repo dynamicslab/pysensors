@@ -93,16 +93,11 @@ class GQR(QR):
             r = R[j:, j:]
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             # Norm of each column
-            if j == 0:
-                i_piv = np.argmax(dlens)
-                dlen = dlens[i_piv]
-                dlens_old = dlens
-            else:
-                dlens_old = dlens
-                dlens_updated = self._norm_calc_Instance(self.idx_constrained, dlens, p, j, self.n_const_sensors, dlens_old=dlens_old, all_sensors=self.all_sensors, n_sensors=self.n_sensors, nx=self.nx, ny=self.ny, r=self.r)
-                i_piv = np.argmax(dlens_updated)
-                dlen = dlens_updated[i_piv]
-                dlens_old = dlens_updated
+            
+            dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
+            dlens_updated = self._norm_calc_Instance(self.idx_constrained, dlens, p, j, self.n_const_sensors, dlens_old=dlens, all_sensors=self.all_sensors, n_sensors=self.n_sensors, nx=self.nx, ny=self.ny, r=self.r)
+            i_piv = np.argmax(dlens_updated)
+            dlen = dlens_updated[i_piv]
                 
             if dlen > 0:
                 u = r[:, i_piv] / dlen

@@ -43,9 +43,9 @@ class MatrixMixin:
         n_basis_modes = self._validate_input(n_basis_modes)
 
         if copy:
-            return self.basis_matrix_[:, :n_basis_modes].copy()#self.original_data @
+            return self.basis_matrix_[:, :n_basis_modes].copy()
         else:
-            return self.basis_matrix_[:, :n_basis_modes]#self.original_data @
+            return self.basis_matrix_[:, :n_basis_modes]
 
     def _validate_input(self, n_basis_modes):
         """

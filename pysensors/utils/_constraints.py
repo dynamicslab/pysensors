@@ -11,26 +11,19 @@ def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_senso
     Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
 
     Parameters
-        ----------
-        x_min: int,
-            Lower bound for the x-axis constraint
-        x_max : int,
-            Upper bound for the x-axis constraint
-        y_min : int,
-            Lower bound for the y-axis constraint
-        y_max : int
-            Upper bound for the y-axis constraint
-        nx : int
-            Image pixel (x dimensions of the grid)
-        ny : int
-            Image pixel (y dimensions of the grid)
-        all_sensors : np.ndarray, shape [n_features]
-            Ranked list of sensor locations.
+    ----------
+    x_min: int, lower bound for the x-axis constraint
+    x_max : int, upper bound for the x-axis constraint
+    y_min : int, lower bound for the y-axis constraint
+    y_max : int, upper bound for the y-axis constraint
+    nx : int, image pixel (x dimensions of the grid)
+    ny : int, image pixel (y dimensions of the grid)
+    all_sensors : np.ndarray, shape [n_features], ranked list of sensor locations.
 
-        Returns
-        -------
-        idx_constrained : np.darray, shape [No. of constrained locations]
-            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+    Returns
+    -------
+    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix.
     """
     n_features = len(all_sensors)
     image_size = int(np.sqrt(n_features))
@@ -52,27 +45,22 @@ def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_senso
         idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
     return idx_constrained
 
-def get_constrained_sensors_indices_linear(x_min,x_max,y_min,y_max,df):
+def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
     """
     Function for obtaining constrained column indices from already existing linear sensor locations on the grid.
 
     Parameters
-        ----------
-        x_min: int,
-            Lower bound for the x-axis constraint
-        x_max : int,
-            Upper bound for the x-axis constraint
-        y_min : int,
-            Lower bound for the y-axis constraint
-        y_max : int
-            Upper bound for the y-axis constraint
-        df : pandas.DataFrame
-            A dataframe containing the features  and samples
+    ----------
+    x_min: int, lower bound for the x-axis constraint
+    x_max : int, upper bound for the x-axis constraint
+    y_min : int, lower bound for the y-axis constraint
+    y_max : int, upper bound for the y-axis constraint
+    df : pandas.DataFrame, a dataframe containing the features  and samples
 
-        Returns
-        -------
-        idx_constrained : np.darray, shape [No. of constrained locations]
-            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
+    Returns
+    -------
+    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix.
     """
     x = df['X (m)'].to_numpy()
     n_features = x.shape[0]
@@ -82,66 +70,3 @@ def get_constrained_sensors_indices_linear(x_min,x_max,y_min,y_max,df):
         if (x[i] >= x_min and x[i] <= x_max) and (y[i] >= y_min and y[i] <= y_max):
             idx_constrained.append(i)
     return idx_constrained
-
-def box_constraints(position,lower_bound,upper_bound,):
-    """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix. ##TODO : BETTER DEFINITION
-
-    Parameters
-        ----------
-        position: ##TODO: FILL
-
-        lower_bound : ##TODO: FILL
-
-        upper_bound : ##TODO: FILL
-
-        Returns
-        -------
-        idx_constrained : np.darray, shape [No. of constrained locations]       ##TODO: CHECK IF CORRECT
-            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
-    """
-    for i,xi in enumerate(position):
-        f1 = position[i] - lower_bound[i]
-        f2 = upper_bound[i] - position [i]
-    return +1 if (f1 and f2 > 0) else -1
-
-def functional_constraints(position, func_response,func_input, free_term):
-    """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix. ##TODO: BETTER DEFINITION
-
-    Parameters
-        ----------
-        position: ##TODO : FILL
-
-        func_response : ##TODO : FILL
-
-        func_input: ##TODO : FILL
-
-        free_term : ##TODO : FILL
-
-        Returns
-        -------
-        g : ##TODO : FILL
-
-    """
-    g = func_response + func_input + free_term
-    return g
-
-# __constraintType = {}
-# __constraintType['swapMutator']       = swapMutator
-# __constraintType['scrambleMutator']   = scrambleMutator
-# __constraintType['bitFlipMutator']    = bitFlipMutator
-# __constraintType['inversionMutator']  = inversionMutator
-# __constraintType['randomMutator']     = randomMutator
-
-
-# def returnInstance(cls, name):
-#   """
-#     Method designed to return class instance:
-#     @ In, cls, class type
-#     @ In, name, string, name of class
-#     @ Out, __crossovers[name], instance of class
-#   """
-#   if name not in __constraintType:
-#     cls.raiseAnError (IOError, "{} CONSTRAINT NOT IMPLEMENTED!!!!!".format(name))
-#   return __constraintType[name]

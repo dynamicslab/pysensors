@@ -4,6 +4,7 @@ Various utility functions for mapping constrained sensors locations with the col
 """
 
 import numpy as np
+import pandas as pd
 import sys, os
 
 
@@ -85,8 +86,15 @@ def functional_constraints(functionHandler, idx,kwargs):
     ------
 
     """
-    shape = kwargs['shape']
-    xLoc,yLoc = get_coordinates_from_indices(idx,shape)
+    if 'shape' in kwargs.keys():
+        shape = kwargs['shape']
+        xLoc,yLoc = get_coordinates_from_indices(idx,shape)
+    elif 'data' in kwargs.keys():
+        data = kwargs['data']
+        ## TODO:
+        #xLoc = data.loc[idx, 'X (m)']
+        #yLoc = data.loc[idx, 'Y (m)']
+        xLoc,yLoc =  get_indices_from_dataframe(idx,data)
     functionName = os.path.basename(functionHandler).strip('.py')
     dirName = os.path.dirname(functionHandler)
     sys.path.insert(0,os.path.expanduser(dirName))
@@ -102,9 +110,11 @@ def constraints_eval(constraints,senID,**kwargs):
         constraints (_type_): _description_
     """
     nConstraints = len(constraints)
-    G = np.zeros((len(senID),nConstraints))
+    G = np.zeros((len(senID),nConstraints),dtype=bool)
     for i in range(nConstraints):
-        G[:,i] = functional_constraints(constraints[i],senID,kwargs)
+        temp = functional_constraints(constraints[i],senID,kwargs)
+        G[:,i] = [x>=0 for x in temp]
+
     return G
 
 def get_functionalConstraind_sensors_indices(senID,g):
@@ -121,20 +131,39 @@ def get_functionalConstraind_sensors_indices(senID,g):
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
-
-    idx_constrained = senID[g<0].tolist()
-    rank = np.where(np.isin(senID,idx_constrained)==True)[0].tolist()
+    assert (len(senID)==len(g))
+    idx_constrained = senID[~g].tolist()
+    rank = np.where(np.isin(senID,idx_constrained))[0].tolist() # ==False
     return idx_constrained, rank
 
 def order_constrained_sensors(idx_constrained_list, ranks_list):
     sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
 
-def get_coordinates_from_indices(idx,shape):
-    return np.unravel_index(idx,shape,'F')
+def get_coordinates_from_indices(idx,info):
+    """_summary_
+
+    Args:
+        idx (_type_): _description_
+        info (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    if isinstance(info,tuple):
+        return np.unravel_index(idx,info,'F')
+    elif isinstance(info,pd.DataFrame):
+        x = info.loc[idx,'X (m)']#.values
+        y = info.loc[idx,'Y (m)']#.values
+        return (x,y)
 
 def get_indices_from_coordinates(corrdinates,shape):
     return np.ravel_multi_index(corrdinates,shape,order='F')
+
+def get_indices_from_dataframe(idx,df):
+    x = df['X (m)'].to_numpy()
+    y = df['Y (m)'].to_numpy()
+    return(x[idx],y[idx])
 
 if __name__ == '__main__':
 

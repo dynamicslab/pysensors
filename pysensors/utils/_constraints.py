@@ -80,11 +80,13 @@ def functional_constraints(functionHandler, idx,kwargs):
     Parameters
     ----------
     functionHandler : function, a function handle to the function which is to be evaluated
-    idx :
+    idx : np.ndarray, ranked list of sensor locations (column indices)
+    shape : tuple of ints, Shape of the matrix fed as data to the algorithm
+    data : pandas.DataFrame, Dataframe which represents the measurement data.
 
     Return
     ------
-
+    g : function, Contains the function defined by the user for the functional constraint. 
     """
     if 'shape' in kwargs.keys():
         shape = kwargs['shape']
@@ -104,10 +106,18 @@ def functional_constraints(functionHandler, idx,kwargs):
     return g
 
 def constraints_eval(constraints,senID,**kwargs):
-    """_summary_
+    """
+    Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
-    Args:
-        constraints (_type_): _description_
+    Parameters:
+    ---------- 
+        constraints: __(type?)__, The constraint defined by the user 
+        senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
+        data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
+                Dataframe or Matrix which represent the measurement data.
+    Returns
+    -------
+    G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
     """
     nConstraints = len(constraints)
     G = np.zeros((len(senID),nConstraints),dtype=bool)
@@ -119,17 +129,18 @@ def constraints_eval(constraints,senID,**kwargs):
 
 def get_functionalConstraind_sensors_indices(senID,g):
     """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
+    Function for finding constrained sensor locations on the grid and their ranks
 
     Parameters
     ----------
-    senID: int, sensor ID
+    senID: np.darray, ranked list of sensor locations (column indices)
     g : float, constraint evaluation function (negative if violating the constraint)
 
     Returns
     -------
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
+    rank : np.darray, shape [No. of constrained locations], array which contains rank of the constrained sensor locations
     """
     assert (len(senID)==len(g))
     idx_constrained = senID[~g].tolist()
@@ -137,18 +148,39 @@ def get_functionalConstraind_sensors_indices(senID,g):
     return idx_constrained, rank
 
 def order_constrained_sensors(idx_constrained_list, ranks_list):
+    """
+    Function for ordering constrained sensor locations on the grid according to their ranks.
+
+    Parameters
+    ----------
+    idx_constrained_list : np.darray shape [No. of constrained locations], Constrained sensor locations
+    ranks_list : no.darray shape [No. of constrained locations], Ranks of each constrained sensor location
+
+    Returns
+    -------
+    sortedConstraints : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix sorted according to their rank.
+    ranks : np.darray, shape [No. of constrained locations], array which contains the ranks of constrained sensors. 
+    """
     sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
 
 def get_coordinates_from_indices(idx,info):
-    """_summary_
+    """
+    Function for obtaining the coordinates on a grid from column indices
+    
+    Parameters
+    ----------
+    idx :  int, sensor ID
+    info : pandas.DataFrame/np.ndarray shape [n_features, n_samples], Dataframe or Matrix which represent the measurement data.
 
-    Args:
-        idx (_type_): _description_
-        info (_type_): _description_
+    Returns
+    -------
+    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix.
 
     Returns:
-        _type_: _description_
+        (x,y) : tuple, The coordinates on the grid of each sensor. 
     """
     if isinstance(info,tuple):
         return np.unravel_index(idx,info,'F')
@@ -157,10 +189,24 @@ def get_coordinates_from_indices(idx,info):
         y = info.loc[idx,'Y (m)']#.values
         return (x,y)
 
-def get_indices_from_coordinates(corrdinates,shape):
-    return np.ravel_multi_index(corrdinates,shape,order='F')
+def get_indices_from_coordinates(coordinates,shape):
+    """
+    Function for obtaining the indices of columns/sensors from coordinates on a grid when data is in the form of a matrix
+    
+    Parameters
+    ----------
+    coordinates : tuple of array_like , (x,y) pair coordinates of sensor locations on the grid
+    shape : tuple of ints, Shape of the matrix fed as data to the algorithm
 
-def get_indices_from_dataframe(idx,df):
+    Returns
+    -------
+    np.ravel_multi_index(coordinates,shape,order='F') : np.ndarray, The indices of the sensors. 
+    """
+    return np.ravel_multi_index(coordinates,shape,order='F')
+
+def get_indices_from_dataframe(idx,df): ## Niharikas_comment : I think this should be renamed to get coordinates from dataframe as when given a sensor index it returns a tuple containing the coordinates of that sensor index.
+    ## It can also maybe be removed completely as get_coordinates_from_indices(idx,info) does the same thing. Thoughts? 
+    
     x = df['X (m)'].to_numpy()
     y = df['Y (m)'].to_numpy()
     return(x[idx],y[idx])

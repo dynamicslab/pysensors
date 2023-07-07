@@ -7,9 +7,7 @@ import numpy as np
 def unconstrained(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     return dlens
 
-def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): ##Will first force sensors into constrained region
-    # num_sensors should be fixed for each custom constraint (for now)
-    # num_sensors must be <= size of constraint region
+def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): 
     """
     Function for mapping constrained sensor locations with the QR procedure.
 

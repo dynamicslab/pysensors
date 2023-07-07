@@ -26,6 +26,10 @@ class GQR(QR):
         "Data-driven sparse sensor placement for reconstruction:
         Demonstrating the benefits of exploiting known patterns."
         IEEE Control Systems Magazine 38.3 (2018): 63-86.
+        
+        Niharika Karnik, Mohammad G. Abdo, Carlos E. Estrada Perez, Jun Soo Yoo, Joshua J. Cogliati, Richard S. Skifton, 
+        Pattrick Calderoni, Steven L. Brunton, and Krithika Manohar. 
+        Optimal Sensor Placement with Adaptive Constraints for Nuclear Digital Twins. 2023. arXiv: 2306 . 13637 [math.OC].
 
     @ authors: Niharika Karnik (@nkarnik2999), Mohammad Abdo (@Jimmy-INL), and Krithika Manohar (@kmanohar)
     """
@@ -75,13 +79,6 @@ class GQR(QR):
         self._norm_calc_Instance = normCalcReturnInstance(self, self.constraint_option)
         n_features, n_samples = basis_matrix.shape  # We transpose basis_matrix below
         max_const_sensors = len(self.idx_constrained) # Maximum number of sensors allowed in the constrained region
-
-        ## Assertions and checks:
-        # if self.n_sensors > n_features - max_const_sensors + self.nConstrainedSensors:
-        #     raise IOError ("n_sensors cannot be larger than n_features - all possible locations in the constrained area + allowed constrained sensors")
-        # if self.n_sensors > n_samples + self.nConstrainedSensors: ## Handling zero constraint?
-        #     raise IOError ("Currently n_sensors should be less than min(number of samples, number of modes) + number of constrained sensors,\
-        #                    got: n_sensors = {}, n_samples + const_sensors = {} + {} = {}".format(self.n_sensors,n_samples,self.nConstrainedSensors,n_samples+self.nConstrainedSensors))
 
         # Initialize helper variables
         R = basis_matrix.conj().T.copy()

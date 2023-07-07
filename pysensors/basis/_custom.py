@@ -27,6 +27,9 @@ class Custom(InvertibleBasis, MatrixMixin):
     """
 
     def __init__(self, U, n_basis_modes=10, **kwargs):
+        '''
+            kwargs : Not defined but added to remain consistent with prior basis functions. 
+        '''
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
             super(Custom, self).__init__()#n_components=n_basis_modes, **kwargs
             self._n_basis_modes = n_basis_modes

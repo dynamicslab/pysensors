@@ -6,6 +6,7 @@ from ._constraints import get_constrained_sensors_indices_linear
 from ._constraints import BaseConstraint
 from ._constraints import circle
 from ._constraints import Line
+from ._constraints import userDefinedConstraints
 # from ._constraints import constraints_eval
 # from ._constraints import functional_constraints
 # from ._constraints import get_coordinates_from_indices
@@ -25,6 +26,7 @@ __all__ = [
     "BaseConstraint",
     "circle",
     "Line",
+    "userDefinedConstraints"
     "box_constraints",
     "constraints_eval",
     "functional_constraints",

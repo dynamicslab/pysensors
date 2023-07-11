@@ -109,64 +109,8 @@ class BaseConstraint():
         self.k = None
         self.a = None
     
-    def constraint(self, shape, all_sensors, info, **BaseConstraint_kws):
-        '''
-        To be filled
-        '''
-        if 'x' in BaseConstraint_kws.keys():
-            x = BaseConstraint_kws['x']
-        else:
-            x = self.x
-        if 'y' in BaseConstraint_kws.keys():
-            y = BaseConstraint_kws['y']
-        else:
-            y = self.y
-        if 'r' in BaseConstraint_kws.keys():
-            r = BaseConstraint_kws['r']
-        else:
-            r = self.r
-        if 'x1' in BaseConstraint_kws.keys():
-            x1 = BaseConstraint_kws['x1']
-        else:
-            x1 = self.x1
-        if 'x2' in BaseConstraint_kws.keys():
-            x2 = BaseConstraint_kws['x2']
-        else:
-            x2 = self.x2
-        if 'y1' in BaseConstraint_kws.keys():
-            y1 = BaseConstraint_kws['y1']
-        else:
-            y1 = self.y1
-        if 'y2' in BaseConstraint_kws.keys():
-            y2 = BaseConstraint_kws['y2']
-        else:
-            y2 = self.y2
-        if 'h' in BaseConstraint_kws.keys():
-            h = BaseConstraint_kws['h']
-        else:
-            h = self.h
-        if 'k' in BaseConstraint_kws.keys():
-            k = BaseConstraint_kws['k']
-        else:
-            k = self.k
-        if 'r' in BaseConstraint_kws.keys():
-            r = BaseConstraint_kws['r']
-        else:
-            r = self.r
-            
-        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
-        g1 = np.zeros(len(x_all_unc),dtype = float) - 1
-        g = np.zeros(len(x_all_unc),dtype = float)
-        if shape == 'circle':
-            for i in range(len(x_all_unc)):
-                g[i] = ((x_all_unc[i]-x)**2 + (y_all_unc[i]-y)**2) - r**2
-        if shape == 'line':
-            for i in range(len(x_all_unc)):
-                g[i] = (y_all_unc[i]-y1)*(x2-x1) - (y2-y1)*(x_all_unc[i]-x1)
-        ## TO DO: Add parabola
-        G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
-        return idx_const,rank
+    def constraint(self):
+        pass    
     
 class circle(BaseConstraint):
     '''
@@ -205,6 +149,20 @@ class circle(BaseConstraint):
                 ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
             ax.add_artist(c)
         # if self.plot_type == 'scatter': ##complete
+        
+    def circle_constraint(self,all_sensors,info):
+        '''
+        To be Filled
+        '''
+        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
+        g1 = np.zeros(len(x_all_unc),dtype = float) - 1
+        g = np.zeros(len(x_all_unc),dtype = float)
+        for i in range(len(x_all_unc)):
+            g[i] = ((x_all_unc[i]-self.center_x)**2 + (y_all_unc[i]-self.center_y)**2) - self.radius**2
+        G_const = constraints_eval([g],all_sensors,data = info)
+        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        return idx_const,rank
+        
            
 class Line(BaseConstraint):
     '''
@@ -249,6 +207,19 @@ class Line(BaseConstraint):
         #     ax1 = fig.add_subplot(121)        # if self.plot_type == 'scatter': ##complete
         #     ax1.scatter(x_coord, y_coord, s=10, c ='b')
             ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
+            
+    def line_constraint(self,all_sensors,info):
+        '''
+        To be Filled
+        '''
+        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
+        g1 = np.zeros(len(x_all_unc),dtype = float) - 1
+        g = np.zeros(len(x_all_unc),dtype = float)
+        for i in range(len(x_all_unc)):
+             g[i] = (y_all_unc[i]-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x_all_unc[i]-self.x1)
+        G_const = constraints_eval([g],all_sensors,data = info)
+        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        return idx_const,rank
     
     
         

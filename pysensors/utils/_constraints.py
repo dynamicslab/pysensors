@@ -270,12 +270,23 @@ class UserDefinedConstraints(BaseConstraint):
         self.info = info
         self.const_path = const_path
         
-    def draw_user_defined_constraint(self):
+    def draw(self,ax):
         '''
         To be filled
         '''
-        pass
-        
+        nConstraints = len([self.const_path])
+        G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+        for i in range(nConstraints):
+            if isinstance(self.info,tuple):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,shape = self.info)
+                G[:,i] = [x != 0 for x in temp]
+            elif isinstance(self.info,pd.DataFrame):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,data = self.info)
+                G[:,i] = [x != 0 for x in temp]
+        idx_const, rank = get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) ## Now I am getting the indices where the function has a value == 0
+        x_val,y_val = get_coordinates_from_indices(idx_const,self.info)
+        ax.scatter(x_val,y_val,s = 5 )
+         
     def constraint(self):
         '''
         To be Filled

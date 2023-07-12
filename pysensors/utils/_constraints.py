@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import sys, os
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+import matplotlib.patches as patches
 
 
 def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
@@ -82,33 +82,28 @@ class BaseConstraint():
     def __init__(self):
         pass
     
-    def constraint(self):
-        pass    
+    def constraint(self,all_sensors,info):
+        '''
+        To be Filled
+        '''
+        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
+        g = np.zeros(len(x_all_unc),dtype = float)
+        for i in range(len(x_all_unc)):
+             g[i] = self.constraint_function(x_all_unc[i], y_all_unc[i])
+        G_const = constraints_eval([g],all_sensors,data = info)
+        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        return idx_const,rank
     
-class circle(BaseConstraint):
-    '''
-    General class for dealing with circular user defined constraints.
-    Plotting, computing constraints functionalities included. 
-    '''
-    def __init__(self,center_x,center_y,radius):
+    def draw_constraint(self):
         '''
-        Attributes
-        ----------
-        center_x : float,
-            x-coordinate of the center of circle
-        center_y : float,
-            y-coordinate of the center of circle
-        radius : float,
-            radius of the circle
+        To be Filled
         '''
-        self.center_x = center_x
-        self.center_y = center_y
-        self.radius = radius
+        fig , ax = plt.subplots()
+        self.draw(ax)
         
-    def draw_circle(self,data,plot_type,**kwargs):
+    def plot_constraint_on_data(self,data,plot_type,**kwargs):
         '''
-        Function for plotting the user-defined constraint 
-        
+        Function for plotting the user-defined constraint on the data
         Attributes
         ----------
         data : pandas.DataFrame/np.darray [n_samples, n_features],
@@ -129,7 +124,6 @@ class circle(BaseConstraint):
         -----------
         A plot of the constraint on top of the measurement data plot.
         '''
-        c = Circle((self.center_x, self.center_y), self.radius, fill = False, color = 'r', lw = 2)
         if plot_type == 'image': 
             image = data[1,:].reshape(1,-1)
             n_samples, n_features = data.shape
@@ -138,7 +132,6 @@ class circle(BaseConstraint):
             for i, comp in enumerate(image):
                 vmax = max(comp.max(), -comp.min())
                 ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
-            ax.add_artist(c)
         elif plot_type == 'scatter': 
             if 'X_axis' in kwargs.keys():
                 X_axis = kwargs['X_axis']
@@ -151,9 +144,8 @@ class circle(BaseConstraint):
             
             y_vals = data[Y_axis]
             x_vals = data[X_axis]
-            ax1 = fig.add_subplot(121)
-            ax1.scatter(x_vals, y_vals, color = 'blue', marker = '.')
-            ax1.add_artist(c)
+            ax = fig.add_subplot(121)
+            ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
         elif plot_type == 'contour_map': 
             if 'X_axis' in kwargs.keys():
                 X_axis = kwargs['X_axis']
@@ -170,21 +162,42 @@ class circle(BaseConstraint):
             
             y_vals = data[Y_axis]
             x_vals = data[X_axis]
-            ax1 = fig.add_subplot(121)
-            ax1.scatter(x_vals, y_vals, c = data[Field], cmap = plt.cm.coolwarm, s = 1)
-            ax1.add_artist(c)
+            ax = fig.add_subplot(121)
+            ax.scatter(x_vals, y_vals, c = data[Field], cmap = plt.cm.coolwarm, s = 1)
+        self.draw(ax)
         
-    def circle_constraint(self,all_sensors,info):
+    
+class Circle(BaseConstraint):
+    '''
+    General class for dealing with circular user defined constraints.
+    Plotting, computing constraints functionalities included. 
+    '''
+    def __init__(self,center_x,center_y,radius):
+        '''
+        Attributes
+        ----------
+        center_x : float,
+            x-coordinate of the center of circle
+        center_y : float,
+            y-coordinate of the center of circle
+        radius : float,
+            radius of the circle
+        '''
+        self.center_x = center_x
+        self.center_y = center_y
+        self.radius = radius
+        
+    def draw(self,ax):
+        c = patches.Circle((self.center_x, self.center_y), self.radius, fill = False, color = 'r', lw = 2)
+        ax.add_patch(c)
+        ax.autoscale_view()
+        
+        
+    def constraint_function(self,x_all_unc, y_all_unc):
         '''
         To be Filled
         '''
-        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info) 
-        g = np.zeros(len(x_all_unc),dtype = float)
-        for i in range(len(x_all_unc)):
-            g[i] = ((x_all_unc[i]-self.center_x)**2 + (y_all_unc[i]-self.center_y)**2) - self.radius**2
-        G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
-        return idx_const,rank
+        return ((x_all_unc-self.center_x)**2 + (y_all_unc-self.center_y)**2) - self.radius**2
         
            
 class Line(BaseConstraint):
@@ -209,57 +222,17 @@ class Line(BaseConstraint):
         self.y1 = y1
         self.y2 = y2
         
-    def draw_line(self,idx,data,plot_type):
-        '''
-        Function for plotting the user-defined constraint 
-        
-        Attributes
-        ----------
-        data : pandas.DataFrame/np.darray [n_samples, n_features],
-            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
-        plot_type : string,
-            the type of plot used to display the data
-            image : if the data is represented in the fprm of an image
-            scatter: if the data can be represented with a scatter plot
-            contour_map: if the data can be represented in the form of a contour map
-        ** kwargs : Required for data in the form of a dataframe for the scatter and contour plots
-            X_axis : string,
-                Name of the column in dataframe to be plotted on the X axis.
-            Y-axis : string,
-                Name of the column in dataframe to be plotted on the Y axis.
-            Field : string,
-                Name of the column in dataframe to be plotted as a contour map.
-        Returns
-        -----------
-        A plot of the constraint on top of the measurement data plot.
-        '''
-        if plot_type == 'image': 
-            image = data[1,:].reshape(1,-1)
-            n_samples, n_features = data.shape
-            image_shape = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
-            fig , ax = plt.subplots()
-            for i, comp in enumerate(image):
-                vmax = max(comp.max(), -comp.min())
-                ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
-        # elif self.plot_type == 'scatter': 
-        #     x_coord, y_coord = BaseConstraint.get_coordinates_from_indices(idx,image_shape)
-        #     fig = plt.figure(figsize = (10,12))
-        #     ax1 = fig.add_subplot(121)        # if self.plot_type == 'scatter': ##complete
-        #     ax1.scatter(x_coord, y_coord, s=10, c ='b')
-            ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
-            
-    def line_constraint(self,all_sensors,info):
+    def draw(self,ax):
         '''
         To be Filled
         '''
-        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
-        g = np.zeros(len(x_all_unc),dtype = float)
-        for i in range(len(x_all_unc)):
-             g[i] = (y_all_unc[i]-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x_all_unc[i]-self.x1)
-        G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
-        return idx_const,rank
-    
+        ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
+            
+    def constraint_function(self,x_all_unc, y_all_unc):
+        '''
+        To be Filled
+        '''
+        return (y_all_unc-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x_all_unc-self.x1)
     
         
 class Parabola(BaseConstraint):
@@ -281,7 +254,7 @@ class Parabola(BaseConstraint):
         self.k = k
         self.a = a
         
-class userDefinedConstraints(BaseConstraint):
+class UserDefinedConstraints(BaseConstraint):
     '''
     General class for dealing with any form of user defined constraints.
     Plotting, computing constraints functionalities included. 
@@ -303,7 +276,7 @@ class userDefinedConstraints(BaseConstraint):
         '''
         pass
         
-    def user_defined_constraint(self):
+    def constraint(self):
         '''
         To be Filled
         '''

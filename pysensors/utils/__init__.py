@@ -4,9 +4,9 @@ from ._optimizers import constrained_multiclass_solve
 from ._constraints import get_constraind_sensors_indices
 from ._constraints import get_constrained_sensors_indices_linear
 from ._constraints import BaseConstraint
-from ._constraints import circle
+from ._constraints import Circle
 from ._constraints import Line
-from ._constraints import userDefinedConstraints
+from ._constraints import UserDefinedConstraints
 # from ._constraints import constraints_eval
 # from ._constraints import functional_constraints
 # from ._constraints import get_coordinates_from_indices
@@ -24,9 +24,9 @@ __all__ = [
     "get_constraind_sensors_indices",
     "get_constrained_sensors_indices_linear",
     "BaseConstraint",
-    "circle",
+    "Circle",
     "Line",
-    "userDefinedConstraints"
+    "UserDefinedConstraints"
     "box_constraints",
     "constraints_eval",
     "functional_constraints",

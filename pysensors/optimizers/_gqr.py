@@ -92,11 +92,9 @@ class GQR(QR):
         for j in range(k):
             r = R[j:, j:]
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
-            # Norm of each column
-            
-            dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
-            dlens_updated = self._norm_calc_Instance(self.idx_constrained, dlens, p, j, self.n_const_sensors, dlens_old=dlens, all_sensors=self.all_sensors, n_sensors=self.n_sensors, nx=self.nx, ny=self.ny, r=self.r)
-            i_piv = np.argmax(dlens_updated)
+            dlens_updated = self._norm_calc_Instance(self.idx_constrained, dlens, p, j, self.n_const_sensors, dlens_old=dlens_old, all_sensors=self.all_sensors, n_sensors=self.n_sensors, nx=self.nx, ny=self.ny, r=self.r)
+            # i_piv = np.argmax(dlens_updated)
+            i_piv = np.where(dlens_updated==dlens_updated.max())[0][0]
             dlen = dlens_updated[i_piv]
                 
             if dlen > 0:

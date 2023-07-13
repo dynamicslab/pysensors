@@ -4,7 +4,10 @@ Various utility functions for mapping constrained sensors locations with the col
 """
 
 import numpy as np
+import pandas as pd
 import sys, os
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 
 def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
@@ -72,113 +75,371 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
             idx_constrained.append(i)
     return idx_constrained
 
-def get_constrained_sensors_indices_distance(j,piv,r, nx,ny, all_sensors):
-    """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
-    Parameters
+class BaseConstraint():
+    '''
+    --To be filled---
+    '''
+    def __init__(self):
+        pass
+    
+    def constraint(self,all_sensors,info):
+        '''
+        To be Filled
+        '''
+        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
+        g = np.zeros(len(x_all_unc),dtype = float)
+        for i in range(len(x_all_unc)):
+             g[i] = self.constraint_function(x_all_unc[i], y_all_unc[i])
+        G_const = constraints_eval([g],all_sensors,data = info)
+        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        return idx_const,rank
+    
+    def draw_constraint(self):
+        '''
+        To be Filled
+        '''
+        fig , ax = plt.subplots()
+        self.draw(ax)
+        
+    def plot_constraint_on_data(self,data,plot_type,**kwargs):
+        '''
+        Function for plotting the user-defined constraint on the data
+        Attributes
         ----------
-        all_sensors : np.ndarray, shape [n_features]
-            Ranked list of sensor locations.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
+        plot_type : string,
+            the type of plot used to display the data
+            image : if the data is represented in the fprm of an image
+            scatter: if the data can be represented with a scatter plot
+            contour_map: if the data can be represented in the form of a contour map
+        ** kwargs : Required for data in the form of a dataframe for the scatter and contour plots
+            X_axis : string,
+                Name of the column in dataframe to be plotted on the X axis.
+            Y-axis : string,
+                Name of the column in dataframe to be plotted on the Y axis.
+            Field : string,
+                Name of the column in dataframe to be plotted as a contour map.
         Returns
-        -------
-        idx_constrained : np.darray, shape [No. of constrained locations]
-            Array which contains the constrained locationsof the grid in terms of column indices of basis_matrix.
-    """
-    n_features = len(all_sensors)
-    image_size = int(np.sqrt(n_features))
-    a = np.unravel_index(piv, (nx,ny))
-    t = np.unravel_index(all_sensors, (nx,ny))
-    x_cord = a[0][j-1]
-    y_cord = a[1][j-1]
-    #print(x_cord,y_cord)
-    constrained_sensorsx = []
-    constrained_sensorsy = []
-    for i in range(n_features):
-        if ((t[0][i]-x_cord)**2 + (t[1][i]-y_cord)**2) < r**2:
-            constrained_sensorsx.append(t[0][i])
-            constrained_sensorsy.append(t[1][i])
+        -----------
+        A plot of the constraint on top of the measurement data plot.
+        '''
+        if plot_type == 'image': 
+            image = data[1,:].reshape(1,-1)
+            n_samples, n_features = data.shape
+            image_shape = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
+            fig , ax = plt.subplots()
+            for i, comp in enumerate(image):
+                vmax = max(comp.max(), -comp.min())
+                ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
+        elif plot_type == 'scatter': 
+            if 'X_axis' in kwargs.keys():
+                X_axis = kwargs['X_axis']
+            else:
+                raise Exception('Must proved X_axis as **kwargs')
+            if 'Y_axis' in kwargs.keys():
+                Y_axis = kwargs['Y_axis']
+            else:
+                raise Exception('Must proved Y_axis as **kwargs')
+            
+            y_vals = data[Y_axis]
+            x_vals = data[X_axis]
+            ax = fig.add_subplot(121)
+            ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
+        elif plot_type == 'contour_map': 
+            if 'X_axis' in kwargs.keys():
+                X_axis = kwargs['X_axis']
+            else:
+                raise Exception('Must proved X_axis as **kwargs')
+            if 'Y_axis' in kwargs.keys():
+                Y_axis = kwargs['Y_axis']
+            else:
+                raise Exception('Must proved Y_axis as **kwargs')
+            if 'Field' in kwargs.keys():
+                Field = kwargs['Field']
+            else:
+                raise Exception('Must proved Field as **kwargs')
+            
+            y_vals = data[Y_axis]
+            x_vals = data[X_axis]
+            ax = fig.add_subplot(121)
+            ax.scatter(x_vals, y_vals, c = data[Field], cmap = plt.cm.coolwarm, s = 1)
+        self.draw(ax)
+        
+    
+class Circle(BaseConstraint):
+    '''
+    General class for dealing with circular user defined constraints.
+    Plotting, computing constraints functionalities included. 
+    '''
+    def __init__(self,center_x,center_y,radius):
+        '''
+        Attributes
+        ----------
+        center_x : float,
+            x-coordinate of the center of circle
+        center_y : float,
+            y-coordinate of the center of circle
+        radius : float,
+            radius of the circle
+        '''
+        self.center_x = center_x
+        self.center_y = center_y
+        self.radius = radius
+        
+    def draw(self,ax):
+        c = patches.Circle((self.center_x, self.center_y), self.radius, fill = False, color = 'r', lw = 2)
+        ax.add_patch(c)
+        ax.autoscale_view()
+        
+        
+    def constraint_function(self,x_all_unc, y_all_unc):
+        '''
+        To be Filled
+        '''
+        return ((x_all_unc-self.center_x)**2 + (y_all_unc-self.center_y)**2) - self.radius**2
+        
+           
+class Line(BaseConstraint):
+    '''
+    To be filled
+    '''
+    def __init__(self,x1,x2,y1,y2):
+        '''
+        Attributes
+        ----------
+        x1 : float,
+            x-coordinate of one end-point of the line
+        x2 : float,
+            x-coordinate of the other end-point of the line
+        y1 : float,
+            y-coordinate of one end-point of the line
+        y2 : float,
+            y-coordinate of the other end-point of the line
+        '''
+        self.x1 = x1
+        self.x2 = x2
+        self.y1 = y1
+        self.y2 = y2
+        
+    def draw(self,ax):
+        '''
+        To be Filled
+        '''
+        ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
+            
+    def constraint_function(self,x_all_unc, y_all_unc):
+        '''
+        To be Filled
+        '''
+        return (y_all_unc-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x_all_unc-self.x1)
+    
+        
+class Parabola(BaseConstraint):
+    '''
+    Fill in
+    '''
+    def __init__(self,h,k,a):
+        '''
+        Attributes
+        ----------
+        h : float,
+            x-coordinate of the vertex of the parabola we want to be constrained
+        k : float,
+            y-coordinate of the vertex of the parabola we want to be constrained
+        a : float,
+            x-coordinate of the focus of the parabola
+        '''
+        self.h = h
+        self.k = k
+        self.a = a
+        
+class UserDefinedConstraints(BaseConstraint):
+    '''
+    General class for dealing with any form of user defined constraints.
+    Plotting, computing constraints functionalities included. 
+    '''
+    def __init__(self,all_sensors,info,const_path):
+        '''
+        Attributes
+        ----------
+        const_path : 'string',
+            path of the file that constains the user-defined constraint function
+        '''
+        self.all_sensors = all_sensors
+        self.info = info
+        self.const_path = const_path
+        
+    def draw(self,ax):
+        '''
+        To be filled
+        '''
+        nConstraints = len([self.const_path])
+        G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+        for i in range(nConstraints):
+            if isinstance(self.info,tuple):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,shape = self.info)
+                G[:,i] = [x != 0 for x in temp]
+            elif isinstance(self.info,pd.DataFrame):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,data = self.info)
+                G[:,i] = [x != 0 for x in temp]
+        idx_const, rank = get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) ## Now I am getting the indices where the function has a value == 0
+        x_val,y_val = get_coordinates_from_indices(idx_const,self.info)
+        ax.scatter(x_val,y_val,s = 5 )
+         
+    def constraint(self):
+        '''
+        To be Filled
+        '''
+        nConstraints = len([self.const_path])
+        G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+        for i in range(nConstraints):
+            if isinstance(self.info,tuple):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,shape = self.info)
+                G[:,i] = [x>=0 for x in temp]
+            elif isinstance(self.info,pd.DataFrame):
+                temp = functional_constraints([self.const_path][i],self.all_sensors,data = self.info)
+                G[:,i] = [x>=0 for x in temp]
+        idx_const, rank = get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0])
+        return idx_const,rank
+        
+def functional_constraints(functionHandler, idx,**kwargs):
+        """
+        Function for evaluating the functional constraints.
 
-    constrained_sensorsx = np.array(constrained_sensorsx)
-    constrained_sensorsy = np.array(constrained_sensorsy)
-    constrained_sensors_array = np.stack((constrained_sensorsx, constrained_sensorsy), axis=1)
-    constrained_sensors_tuple = np.transpose(constrained_sensors_array)
-    if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
-        idx_constrained = []
-    else:
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
-    return idx_constrained
+        Parameters
+        ----------
+        functionHandler : function, a function handle to the function which is to be evaluated
+        idx : np.ndarray, ranked list of sensor locations (column indices)
+        shape : tuple of ints, Shape of the matrix fed as data to the algorithm
+        data : pandas.DataFrame, Dataframe which represents the measurement data.
 
-def functional_constraints(functionHandler, idx,kwargs):
-    """
-    Function for evaluating the functional constraints.
-
-    Parameters
-    ----------
-    functionHandler : function, a function handle to the function which is to be evaluated
-    idx :
-
-    Return
-    ------
-
-    """
-    if 'shape' in kwargs.keys():
-        shape = kwargs['shape']
-        xLoc,yLoc = get_coordinates_from_indices(idx,shape)
-        print(xLoc,yLoc)
-    elif 'data' in kwargs.keys():
-        data = kwargs['data']
-        xLoc,yLoc =  get_indices_from_dataframe(data)
-        print(xLoc,yLoc)
-
-    functionName = os.path.basename(functionHandler).strip('.py')
-    dirName = os.path.dirname(functionHandler)
-    sys.path.insert(0,os.path.expanduser(dirName))
-    module = __import__(functionName)
-    func = getattr(module, functionName)
-    g = func(xLoc, yLoc,**kwargs)
-    print(g)
-    return g
-
+        Return
+        ------
+        g : function, Contains the function defined by the user for the functional constraint. 
+        """
+        if 'shape' in kwargs.keys():
+            shape = kwargs['shape']
+            xLoc,yLoc = get_coordinates_from_indices(idx,shape)
+        elif 'data' in kwargs.keys():
+            data = kwargs['data']
+            ## TODO:
+            #xLoc = data.loc[idx, 'X (m)']
+            #yLoc = data.loc[idx, 'Y (m)']
+            xLoc,yLoc =  get_indices_from_dataframe(idx,data)
+        functionName = os.path.basename(functionHandler).strip('.py')
+        dirName = os.path.dirname(functionHandler)
+        sys.path.insert(0,os.path.expanduser(dirName))
+        module = __import__(functionName)
+        func = getattr(module, functionName)
+        g = func(xLoc, yLoc,**kwargs)
+        return g
+    
 def constraints_eval(constraints,senID,**kwargs):
-    """_summary_
+    """
+    Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
-    Args:
-        constraints (_type_): _description_
+    Parameters:
+    ---------- 
+        constraints: __(type?)__, The constraint defined by the user 
+        senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
+        data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
+                Dataframe or Matrix which represent the measurement data.
+    Returns
+    -------
+    G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
     """
     nConstraints = len(constraints)
-    G = np.zeros((len(senID),nConstraints))
+    G = np.zeros((len(senID),nConstraints),dtype=bool)
     for i in range(nConstraints):
-        G[:,i] = functional_constraints(constraints[i],senID,kwargs)
-    return G
+        # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
+        G[:,i] = [x>=0 for x in constraints[i]]
 
+    return G
+    
 def get_functionalConstraind_sensors_indices(senID,g):
     """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
+    Function for finding constrained sensor locations on the grid and their ranks
 
     Parameters
     ----------
-    senID: int, sensor ID
+    senID: np.darray, ranked list of sensor locations (column indices)
     g : float, constraint evaluation function (negative if violating the constraint)
 
     Returns
     -------
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
+    rank : np.darray, shape [No. of constrained locations], array which contains rank of the constrained sensor locations
     """
-
-    idx_constrained = senID[g<0].tolist()
-    rank = np.where(np.isin(senID,idx_constrained)==True)[0].tolist()
+    assert (len(senID)==len(g))
+    idx_constrained = senID[~g].tolist()
+    rank = np.where(np.isin(senID,idx_constrained))[0].tolist() # ==False
     return idx_constrained, rank
-
+    
 def order_constrained_sensors(idx_constrained_list, ranks_list):
+    """
+    Function for ordering constrained sensor locations on the grid according to their ranks.
+
+    Parameters
+    ----------
+    idx_constrained_list : np.darray shape [No. of constrained locations], Constrained sensor locations
+    ranks_list : no.darray shape [No. of constrained locations], Ranks of each constrained sensor location
+
+    Returns
+    -------
+    sortedConstraints : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix sorted according to their rank.
+    ranks : np.darray, shape [No. of constrained locations], array which contains the ranks of constrained sensors. 
+    """
     sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
+    
+def get_coordinates_from_indices(idx,info):
+    """
+    Function for obtaining the coordinates on a grid from column indices
 
-def get_coordinates_from_indices(idx,shape):
-    return np.unravel_index(idx,shape,'F')
+    Parameters
+    ----------
+    idx :  int, sensor ID
+    info : pandas.DataFrame/np.ndarray shape [n_features, n_samples], Dataframe or Matrix which represent the measurement data.
 
-def get_indices_from_coordinates(corrdinates,shape):
-    return np.ravel_multi_index(corrdinates,shape,order='F')
+    Returns
+    -------
+    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
+        locations of the grid in terms of column indices of basis_matrix.
+
+    Returns:
+        (x,y) : tuple, The coordinates on the grid of each sensor. 
+    """
+    if isinstance(info,tuple):
+        return np.unravel_index(idx,info,'F')
+    elif isinstance(info,pd.DataFrame):
+        x = info.loc[idx,'X (m)']#.values
+        y = info.loc[idx,'Y (m)']#.values
+        return (x,y)
+    
+def get_indices_from_coordinates(coordinates,shape):
+    """
+    Function for obtaining the indices of columns/sensors from coordinates on a grid when data is in the form of a matrix
+    
+    Parameters
+    ----------
+    coordinates : tuple of array_like , (x,y) pair coordinates of sensor locations on the grid
+    shape : tuple of ints, Shape of the matrix fed as data to the algorithm
+
+    Returns
+    -------
+    np.ravel_multi_index(coordinates,shape,order='F') : np.ndarray, The indices of the sensors. 
+    """
+    return np.ravel_multi_index(coordinates,shape,order='F')
+
+def get_indices_from_dataframe(idx,df): ## Niharikas_comment : I think this should be renamed to get coordinates from dataframe as when given a sensor index it returns a tuple containing the coordinates of that sensor index.
+    ## It can also maybe be removed completely as get_coordinates_from_indices(idx,info) does the same thing. Thoughts? 
+    
+    x = df['X (m)'].to_numpy()
+    y = df['Y (m)'].to_numpy()
+    return(x[idx],y[idx])
 
 def get_indices_from_dataframe(df):
     x = df['X (m)'].to_numpy()

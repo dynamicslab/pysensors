@@ -82,14 +82,14 @@ class BaseConstraint():
     def __init__(self):
         pass
     
-    def constraint(self,all_sensors,info):
+    def get_constraint_indices(self,all_sensors,info):
         '''
         To be Filled
         '''
-        x_all_unc, y_all_unc = get_coordinates_from_indices(all_sensors,info)
-        g = np.zeros(len(x_all_unc),dtype = float)
-        for i in range(len(x_all_unc)):
-             g[i] = self.constraint_function(x_all_unc[i], y_all_unc[i])
+        x, y = get_coordinates_from_indices(all_sensors,info)
+        g = np.zeros(len(x),dtype = float)
+        for i in range(len(x)):
+             g[i] = self.constraint_function(x[i], y[i])
         G_const = constraints_eval([g],all_sensors,data = info)
         idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
         return idx_const,rank
@@ -136,11 +136,11 @@ class BaseConstraint():
             if 'X_axis' in kwargs.keys():
                 X_axis = kwargs['X_axis']
             else:
-                raise Exception('Must proved X_axis as **kwargs')
+                raise Exception('Must provide X_axis as **kwargs')
             if 'Y_axis' in kwargs.keys():
                 Y_axis = kwargs['Y_axis']
             else:
-                raise Exception('Must proved Y_axis as **kwargs')
+                raise Exception('Must provide Y_axis as **kwargs')
             
             y_vals = data[Y_axis]
             x_vals = data[X_axis]
@@ -150,15 +150,15 @@ class BaseConstraint():
             if 'X_axis' in kwargs.keys():
                 X_axis = kwargs['X_axis']
             else:
-                raise Exception('Must proved X_axis as **kwargs')
+                raise Exception('Must provide X_axis as **kwargs')
             if 'Y_axis' in kwargs.keys():
                 Y_axis = kwargs['Y_axis']
             else:
-                raise Exception('Must proved Y_axis as **kwargs')
+                raise Exception('Must provide Y_axis as **kwargs')
             if 'Field' in kwargs.keys():
                 Field = kwargs['Field']
             else:
-                raise Exception('Must proved Field as **kwargs')
+                raise Exception('Must provide Field as **kwargs')
             
             y_vals = data[Y_axis]
             x_vals = data[X_axis]
@@ -166,6 +166,60 @@ class BaseConstraint():
             ax.scatter(x_vals, y_vals, c = data[Field], cmap = plt.cm.coolwarm, s = 1)
         self.draw(ax)
         
+    def plot_grid(self,all_sensors,data,**kwargs):
+        '''
+        To be filled
+        '''
+        if isinstance(data,np.ndarray):
+            n_samples, n_features = data.shape
+            info = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
+            x_val, y_val = get_coordinates_from_indices(all_sensors,info)
+            fig , ax = plt.subplots()
+            ax.scatter(x_val, y_val, color = 'blue', marker = '.')
+        elif isinstance(data,pd.DataFrame):
+            if 'X_axis' in kwargs.keys():
+                X_axis = kwargs['X_axis']
+            else:
+                raise Exception('Must provide X_axis as **kwargs')
+            if 'Y_axis' in kwargs.keys():
+                Y_axis = kwargs['Y_axis']
+            else:
+                raise Exception('Must provide Y_axis as **kwargs')
+            if 'Field' in kwargs.keys():
+                Field = kwargs['Field']
+            else:
+                raise Exception('Must provide Field as **kwargs')
+            y_vals = data[Y_axis]
+            x_vals = data[X_axis]
+            fig , ax = plt.subplots()
+            ax.scatter(x_val, y_val, color = 'blue', marker = '.')
+        
+    def sensors_dataframe(self,sensors,data):
+        '''
+        To be filled
+        '''
+        n_samples, n_features = data.shape
+        n_sensors = len(sensors)
+        xTop = np.mod(sensors,np.sqrt(n_features))
+        yTop = np.floor(sensors/np.sqrt(n_features))
+        columns = ['Sensor ID','SensorX','sensorY'] 
+        Sensors_df = pd.DataFrame(data = np.vstack([sensors,xTop,yTop]).T,columns=columns,dtype=int)
+        Sensors_df.head(n_sensors)
+        return Sensors_df
+        
+    def annotate_sensors(self,sensors,data):
+        '''
+        To be filled
+        '''
+        n_samples, n_features = data.shape
+        n_sensors = len(sensors)
+        xTop = np.mod(sensors,np.sqrt(n_features))
+        yTop = np.floor(sensors/np.sqrt(n_features))
+        data = np.vstack([sensors,xTop,yTop]).T
+        for ind,i in enumerate(range(len(xTop))):
+            plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
+                xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                arrowprops=dict(arrowstyle="->", color='black'))
     
 class Circle(BaseConstraint):
     '''

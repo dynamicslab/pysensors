@@ -66,7 +66,7 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
-    x = df['X (m)'].to_numpy()
+    x = df['X (m)'].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe
     n_features = x.shape[0]
     y = df['Y (m)'].to_numpy()
     idx_constrained = []
@@ -75,12 +75,41 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
             idx_constrained.append(i)
     return idx_constrained
 
-class BaseConstraint():
+class BaseConstraint(object):
     '''
     --To be filled---
     '''
-    def __init__(self):
-        pass
+    def __init__(self,**kwgs):
+        """
+        Attributes
+        ----------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
+        """
+        if 'data' in kwgs.keys():
+            self.data = kwgs['data']
+        else:
+            raise Exception('Must provide data as **kwgs')
+        if isinstance(self.data,pd.DataFrame):
+            if 'X_axis' in kwgs.keys():
+                self.X_axis = kwgs['X_axis']
+            else:
+                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+            if 'Y_axis' in kwgs.keys():
+                self.Y_axis = kwgs['Y_axis']
+            else:
+                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+            if 'Field' in kwgs.keys():
+                self.Field = kwgs['Field']
+            else:
+                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+        
     
     def get_constraint_indices(self,all_sensors,info):
         '''
@@ -101,7 +130,7 @@ class BaseConstraint():
         fig , ax = plt.subplots()
         self.draw(ax)
         
-    def plot_constraint_on_data(self,data,plot_type,**kwargs):
+    def plot_constraint_on_data(self,plot_type):
         '''
         Function for plotting the user-defined constraint on the data
         Attributes
@@ -125,108 +154,89 @@ class BaseConstraint():
         A plot of the constraint on top of the measurement data plot.
         '''
         if plot_type == 'image': 
-            image = data[1,:].reshape(1,-1)
-            n_samples, n_features = data.shape
+            image = self.data[1,:].reshape(1,-1)
+            n_samples, n_features = self.data.shape
             image_shape = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
             fig , ax = plt.subplots()
             for i, comp in enumerate(image):
                 vmax = max(comp.max(), -comp.min())
                 ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
         elif plot_type == 'scatter': 
-            if 'X_axis' in kwargs.keys():
-                X_axis = kwargs['X_axis']
-            else:
-                raise Exception('Must provide X_axis as **kwargs')
-            if 'Y_axis' in kwargs.keys():
-                Y_axis = kwargs['Y_axis']
-            else:
-                raise Exception('Must provide Y_axis as **kwargs')
-            
-            y_vals = data[Y_axis]
-            x_vals = data[X_axis]
-            ax = fig.add_subplot(121)
+            fig , ax = plt.subplots()
+            y_vals = self.data[self.Y_axis]
+            x_vals = self.data[self.X_axis]
             ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
         elif plot_type == 'contour_map': 
-            if 'X_axis' in kwargs.keys():
-                X_axis = kwargs['X_axis']
-            else:
-                raise Exception('Must provide X_axis as **kwargs')
-            if 'Y_axis' in kwargs.keys():
-                Y_axis = kwargs['Y_axis']
-            else:
-                raise Exception('Must provide Y_axis as **kwargs')
-            if 'Field' in kwargs.keys():
-                Field = kwargs['Field']
-            else:
-                raise Exception('Must provide Field as **kwargs')
-            
-            y_vals = data[Y_axis]
-            x_vals = data[X_axis]
-            ax = fig.add_subplot(121)
-            ax.scatter(x_vals, y_vals, c = data[Field], cmap = plt.cm.coolwarm, s = 1)
+            fig , ax = plt.subplots()
+            y_vals = self.data[self.Y_axis]
+            x_vals = self.data[self.X_axis]
+            ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = plt.cm.coolwarm, s = 1)
         self.draw(ax)
         
-    def plot_grid(self,all_sensors,data,**kwargs):
+    def plot_grid(self,all_sensors):
         '''
         To be filled
         '''
-        if isinstance(data,np.ndarray):
-            n_samples, n_features = data.shape
+        if isinstance(self.data,np.ndarray):
+            n_samples, n_features = self.data.shape
             info = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
             x_val, y_val = get_coordinates_from_indices(all_sensors,info)
             fig , ax = plt.subplots()
             ax.scatter(x_val, y_val, color = 'blue', marker = '.')
-        elif isinstance(data,pd.DataFrame):
-            if 'X_axis' in kwargs.keys():
-                X_axis = kwargs['X_axis']
-            else:
-                raise Exception('Must provide X_axis as **kwargs')
-            if 'Y_axis' in kwargs.keys():
-                Y_axis = kwargs['Y_axis']
-            else:
-                raise Exception('Must provide Y_axis as **kwargs')
-            if 'Field' in kwargs.keys():
-                Field = kwargs['Field']
-            else:
-                raise Exception('Must provide Field as **kwargs')
-            y_vals = data[Y_axis]
-            x_vals = data[X_axis]
+        elif isinstance(self.data,pd.DataFrame):
+            y_vals = self.data[self.Y_axis]
+            x_vals = self.data[self.X_axis]
             fig , ax = plt.subplots()
-            ax.scatter(x_val, y_val, color = 'blue', marker = '.')
+            ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
         
-    def sensors_dataframe(self,sensors,data):
+    def sensors_dataframe(self,sensors):
         '''
         To be filled
         '''
-        n_samples, n_features = data.shape
+        n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        xTop = np.mod(sensors,np.sqrt(n_features))
-        yTop = np.floor(sensors/np.sqrt(n_features))
+        if isinstance(self.data,np.ndarray):
+            xTop = np.mod(sensors,np.sqrt(n_features))
+            yTop = np.floor(sensors/np.sqrt(n_features))
+        elif isinstance(self.data,pd.DataFrame):
+            xTop, yTop = get_coordinates_from_indices(sensors,self.data)
         columns = ['Sensor ID','SensorX','sensorY'] 
-        Sensors_df = pd.DataFrame(data = np.vstack([sensors,xTop,yTop]).T,columns=columns,dtype=int)
+        Sensors_df = pd.DataFrame(data = np.vstack([sensors,xTop,yTop]).T,columns=columns,dtype=float)
         Sensors_df.head(n_sensors)
         return Sensors_df
         
-    def annotate_sensors(self,sensors,data):
+            
+        
+    def annotate_sensors(self,sensors):
         '''
         To be filled
         '''
-        n_samples, n_features = data.shape
+        n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        xTop = np.mod(sensors,np.sqrt(n_features))
-        yTop = np.floor(sensors/np.sqrt(n_features))
-        data = np.vstack([sensors,xTop,yTop]).T
-        for ind,i in enumerate(range(len(xTop))):
-            plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
-                xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
-                arrowprops=dict(arrowstyle="->", color='black'))
+        if isinstance(self.data,np.ndarray):
+            xTop = np.mod(sensors,np.sqrt(n_features))
+            yTop = np.floor(sensors/np.sqrt(n_features))
+            data = np.vstack([sensors,xTop,yTop]).T
+            for ind,i in enumerate(range(len(xTop))):
+                plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
+                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    arrowprops=dict(arrowstyle="->", color='black'))
+        elif isinstance(self.data,pd.DataFrame):
+            X,Y = self.data[self.X_axis], self.data[self.Y_axis]
+            xTop, yTop = get_coordinates_from_indices(sensors,self.data)
+            data = np.vstack([sensors,xTop,yTop]).T
+            for _,i in enumerate(range(len(xTop))):
+                plt.annotate(f"{str(i)}",(xTop.to_numpy()[i]*100,yTop.to_numpy()[i]*100),xycoords='data',
+                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    arrowprops=dict(arrowstyle="->", color='black'))
     
 class Circle(BaseConstraint):
     '''
     General class for dealing with circular user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,radius):
+    def __init__(self,center_x,center_y,radius, **kwgs):
+        super().__init__(**kwgs)
         '''
         Attributes
         ----------
@@ -258,7 +268,8 @@ class Line(BaseConstraint):
     '''
     To be filled
     '''
-    def __init__(self,x1,x2,y1,y2):
+    def __init__(self,x1,x2,y1,y2,**kwgs):
+        super().__init__(**kwgs)
         '''
         Attributes
         ----------
@@ -293,7 +304,8 @@ class Parabola(BaseConstraint):
     '''
     Fill in
     '''
-    def __init__(self,h,k,a):
+    def __init__(self,h,k,a, **kwgs):
+        super().__init__(**kwgs)
         '''
         Attributes
         ----------
@@ -313,7 +325,8 @@ class UserDefinedConstraints(BaseConstraint):
     General class for dealing with any form of user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,all_sensors,info,const_path):
+    def __init__(self,all_sensors,info,const_path, **kwgs):
+        super().__init__(**kwgs)
         '''
         Attributes
         ----------
@@ -469,7 +482,7 @@ def get_coordinates_from_indices(idx,info):
     if isinstance(info,tuple):
         return np.unravel_index(idx,info,'F')
     elif isinstance(info,pd.DataFrame):
-        x = info.loc[idx,'X (m)']#.values
+        x = info.loc[idx,'X (m)']#.values  ## This will not always be X (m) or Y (m) CHANGE!!!
         y = info.loc[idx,'Y (m)']#.values
         return (x,y)
     

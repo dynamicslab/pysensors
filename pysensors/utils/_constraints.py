@@ -49,7 +49,7 @@ def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_senso
         idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
     return idx_constrained
 
-def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
+def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df,**kwgs):
     """
     Function for obtaining constrained column indices from already existing linear sensor locations on the grid.
 
@@ -66,9 +66,17 @@ def get_constrained_sensors_indices_linear(x_min, x_max, y_min, y_max,df):
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
-    x = df['X (m)'].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe
+    if 'X_axis' in kwgs.keys():
+        X_axis = kwgs['X_axis']
+    else:
+        raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+    if 'Y_axis' in kwgs.keys():
+        Y_axis = kwgs['Y_axis']
+    else:
+        raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+    x = df[X_axis].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe
     n_features = x.shape[0]
-    y = df['Y (m)'].to_numpy()
+    y = df[Y_axis].to_numpy()
     idx_constrained = []
     for i in range(n_features):
         if (x[i] >= x_min and x[i] <= x_max) and (y[i] >= y_min and y[i] <= y_max):

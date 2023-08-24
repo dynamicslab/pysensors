@@ -6,11 +6,12 @@ from ._constraints import get_constrained_sensors_indices_linear
 from ._constraints import BaseConstraint
 from ._constraints import Circle
 from ._constraints import Line
+from ._constraints import Ellipse
 from ._constraints import UserDefinedConstraints
-# from ._constraints import constraints_eval
-# from ._constraints import functional_constraints
-# from ._constraints import get_coordinates_from_indices
-# from ._constraints import get_indices_from_coordinates
+from ._constraints import constraints_eval
+from ._constraints import functional_constraints
+from ._constraints import get_coordinates_from_indices
+from ._constraints import get_indices_from_coordinates
 from ._norm_calc import exact_n
 from ._norm_calc import max_n
 from ._norm_calc import predetermined
@@ -26,6 +27,7 @@ __all__ = [
     "BaseConstraint",
     "Circle",
     "Line",
+    "Ellipse",
     "UserDefinedConstraints"
     "box_constraints",
     "constraints_eval",

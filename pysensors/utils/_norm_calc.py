@@ -3,7 +3,6 @@ Various utility functions for calculating the norm and providing dlens_updated b
 """
 
 import numpy as np
-from ._constraints import get_constrained_sensors_indices_distance
 
 def unconstrained(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     return dlens
@@ -124,56 +123,11 @@ def predetermined(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     dlens[didx] = 0
     return dlens
 
-def distance(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):   #j,dlens,dlens_old,piv,nx,ny,r, all_sensors, n_sensors
-    if 'all_sensors' in kwargs.keys():
-        all_sensors = kwargs['all_sensors']
-    else:
-        all_sensors = []
-    if 'n_sensors' in kwargs.keys():
-        n_sensors = kwargs['n_sensors']
-    else:
-        n_sensors = len(all_sensors)
-    if 'r' in kwargs.keys():
-        r = kwargs['r']
-    else:
-        r = 1
-    if 'nx' in kwargs.keys():
-        nx = kwargs['nx']
-    else:
-        nx = 64
-    if 'ny' in kwargs.keys():
-        ny = kwargs['ny']
-    else:
-        ny = 64
-    if 'dlens_old' in kwargs.keys():
-        dlens_old = kwargs['dlens_old']
-    else:
-        dlens_old = []
-    if j == 1:
-        idx_constrained = get_constrained_sensors_indices_distance(j,piv,r, nx,ny, all_sensors)
-        print(idx_constrained)
-        didx = np.isin(piv[j:],idx_constrained,invert= False)
-        dlens[didx] = 0
-        return dlens
-    else:
-        result = np.where(dlens_old == 0)[0]
-        result_list = result.tolist()
-        result_list = [x + (j-1) for x in result_list]
-        result_array = np.array(result_list)
-        print(result_array)
-
-        idx_constrained1 = get_constrained_sensors_indices_distance(j,piv,r, nx,ny, all_sensors)
-        t = np.concatenate((idx_constrained1,result_array), axis = 0)
-        didx = np.isin(piv[j:],t,invert= False)
-        dlens[didx] = 0
-        return dlens
-
 __norm_calc_type = {}
 __norm_calc_type[''] = unconstrained
 __norm_calc_type['exact_n'] = exact_n
 __norm_calc_type['max_n'] = max_n
 __norm_calc_type['predetermined'] = predetermined
-__norm_calc_type['distance'] = distance
 
 def returnInstance(cls, name):
   """

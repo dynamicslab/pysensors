@@ -74,7 +74,7 @@ class GQR(QR):
         [setattr(self,name,optimizer_kws.get(name,getattr(self,name))) for name in optimizer_kws.keys()]
         self._norm_calc_Instance = normCalcReturnInstance(self, self.constraint_option)
         n_features, n_samples = basis_matrix.shape  # We transpose basis_matrix below
-        max_const_sensors = len(self.idx_constrained) # Maximum number of sensors allowed in the constrained region
+        # max_const_sensors = len(self.idx_constrained) # Maximum number of sensors allowed in the constrained region
 
         ## Assertions and checks:
         # if self.n_sensors > n_features - max_const_sensors + self.nConstrainedSensors:

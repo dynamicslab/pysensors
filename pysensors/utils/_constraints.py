@@ -144,7 +144,7 @@ class BaseConstraint(object):
         for i in range(len(x)):
              g[i] = self.constraint_function(x[i], y[i])
         G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        idx_const, rank = get_functionalConstraind_sensors_indices(all_sensors,np.squeeze(G_const))
         return idx_const,rank
     
     def draw_constraint(self):
@@ -236,7 +236,7 @@ class BaseConstraint(object):
         Sensors_df.head(n_sensors)
         return Sensors_df
         
-    def annotate_sensors(self,sensors):
+    def annotate_sensors(self,sensors,color='red'):
         '''
         Function to annotate the sensor location on the grid with the rand of the sensor
         Attributes
@@ -253,16 +253,18 @@ class BaseConstraint(object):
             xTop = np.mod(sensors,np.sqrt(n_features))
             yTop = np.floor(sensors/np.sqrt(n_features))
             data = np.vstack([sensors,xTop,yTop]).T
+            plt.plot(xTop, yTop,'*',color=color,alpha=0.3)
             for ind,i in enumerate(range(len(xTop))):
                 plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
         elif isinstance(self.data,pd.DataFrame):
             xTop, yTop = get_coordinates_from_indices(sensors,self.data)    #### Annotate not working for dataframe : FIX
             data = np.vstack([sensors,xTop,yTop]).T
+            plt.plot(xTop, yTop,'*',color=color,alpha=0.3)
             for _,i in enumerate(range(len(sensors))):
                 plt.annotate(f"{str(i)}",(xTop.to_numpy()[i]*100,yTop.to_numpy()[i]*100),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
     
 class Circle(BaseConstraint):
@@ -270,7 +272,7 @@ class Circle(BaseConstraint):
     General class for dealing with circular user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,radius,loc, **kwgs):
+    def __init__(self,center_x,center_y,radius,loc='in', **kwgs):
         super().__init__(**kwgs)
         '''
         Attributes
@@ -389,7 +391,7 @@ class Ellipse(BaseConstraint):
     General class for dealing with elliptical user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,half_major_axis, half_minor_axis,loc, **kwgs):
+    def __init__(self,center_x,center_y,half_major_axis, half_minor_axis,angle=0.0,loc='in', **kwgs):
         super().__init__(**kwgs)
         '''
         Attributes
@@ -402,6 +404,8 @@ class Ellipse(BaseConstraint):
             half the length of the major axis
         half_minor_axis : float,
             half the length of the minor axis
+        angle : float,
+            angle of the orientation of the ellipse in degrees
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
         '''
@@ -410,6 +414,7 @@ class Ellipse(BaseConstraint):
         self.half_major_axis = half_major_axis
         self.half_minor_axis = half_minor_axis
         self.loc = loc
+        self.angle = angle
         
     def draw(self,ax):
         '''
@@ -418,10 +423,13 @@ class Ellipse(BaseConstraint):
         ----------
         ax : axis on which the constraint line should be plotted
         '''
-        if self.half_major_axis > self.half_minor_axis:
-            c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, fill = False, color = 'r', lw = 2)
-        else: 
+        if self.angle % 360.0 in [0,180]:
+        # if self.half_major_axis > self.half_minor_axis:
+            c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
+        elif self.angle % 270 in [0,90]: 
             c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, fill = False, color = 'r', lw = 2)
+        else:
+            c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
         
@@ -466,7 +474,40 @@ class Polygon(BaseConstraint):
         '''
         To be Filled
         '''
-        return ((x_all_unc-self.center_x)**2 + (y_all_unc-self.center_y)**2) - self.radius**2
+        # def point_in_polygon(point, polygon):
+        x, y = x_all_unc,y_all_unc
+        polygon =self.xy_coords 
+        n = len(polygon)
+        inside = False
+
+        # x1, y1 = polygon[0]
+        for i in range(n):
+            x1, y1 = polygon[i]
+            x2, y2 = polygon[(i + 1) % n]
+
+            if y1 < y and y2 >= y or y2 < y and y1 >= y:
+                if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
+                    inside = not inside
+
+        return not inside
+        # for i in range(n + 1):
+        #     x2, y2 = polygon[i % n]
+        #     if y > min(y1, y2) and y <= max(y1, y2) and x <= max(x1, x2):
+        #         if x1 != x2:
+        #             x_intersection = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+        #             if x1 == x2 or x <= x_intersection:
+        #                 inside = not inside
+        #     x1, y1 = x2, y2
+
+        # return inside
+
+# # Example usage:
+# polygon = [(0, 0), (0, 4), (4, 4), (4, 0)]
+# point = (2, 2)
+# result = point_in_polygon(point, polygon)
+# print(result)  # True (point is inside the polygon)
+
+        # return ((x_all_unc-self.center_x)**2 + (y_all_unc-self.center_y)**2) - self.radius**2
 class UserDefinedConstraints(BaseConstraint):
     '''
     General class for dealing with any form of user defined constraints.
@@ -567,8 +608,7 @@ def constraints_eval(constraints,senID,**kwargs):
     G = np.zeros((len(senID),nConstraints),dtype=bool)
     for i in range(nConstraints):
         # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
-        G[:,i] = [x>=0 for x in constraints[i]]
-
+        G[:,i] = [x>0 for x in constraints[i]]
     return G
     
 def get_functionalConstraind_sensors_indices(senID,g):

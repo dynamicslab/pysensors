@@ -60,6 +60,15 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
     y_min : int, lower bound for the y-axis constraint
     y_max : int, upper bound for the y-axis constraint
     df : pandas.DataFrame, a dataframe containing the features  and samples
+    
+    Keyword Arguments
+    -----------------
+    X_axis : string,
+        Name of the column in dataframe to be plotted on the X axis.
+    Y-axis : string,
+        Name of the column in dataframe to be plotted on the Y axis.
+    Field : string,
+        Name of the column in dataframe to be plotted as a contour map.
 
     Returns
     -------
@@ -95,6 +104,8 @@ class BaseConstraint(object):
         """
         Attributes
         ----------
+        Keyword Arguments:
+        ------------------
         X_axis : string,
             Name of the column in dataframe to be plotted on the X axis.
         Y-axis : string,
@@ -132,7 +143,15 @@ class BaseConstraint(object):
         idx : np.ndarray, ranked list of sensor locations (column indices)
         info : pandas.DataFrame/np.darray [n_samples, n_features],
             dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
-
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+            
         Return
         ------
         g : function, Contains the function defined by the user for the functional constraint. 
@@ -253,6 +272,7 @@ class BaseConstraint(object):
         ----------
         all_sensors : np.darray,
             A ranked list of all sensor indices computed from just QR optimizer
+            
         Returns
         -----------
         A plot of the user defined grid showing all possible sensor locations 
@@ -269,6 +289,17 @@ class BaseConstraint(object):
             ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
     
     def plot_selected_sensors(self,sensors):
+        '''
+        Function to plot the sensor locations to choosen during the optimization procedure
+        Attributes
+        ----------
+        sensors : np.darray,
+            A ranked list of all sensor indices computed from QR/GQR/CCQR optimizer
+            
+        Returns
+        -----------
+        A plot of the user defined grid showing chosen sensor locations 
+        '''
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
         if isinstance(self.data,np.ndarray):
@@ -348,6 +379,17 @@ class Circle(BaseConstraint):
             radius of the circle
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
+            
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.center_x = center_x
         self.center_y = center_y
@@ -400,6 +442,17 @@ class Line(BaseConstraint):
             y-coordinate of one end-point of the line
         y2 : float,
             y-coordinate of the other end-point of the line
+            
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.x1 = x1
         self.x2 = x2
@@ -446,6 +499,17 @@ class Parabola(BaseConstraint):
             x-coordinate of the focus of the parabola
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
+        
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.h = h
         self.k = k
@@ -457,7 +521,7 @@ class Parabola(BaseConstraint):
         Function to plot a parabola based on user-defined coordinates 
         Attributes
         ----------
-        ax : axis on which the constraint line should be plotted
+        ax : axis on which the constraint parabola should be plotted
         '''
         if isinstance(self.data,np.ndarray):
             grid_points = np.arange(self.data.shape[1])
@@ -503,6 +567,17 @@ class Ellipse(BaseConstraint):
             half the length of the minor axis
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
+            
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.center_x = center_x
         self.center_y = center_y
@@ -515,7 +590,7 @@ class Ellipse(BaseConstraint):
         Function to plot an ellipse based on user-defined coordinates 
         Attributes
         ----------
-        ax : axis on which the constraint line should be plotted
+        ax : axis on which the constraint ellipse should be plotted
         '''
         if self.half_major_axis > self.half_minor_axis:
             c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, fill = False, color = 'r', lw = 2)
@@ -540,7 +615,7 @@ class Ellipse(BaseConstraint):
         else: 
             return - ((((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2))
 
-class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part 
+class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''
     General class for dealing with polygonal user defined constraints.
     Plotting, computing constraints functionalities included. 
@@ -569,7 +644,10 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
     
 class UserDefinedConstraints(BaseConstraint):
     '''
-    General class for dealing with any form of user defined constraints.
+    General class for dealing with any form of user defined constraints. 
+    The user can input the constraint in two forms: 
+    - As a python file which has the equation of the constraint the user wants to implement.
+    - As a string with just the equation of the constraint the user wants to implement.
     Plotting, computing constraints functionalities included. 
     '''
     def __init__(self,all_sensors, **kwgs):
@@ -577,8 +655,23 @@ class UserDefinedConstraints(BaseConstraint):
         '''
         Attributes
         ----------
-        const_path : 'string',
-            path of the file that constains the user-defined constraint function
+        all_sensors : np.darray,
+            A ranked list of all sensor indices computed from just QR optimizer
+            
+        Keyword Arguments
+        -----------------
+        file : string,
+            Name of the python file containing the equation of the constraint 
+        equation : string,
+            Equation of the constraint the user wants to implement
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.all_sensors = all_sensors
         
@@ -590,8 +683,6 @@ class UserDefinedConstraints(BaseConstraint):
             self.equation = kwgs['equation']
         else: 
             self.equation = None
-        # if 'file' and 'equation' not in kwgs.keys():
-        #     raise Exception('Must provide either python file name containing the constraint to evaluate or an equation in string format')
             
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwgs.keys():
@@ -609,7 +700,10 @@ class UserDefinedConstraints(BaseConstraint):
     
     def draw(self,ax):
         '''
-        To be filled
+        Function to plot the user-defined constraint
+        Attributes
+        ----------
+        ax : axis on which the constraint should be plotted
         '''
         if self.file != None :
             nConstraints = len([self.file])
@@ -647,7 +741,7 @@ class UserDefinedConstraints(BaseConstraint):
          
     def constraint(self):
         '''
-        To be Filled
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         '''
         
         # if 'self.file' in globals():
@@ -680,6 +774,10 @@ class UserDefinedConstraints(BaseConstraint):
     
 def load_functional_constraints(functionHandler):
     """
+    Parameters:
+    ----------
+    functionHandler : The python file name that contains the constraint to be evaluated as a string
+    
     Return
     -------
     A function from the function handler file
@@ -739,6 +837,15 @@ def get_coordinates_from_indices(idx,info,**kwgs): ### This one remains outside 
     ----------
     idx :  int, sensor ID
     info : pandas.DataFrame/np.ndarray shape [n_features, n_samples], Dataframe or Matrix which represent the measurement data.
+    
+    Keyword Arguments
+    -----------------
+    X_axis : string,
+        Name of the column in dataframe to be plotted on the X axis.
+    Y-axis : string,
+        Name of the column in dataframe to be plotted on the Y axis.
+    Field : string,
+        Name of the column in dataframe to be plotted as a contour map.
 
     Returns:
         (x,y) : tuple, The coordinates on the grid of each sensor. 

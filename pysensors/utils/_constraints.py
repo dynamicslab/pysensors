@@ -121,6 +121,40 @@ class BaseConstraint(object):
                 self.Field = kwgs['Field']
             else:
                 raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+
+    def functional_constraints(func, idx, info, **kwargs):  ### According to our discussion @Josh is going to split this into two functions: 1) For a python file handler which remains outside the Base_constraint class and 2) String/Equation which goes inside the Base Constraint class.
+        """
+        Function for evaluating the functional constraints.
+
+        Parameters
+        ----------
+        func : function, a function which is to be evaluated
+        idx : np.ndarray, ranked list of sensor locations (column indices)
+        info : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
+
+        Return
+        ------
+        g : function, Contains the function defined by the user for the functional constraint. 
+        """
+        if isinstance(info,np.ndarray):
+            xLoc,yLoc = get_coordinates_from_indices(idx,info)
+        elif isinstance(info,pd.DataFrame):
+            if 'X_axis' in kwargs.keys():
+                X_axis = kwargs['X_axis']
+            else:
+                raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
+            if 'Y_axis' in kwargs.keys():
+                Y_axis = kwargs['Y_axis']
+            else:
+                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+            if 'Field' in kwargs.keys():
+                Field = kwargs['Field']
+            else:
+                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+            xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Field = Field)
+        g = func(xLoc, yLoc,**kwargs)
+        return g
     
     def get_functionalConstraind_sensors_indices(senID,g):  ### Moving this function inside the Base_constraint class as discussed
         """
@@ -432,7 +466,7 @@ class Parabola(BaseConstraint):
             grid_points = np.arange(len(self.data))
             x, y = get_coordinates_from_indices(grid_points,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         y_vals = (self.a*((x-self.h)**2)) - self.k
-        ax.scatter(x,y_vals)
+        ax.scatter(x,y_vals,s=1)
         
     def constraint_function(self,x, y):
         '''
@@ -538,7 +572,7 @@ class UserDefinedConstraints(BaseConstraint):
     General class for dealing with any form of user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,all_sensors,const_path, **kwgs):
+    def __init__(self,all_sensors, **kwgs):
         super().__init__(**kwgs)
         '''
         Attributes
@@ -547,8 +581,18 @@ class UserDefinedConstraints(BaseConstraint):
             path of the file that constains the user-defined constraint function
         '''
         self.all_sensors = all_sensors
-        self.const_path = const_path
-      
+        
+        if 'file' in kwgs.keys():
+            self.file = kwgs['file']
+        else:
+            self.file = None
+        if 'equation' in kwgs.keys():
+            self.equation = kwgs['equation']
+        else: 
+            self.equation = None
+        # if 'file' and 'equation' not in kwgs.keys():
+        #     raise Exception('Must provide either python file name containing the constraint to evaluate or an equation in string format')
+            
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwgs.keys():
                 self.X_axis = kwgs['X_axis']
@@ -562,80 +606,90 @@ class UserDefinedConstraints(BaseConstraint):
                 self.Field = kwgs['Field']
             else:
                 raise Exception('Must provide Field as **kwgs as your data is a dataframe')
-        
+    
     def draw(self,ax):
         '''
         To be filled
         '''
-        nConstraints = len([self.const_path])
-        G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
-        for i in range(nConstraints):
-            if isinstance(self.data,np.ndarray):
-                temp = functional_constraints([self.const_path][i],self.all_sensors,self.data)
-                G[:,i] = [x != 0 for x in temp]
-                idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
-                x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
-            elif isinstance(self.data,pd.DataFrame):
-                temp = functional_constraints([self.const_path][i],self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
-                G[:,i] = [x == 0 for x in temp]
-                idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
-                x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        ax.scatter(x_val,y_val,s = 5 )
+        if self.file != None :
+            nConstraints = len([self.file])
+            G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+            for i in range(nConstraints):
+                if isinstance(self.data,np.ndarray):
+                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
+                    G[:,i] = [x != 0 for x in temp]
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
+                    x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
+                elif isinstance(self.data,pd.DataFrame):
+                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    G[:,i] = [x == 0 for x in temp]
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
+                    x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+        else:
+            nConstraints = len([self.equation])
+            G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+            for i in range(nConstraints):
+                if isinstance(self.data,np.ndarray):
+                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data)
+                    xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
+                    for k in range(len(xValue)):
+                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
+                    x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
+                elif isinstance(self.data,pd.DataFrame):
+                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+                    for k in range(len(xValue)):
+                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
+                    x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+        ax.scatter(x_val,y_val,s = 1)
          
     def constraint(self):
         '''
         To be Filled
         '''
-        nConstraints = len([self.const_path])
-        G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
-        for i in range(nConstraints):
-            if isinstance(self.data,np.ndarray):
-                temp = functional_constraints([self.const_path][i],self.all_sensors,self.data)
-                G[:,i] = [x>=0 for x in temp]
-            elif isinstance(self.data,pd.DataFrame):
-                temp = functional_constraints([self.const_path][i],self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
-                G[:,i] = [x>=0 for x in temp]
+        
+        # if 'self.file' in globals():
+        if self.file != None :
+            nConstraints = len([self.file])
+            G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+            for i in range(nConstraints):
+                if isinstance(self.data,np.ndarray):
+                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
+                    G[:,i] = [x>=0 for x in temp]
+                elif isinstance(self.data,pd.DataFrame):
+                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    G[:,i] = [x>=0 for x in temp]
+        else:
+            nConstraints = len([self.equation])
+            G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
+            for i in range(nConstraints):
+                if isinstance(self.data,np.ndarray):
+                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
+                    xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
+                    for k in range(len(xValue)):
+                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                elif isinstance(self.data,pd.DataFrame):
+                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    for k in range(len(xValue)):
+                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
         idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0])
         return idx_const,rank
-        
-def functional_constraints(functionHandler, idx, info, **kwargs):  ### According to our discussion @Josh is going to split this into two functions: 1) For a python file handler which remains outside the Base_constraint class and 2) String/Equation which goes inside the Base Constraint class.
-        """
-        Function for evaluating the functional constraints.
-
-        Parameters
-        ----------
-        functionHandler : function, a function handle to the function which is to be evaluated
-        idx : np.ndarray, ranked list of sensor locations (column indices)
-        shape : tuple of ints, Shape of the matrix fed as data to the algorithm
-        data : pandas.DataFrame, Dataframe which represents the measurement data.
-
-        Return
-        ------
-        g : function, Contains the function defined by the user for the functional constraint. 
-        """
-        if isinstance(info,np.ndarray):
-            xLoc,yLoc = get_coordinates_from_indices(idx,info)
-        elif isinstance(info,pd.DataFrame):
-            if 'X_axis' in kwargs.keys():
-                X_axis = kwargs['X_axis']
-            else:
-                raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
-            if 'Y_axis' in kwargs.keys():
-                Y_axis = kwargs['Y_axis']
-            else:
-                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
-            if 'Field' in kwargs.keys():
-                Field = kwargs['Field']
-            else:
-                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
-            xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Field = Field)
-        functionName = os.path.basename(functionHandler).strip('.py')
-        dirName = os.path.dirname(functionHandler)
-        sys.path.insert(0,os.path.expanduser(dirName))
-        module = __import__(functionName)
-        func = getattr(module, functionName)
-        g = func(xLoc, yLoc,**kwargs)
-        return g
+    
+def load_functional_constraints(functionHandler):
+    """
+    Return
+    -------
+    A function from the function handler file
+    """
+    functionName = os.path.basename(functionHandler).strip('.py')
+    dirName = os.path.dirname(functionHandler)
+    sys.path.insert(0,os.path.expanduser(dirName))
+    module = __import__(functionName)
+    func = getattr(module, functionName)
+    return func
     
 def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one remains outside the Base_constraint() class
     """

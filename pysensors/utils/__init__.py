@@ -8,6 +8,7 @@ from ._constraints import Circle
 from ._constraints import Line
 from ._constraints import Ellipse
 from ._constraints import Parabola
+from ._constraints import Polygon 
 from ._constraints import UserDefinedConstraints
 from ._constraints import constraints_eval
 from ._constraints import load_functional_constraints
@@ -28,6 +29,8 @@ __all__ = [
     "BaseConstraint",
     "Circle",
     "Line",
+    "Parabola",
+    "Polygon",
     "Ellipse",
     "UserDefinedConstraints"
     "box_constraints",

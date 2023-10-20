@@ -217,9 +217,9 @@ class BaseConstraint(object):
             x, y = get_coordinates_from_indices(all_sensors,info, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         g = np.zeros(len(x),dtype = float)
         for i in range(len(x)):
-             g[i] = self.constraint_function(x[i], y[i])
+            g[i] = self.constraint_function(x[i], y[i])
         G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,G_const[:,0])
+        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,np.squeeze(G_const)) 
         return idx_const,rank
     
     def draw_constraint(self):
@@ -332,7 +332,7 @@ class BaseConstraint(object):
         Sensors_df.head(n_sensors)
         return Sensors_df
         
-    def annotate_sensors(self,sensors):
+    def annotate_sensors(self,sensors,color = 'red'):
         '''
         Function to annotate the sensor location on the grid with the rand of the sensor
         Attributes
@@ -349,16 +349,18 @@ class BaseConstraint(object):
             xTop = np.mod(sensors,np.sqrt(n_features))
             yTop = np.floor(sensors/np.sqrt(n_features))
             data = np.vstack([sensors,xTop,yTop]).T
+            plt.plot(xTop, yTop, '*', color = color, alpha =0.3)
             for ind,i in enumerate(range(len(xTop))):
                 plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
         elif isinstance(self.data,pd.DataFrame):
             xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)    #### Annotate not working for dataframe : FIX
             data = np.vstack([sensors,xTop,yTop]).T
+            plt.plot(xTop, yTop, '*', color = color, alpha =0.3)
             for _,i in enumerate(range(len(sensors))):
                 plt.annotate(f"{str(i)}",(xTop[i]*100,yTop[i]*100),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color="r",fontsize=12,
+                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
     
 class Circle(BaseConstraint):
@@ -552,7 +554,7 @@ class Ellipse(BaseConstraint):
     General class for dealing with elliptical user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,half_major_axis, half_minor_axis,loc, **kwgs):
+    def __init__(self,center_x,center_y,half_major_axis, half_minor_axis, angle = 0.0, loc = 'in', **kwgs):
         super().__init__(**kwgs)
         '''
         Attributes
@@ -565,6 +567,8 @@ class Ellipse(BaseConstraint):
             half the length of the major axis
         half_minor_axis : float,
             half the length of the minor axis
+        angle : float,
+            angle of the orientation of the ellipse in degrees
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
             
@@ -584,6 +588,7 @@ class Ellipse(BaseConstraint):
         self.half_major_axis = half_major_axis
         self.half_minor_axis = half_minor_axis
         self.loc = loc
+        self.angle = angle
         
     def draw(self,ax):
         '''
@@ -592,10 +597,12 @@ class Ellipse(BaseConstraint):
         ----------
         ax : axis on which the constraint ellipse should be plotted
         '''
-        if self.half_major_axis > self.half_minor_axis:
-            c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, fill = False, color = 'r', lw = 2)
-        else: 
+        if self.angle % 360.0 in [0,180]:
+            c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
+        elif self.angle % 270 in [0,90]:
             c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, fill = False, color = 'r', lw = 2)
+        else: 
+           c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
         
@@ -631,16 +638,60 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         self.xy_coords= xy_coords
         
     def draw(self,ax):
+        '''
+        Function to plot a polygon based on user-defined coordinates 
+        Attributes
+        ----------
+        ax : axis on which the constraint polygon should be plotted
+        '''
         c = patches.Polygon(self.xy_coords, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
         
         
-    def constraint_function(self,x_all_unc, y_all_unc):
+    def constraint_function(self,x, y):
         '''
-        To be Filled
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Attributes
+        ----------
+        x : float,
+            x coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
+        y : float,
+            y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
-        return ((x_all_unc-self.center_x)**2 + (y_all_unc-self.center_y)**2) - self.radius**2
+        # def point_in_polygon(point, polygon):
+        polygon =self.xy_coords 
+        n = len(polygon)
+        inside = False
+
+        # x1, y1 = polygon[0]
+        for i in range(n):
+            x1, y1 = polygon[i]
+            x2, y2 = polygon[(i + 1) % n]
+
+            if y1 < y and y2 >= y or y2 < y and y1 >= y:
+                if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
+                    inside = not inside
+
+        return not inside
+        # for i in range(n + 1):
+        #     x2, y2 = polygon[i % n]
+        #     if y > min(y1, y2) and y <= max(y1, y2) and x <= max(x1, x2):
+        #         if x1 != x2:
+        #             x_intersection = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+        #             if x1 == x2 or x <= x_intersection:
+        #                 inside = not inside
+        #     x1, y1 = x2, y2
+
+        # return inside
+
+# # Example usage:
+# polygon = [(0, 0), (0, 4), (4, 4), (4, 0)]
+# point = (2, 2)
+# result = point_in_polygon(point, polygon)
+# print(result)  # True (point is inside the polygon)
+
+        
     
 class UserDefinedConstraints(BaseConstraint):
     '''
@@ -677,12 +728,15 @@ class UserDefinedConstraints(BaseConstraint):
         
         if 'file' in kwgs.keys():
             self.file = kwgs['file']
+            self.functions = load_functional_constraints(self.file)
         else:
             self.file = None
         if 'equation' in kwgs.keys():
-            self.equation = kwgs['equation']
+            self.equations = [kwgs['equation']]
         else: 
-            self.equation = None
+            self.equations = None
+        if self.equations is None and self.file is None:
+            raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
             
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwgs.keys():
@@ -696,7 +750,7 @@ class UserDefinedConstraints(BaseConstraint):
             if 'Field' in kwgs.keys():
                 self.Field = kwgs['Field']
             else:
-                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+                raise Exception('Must provide either a python file containing the constraint or an equation of the constraint')
     
     def draw(self,ax):
         '''
@@ -706,35 +760,35 @@ class UserDefinedConstraints(BaseConstraint):
         ax : axis on which the constraint should be plotted
         '''
         if self.file != None :
-            nConstraints = len([self.file])
+            nConstraints = len([self.functions])
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
-                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
+                    temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data)
                     G[:,i] = [x != 0 for x in temp]
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
-                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     G[:,i] = [x == 0 for x in temp]
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        else:
-            nConstraints = len([self.equation])
+        elif self.equations is not None:
+            nConstraints = len(self.equations)
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
                     # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
-                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                        G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
                     # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
                     for k in range(len(xValue)):
-                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                        G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         ax.scatter(x_val,y_val,s = 1)
@@ -746,29 +800,29 @@ class UserDefinedConstraints(BaseConstraint):
         
         # if 'self.file' in globals():
         if self.file != None :
-            nConstraints = len([self.file])
+            nConstraints = len([self.functions])
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
-                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
+                    temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data)
                     G[:,i] = [x>=0 for x in temp]
                 elif isinstance(self.data,pd.DataFrame):
-                    temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
+                    temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     G[:,i] = [x>=0 for x in temp]
         else:
-            nConstraints = len([self.equation])
+            nConstraints = len([self.equations])
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
                     # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
-                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                        G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                 elif isinstance(self.data,pd.DataFrame):
                     # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     for k in range(len(xValue)):
-                        G[k,i] = eval(self.equation, {"x":xValue[k],"y":yValue[k]})
+                        G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
         idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0])
         return idx_const,rank
     
@@ -780,7 +834,7 @@ def load_functional_constraints(functionHandler):
     
     Return
     -------
-    A function from the function handler file
+    Convert the functionHandler file into a callable function
     """
     functionName = os.path.basename(functionHandler).strip('.py')
     dirName = os.path.dirname(functionHandler)
@@ -807,7 +861,7 @@ def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one rem
     G = np.zeros((len(senID),nConstraints),dtype=bool)
     for i in range(nConstraints):
         # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
-        G[:,i] = [x>=0 for x in constraints[i]]
+        G[:,i] = [x>0 for x in constraints[i]]  ### I had >= 0 and hence Polygon was not working (Polygone gives 0 when False and 1 hen True)
 
     return G
     
@@ -886,68 +940,3 @@ def get_indices_from_coordinates(coordinates,shape):
 #     x = df['X (m)'].to_numpy()
 #     y = df['Y (m)'].to_numpy()
 #     return(x[idx],y[idx])
-
-if __name__ == '__main__':
-
-    import pysensors as ps
-    from sklearn import datasets
-
-    # Test the constraintsEval function
-    const1 = '~/projects/pysensors/examples/userExplicitConstraint1.py'
-    const2 = '~/projects/pysensors/examples/userExplicitConstraint2.py'
-    constList = [const1, const2]
-    faces = datasets.fetch_olivetti_faces(shuffle=True)
-    XX = faces.data
-    n_samples, n_features = XX.shape
-    # Global centering
-    XX = XX - XX.mean(axis=0)
-    # Local centering
-    XX -= XX.mean(axis=1).reshape(n_samples, -1)
-
-    n_sensors0 = 15
-    n_modes0 = 15
-    basis1 = ps.basis.SVD(n_basis_modes=n_modes0)
-    optimizer_faces = ps.optimizers.QR()
-    model = ps.SSPOR(basis=basis1,optimizer=optimizer_faces, n_sensors=n_sensors0)
-    model.fit(XX)
-    basis_matrix = model.basis_matrix_
-
-    all_sensors0 = model.get_all_sensors()
-    top_sensors0 = model.get_selected_sensors()
-
-    xTopUnc = np.mod(top_sensors0,np.sqrt(n_features))
-    yTopUnc = np.floor(top_sensors0/np.sqrt(n_features))
-    xAllUnc = np.mod(all_sensors0,np.sqrt(n_features))
-    yAllUnc = np.floor(all_sensors0/np.sqrt(n_features))
-
-    # sensors_constrained = ps.utils._constraints.get_constraind_sensors_indices(xmin,xmax,ymin,ymax,nx,ny,all_sensors0) #Constrained column indices
-    G = ps.utils._constraints.constraints_eval(constList,top_sensors0,shape=(64,64))
-    idx_constrainedConst,ranks = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,0])
-    idx_constrainedConst2,rank2 = ps.utils._constraints.get_functionalConstraind_sensors_indices(top_sensors0,G[:,1])
-
-    idx_constrainedConst.extend(idx_constrainedConst2)
-    ranks.extend(rank2)
-    idx_constr_sorted, ranks = ps.utils._constraints.order_constrained_sensors(idx_constrainedConst,ranks)
-
-    n_const_sensors0 = 1
-    optimizer1 = ps.optimizers.GQR()
-    opt_kws={'idx_constrained':idx_constrainedConst,
-             'n_sensors':n_sensors0,
-             'n_const_sensors':n_const_sensors0,
-             'all_sensors':all_sensors0,
-             'constraint_option':"max_n"}
-    model1 = ps.SSPOR(basis = basis1, optimizer = optimizer1, n_sensors = n_sensors0)
-    model1.fit(XX,**opt_kws)
-    basis_matrix_svd = model1.basis_matrix_
-    all_sensors1 = model1.get_all_sensors()
-
-    top_sensors = model1.get_selected_sensors()
-    print(top_sensors)
-    dterminant_faces_svd = ps.utils._validation.determinant(top_sensors,n_features,basis_matrix_svd)
-    print(dterminant_faces_svd)
-
-
-    const3 = '/Users/abdomg/projects/Sparse_Sensing_in_NDTs_LDRD/notebooks/myBoxConstraint.py'
-    constList2 =[const3]
-    constr_kws = {'xmin':10,'xmax':30,'ymin':20,'ymax':40,'shape':(64,64)}
-    G2 = ps.utils._constraints.constraints_eval(constList2,all_sensors0,**constr_kws)

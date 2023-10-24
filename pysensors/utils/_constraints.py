@@ -355,11 +355,10 @@ class BaseConstraint(object):
                     xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
         elif isinstance(self.data,pd.DataFrame):
-            xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)    #### Annotate not working for dataframe : FIX
-            data = np.vstack([sensors,xTop,yTop]).T
+            xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)   
             plt.plot(xTop, yTop, '*', color = color, alpha =0.3)
             for _,i in enumerate(range(len(sensors))):
-                plt.annotate(f"{str(i)}",(xTop[i]*100,yTop[i]*100),xycoords='data',
+                plt.annotate(f"{str(i)}",(xTop[i],yTop[i]),xycoords='data',
                     xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
     
@@ -765,7 +764,7 @@ class UserDefinedConstraints(BaseConstraint):
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
                     temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data)
-                    G[:,i] = [x != 0 for x in temp]
+                    G[:,i] = [x > 0 for x in temp]
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
@@ -778,14 +777,12 @@ class UserDefinedConstraints(BaseConstraint):
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
-                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
                         G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,0]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
-                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.const_path][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
                     for k in range(len(xValue)):
                         G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
@@ -797,8 +794,6 @@ class UserDefinedConstraints(BaseConstraint):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         '''
-        
-        # if 'self.file' in globals():
         if self.file != None :
             nConstraints = len([self.functions])
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
@@ -814,12 +809,10 @@ class UserDefinedConstraints(BaseConstraint):
             G = np.zeros((len(self.all_sensors),nConstraints),dtype=bool)
             for i in range(nConstraints):
                 if isinstance(self.data,np.ndarray):
-                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
                         G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                 elif isinstance(self.data,pd.DataFrame):
-                    # temp = BaseConstraint.functional_constraints(load_functional_constraints([self.file][i]),self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     for k in range(len(xValue)):
                         G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})

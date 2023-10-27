@@ -660,11 +660,11 @@ class Ellipse(BaseConstraint):
         ax : axis on which the constraint ellipse should be plotted
         '''
         if self.angle % 360.0 in [0,180]:
-            c = patches.Ellipse((self.center_x, self.center_y), self.half_major_axis, self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
+            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_major_axis, 2*self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
         elif self.angle % 270 in [0,90]:
-            c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, fill = False, color = 'r', lw = 2)
+            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_minor_axis, 2*self.half_major_axis, fill = False, color = 'r', lw = 2)
         else: 
-           c = patches.Ellipse((self.center_x, self.center_y), self.half_minor_axis, self.half_major_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
+            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_minor_axis, 2*self.half_major_axis, angle = self.angle, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
         

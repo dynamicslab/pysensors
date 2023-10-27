@@ -229,7 +229,7 @@ class BaseConstraint(object):
         fig , ax = plt.subplots()
         self.draw(ax)
         
-    def plot_constraint_on_data(self,plot_type):
+    def plot_constraint_on_data(self,plot_type, plot=None):
         '''
         Function for plotting the user-defined constraint on the data
         Attributes
@@ -241,29 +241,32 @@ class BaseConstraint(object):
             image : if the data is represented in the fprm of an image
             scatter: if the data can be represented with a scatter plot
             contour_map: if the data can be represented in the form of a contour map
+        plot : to plot on an exisiting subplot, pass plot = (fig, ax),
+                otherwise leave plot = None
         Returns
         -----------
         A plot of the constraint on top of the measurement data plot.
         '''
+        if plot is None: 
+            self.fig, self.ax = plt.subplots()
+        else:
+            self.fig, self.ax = plot
         if plot_type == 'image': 
             image = self.data[1,:].reshape(1,-1)
             n_samples, n_features = self.data.shape
             image_shape = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
-            fig , ax = plt.subplots()
             for i, comp in enumerate(image):
                 vmax = max(comp.max(), -comp.min())
-                ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
+                self.ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
         elif plot_type == 'scatter': 
-            fig , ax = plt.subplots()
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
-            ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
+            self.ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
         elif plot_type == 'contour_map': 
-            fig , ax = plt.subplots()
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
-            ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = plt.cm.coolwarm, s = 1)
-        self.draw(ax)
+            self.ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = plt.cm.coolwarm, s = 1)
+        self.draw(self.ax)
         
     def plot_grid(self,all_sensors):
         '''
@@ -288,26 +291,38 @@ class BaseConstraint(object):
             fig , ax = plt.subplots()
             ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
     
-    def plot_selected_sensors(self,sensors):
+    def plot_selected_sensors(self,sensors, all_sensors, color_constrained = 'red', color_unconstrained = 'green'):
         '''
-        Function to plot the sensor locations to choosen during the optimization procedure
+        Function to plot the sensor locations choosen during the optimization procedure.
+        This function plots near-optimal sensors which are unconstrained sensor locations choosen by QR in the user defined color_unconstrained/green and sensors that are choosen through constraining certain regions of the grid in the under defined color_constrained/red. 
         Attributes
         ----------
         sensors : np.darray,
             A ranked list of all sensor indices computed from QR/GQR/CCQR optimizer
-            
+        all_sensors : np.darray,
+            A ranked list of all sensor indices computed from just QR optimizer
+        color_constrained : string,
+            The color the sensors that were selected due to the applied constraints should be plotted in
+        color_unconstrained : string,
+            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in 
         Returns
         -----------
         A plot of the user defined grid showing chosen sensor locations 
         '''
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
+        constrained = sensors[np.where(np.in1d(all_sensors[:n_sensors],sensors) == False)[0]]
+        unconstrained = sensors[np.where(np.in1d(all_sensors[:n_sensors],sensors) == True)[0]]
         if isinstance(self.data,np.ndarray):
-            xTop = np.mod(sensors,np.sqrt(n_features))
-            yTop = np.floor(sensors/np.sqrt(n_features))
+            xconst = np.mod(constrained,np.sqrt(n_features))
+            yconst = np.floor(constrained/np.sqrt(n_features))
+            xunconst = np.mod(unconstrained,np.sqrt(n_features))
+            yunconst = np.floor(unconstrained/np.sqrt(n_features))
         elif isinstance(self.data,pd.DataFrame):
-            xTop, yTop = get_coordinates_from_indices(sensors,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        plt.plot(xTop, yTop,'*r')
+            xconst, yconst = get_coordinates_from_indices(constrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+            xunconst, yunconst = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+        self.ax.plot(xconst, yconst,'*',color = color_constrained)
+        self.ax.plot(xunconst, yunconst, '*',color = color_unconstrained)
         
     def sensors_dataframe(self,sensors):
         '''
@@ -332,35 +347,83 @@ class BaseConstraint(object):
         Sensors_df.head(n_sensors)
         return Sensors_df
         
-    def annotate_sensors(self,sensors,color = 'red'):
+    def annotate_sensors(self,sensors,all_sensors,color_constrained = 'red', color_unconstrained = 'green'):
         '''
-        Function to annotate the sensor location on the grid with the rand of the sensor
+        Function to annotate the sensor location on the grid while also plotting the sensor location
         Attributes
         ----------
         sensors : np.darray,
             A ranked list of all sensor indices choosen from QR/CCQR/GQR optimizer
+        all_sensors : np.darray,
+            A ranked list of all sensor indices computed from just QR optimizer
+        color_constrained : string,
+            The color the sensors that were selected due to the applied constraints should be plotted in
+        color_unconstrained : string,
+            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in 
+
         Returns
         -----------
         Annotation of sensor rank near the choosen sensor locations
         '''
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
+        constrained = sensors[np.where(np.in1d(all_sensors[:n_sensors],sensors) == False)[0]]
+        unconstrained = sensors[np.where(np.in1d(all_sensors[:n_sensors],sensors) == True)[0]]
         if isinstance(self.data,np.ndarray):
             xTop = np.mod(sensors,np.sqrt(n_features))
             yTop = np.floor(sensors/np.sqrt(n_features))
+            xconst = np.mod(constrained,np.sqrt(n_features))
+            yconst = np.floor(constrained/np.sqrt(n_features))
+            xunconst = np.mod(unconstrained,np.sqrt(n_features))
+            yunconst = np.floor(unconstrained/np.sqrt(n_features))
             data = np.vstack([sensors,xTop,yTop]).T
-            plt.plot(xTop, yTop, '*', color = color, alpha =0.3)
+            self.ax.plot(xconst, yconst, '*', color = color_constrained, alpha =0.5)
+            self.ax.plot(xunconst, yunconst, '*', color = color_unconstrained, alpha =0.5)
             for ind,i in enumerate(range(len(xTop))):
-                plt.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
+                self.ax.annotate(f"{str(ind)}",(xTop[i],yTop[i]),xycoords='data',
+                    xytext=(-20,20), textcoords='offset points',color='r',fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
         elif isinstance(self.data,pd.DataFrame):
             xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)   
-            plt.plot(xTop, yTop, '*', color = color, alpha =0.3)
+            xconst, yconst = get_coordinates_from_indices(constrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+            xunconst, yunconst = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+            self.ax.plot(xconst, yconst, '*', color = color_constrained, alpha =0.5)
+            self.ax.plot(xunconst, yunconst, '*', color = color_unconstrained, alpha =0.5)
             for _,i in enumerate(range(len(sensors))):
-                plt.annotate(f"{str(i)}",(xTop[i],yTop[i]),xycoords='data',
-                    xytext=(-20,20), textcoords='offset points',color=color,fontsize=12,
+                self.ax.annotate(f"{str(i)}",(xTop[i],yTop[i]),xycoords='data',
+                    xytext=(-20,20), textcoords='offset points',color='r',fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
+
+class Intersection(BaseConstraint):
+    '''
+    A General class for dealing with constraint regions that are defined by the combination of 
+    two or more individual constraint shapes/equations.
+    '''
+    def __init__(self,constraints, **kwgs): ### We want to make default location as 'in'
+        super().__init__(**kwgs)
+        '''
+        Attributes
+        ----------
+        constraints : np.darray containing instances of classes, for e.g: [circle_instance, line_instance],
+           
+        '''
+        self.constraints = constraints
+        
+    def draw(self,ax):
+        '''
+        Function to plot the constraint based on two or more constraint shapes/equations
+        Attributes
+        ----------
+        ax : axis on which the constraint circle should be plotted
+        '''
+    def constraint_function(self):
+        '''
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        
+        '''
+    
+   
+    
     
 class Circle(BaseConstraint):
     '''

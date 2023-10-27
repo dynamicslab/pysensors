@@ -8,6 +8,7 @@ import pandas as pd
 import sys, os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import math
 
 
 def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
@@ -679,10 +680,16 @@ class Ellipse(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
-        if self.loc == 'in':
-            return (((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2)
-        else: 
-            return - ((((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2))
+        if self.angle == 0.0:
+            if self.loc == 'in':
+                return (((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2)
+            else: 
+                return - ((((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2))
+        else:
+            if self.loc == 'in':
+                return ((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2)
+            else: 
+                return - (((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2))
 
 class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''

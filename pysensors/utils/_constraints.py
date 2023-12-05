@@ -400,7 +400,7 @@ class Intersection(BaseConstraint):
     A General class for dealing with constraint regions that are defined by the combination of 
     two or more individual constraint shapes/equations.
     '''
-    def __init__(self,constraints, **kwgs): ### We want to make default location as 'in'
+    def __init__(self,list_of_constraints, **kwgs): ### We want to make default location as 'in'
         super().__init__(**kwgs)
         '''
         Attributes
@@ -408,7 +408,7 @@ class Intersection(BaseConstraint):
         constraints : np.darray containing instances of classes, for e.g: [circle_instance, line_instance],
            
         '''
-        self.constraints = constraints
+        self.list_of_constraints = list_of_constraints
         
     def draw(self,ax):
         '''
@@ -617,7 +617,7 @@ class Ellipse(BaseConstraint):
     General class for dealing with elliptical user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,half_major_axis, half_minor_axis, angle = 0.0, loc = 'in', **kwgs):
+    def __init__(self,center_x,center_y,width, height, angle = 0.0, loc = 'in', **kwgs):
         super().__init__(**kwgs)
         '''
         Attributes
@@ -626,10 +626,10 @@ class Ellipse(BaseConstraint):
             x-coordinate of the center of circle
         center_y : float,
             y-coordinate of the center of circle
-        half_major_axis : float,
-            half the length of the major axis
-        half_minor_axis : float,
-            half the length of the minor axis
+        width : float,
+            total length (diameter) of horizontal axis.
+        height : float,
+            total length (diameter) of vertical axis.
         angle : float,
             angle of the orientation of the ellipse in degrees
         loc : string- 'in'/'out',
@@ -648,10 +648,17 @@ class Ellipse(BaseConstraint):
         '''
         self.center_x = center_x
         self.center_y = center_y
-        self.half_major_axis = half_major_axis
-        self.half_minor_axis = half_minor_axis
+        self.width = width
+        self.height = height
         self.loc = loc
         self.angle = angle
+        
+        if self.width < self.height:
+            self.half_major_axis = self.height/2
+            self.half_minor_axis = self.width/2
+        else: 
+            self.half_major_axis = self.width/2
+            self.half_minor_axis = self.height/2
         
     def draw(self,ax):
         '''
@@ -660,12 +667,12 @@ class Ellipse(BaseConstraint):
         ----------
         ax : axis on which the constraint ellipse should be plotted
         '''
-        if self.angle % 360.0 in [0,180]:
-            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_major_axis, 2*self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
-        elif self.angle % 270 in [0,90]:
-            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_minor_axis, 2*self.half_major_axis, fill = False, color = 'r', lw = 2)
-        else: 
-            c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_minor_axis, 2*self.half_major_axis, angle = self.angle, fill = False, color = 'r', lw = 2)
+        # if self.angle % 360.0 in [0,180]:
+        #     c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_major_axis, 2*self.half_minor_axis, angle=self.angle, fill = False, color = 'r', lw = 2)
+        # elif self.angle % 270 in [0,90]:
+        #     c = patches.Ellipse((self.center_x, self.center_y), 2*self.half_minor_axis, 2*self.half_major_axis, fill = False, color = 'r', lw = 2)
+        # else: 
+        c = patches.Ellipse((self.center_x, self.center_y), self.width, self.height, angle = self.angle, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
         
@@ -680,16 +687,23 @@ class Ellipse(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
-        if self.angle == 0.0:
-            if self.loc == 'in':
-                return (((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2)
-            else: 
-                return - ((((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2))
-        else:
-            if self.loc == 'in':
-                return ((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2)
-            else: 
-                return - (((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2))
+        angleInRadians = self.angle * np.pi/180
+        u = (x - self.center_x) * np.cos(angleInRadians) + (y - self.center_y) * np.sin(angleInRadians)
+        v = -(x - self.center_x) * np.sin(angleInRadians) + (y - self.center_y) * np.sin(angleInRadians)
+        if self.loc == 'in':
+            return u**2/self.half_major_axis**2 + v**2/self.half_minor_axis**2 - 1
+        elif self.loc == 'out':
+            return 1 - (u**2/self.half_major_axis**2 + v**2/self.half_minor_axis**2)
+        # if self.angle == 0.0:
+        #     if self.loc == 'in':
+        #         return (((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2)
+        #     else: 
+        #         return - ((((x-self.center_x)**2)*(self.half_minor_axis**2) + ((y-self.center_y)**2)*(self.half_major_axis**2)) - (self.half_major_axis**2 * self.half_minor_axis**2))
+        # else:
+        #     if self.loc == 'in':
+        #         return ((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2)
+        #     else: 
+        #         return - (((((x-self.center_x)*math.cos(self.angle)) + ((y-self.center_y)*math.sin(self.angle)))**2 * (self.half_minor_axis**2)) +  ((((x-self.center_x)*math.sin(self.angle)) + ((y-self.center_y)*math.cos(self.angle)))**2 * (self.half_major_axis**2))  - (self.half_major_axis**2 * self.half_minor_axis**2))
 
 class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''

@@ -34,7 +34,7 @@ def exact_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs): ##Will first for
         all_sensors = kwargs['all_sensors']
     else:
         all_sensors = []
-    if 'n_sensors' in kwargs.keys():
+    if 'n_sensors' in kwargs.keys() and kwargs['n_sensors'] not in [None,0]:
         n_sensors = kwargs['n_sensors']
     else:
         n_sensors = len(all_sensors)
@@ -78,7 +78,7 @@ def max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
         all_sensors = kwargs['all_sensors']
     else:
         all_sensors = []
-    if 'n_sensors' in kwargs.keys():
+    if 'n_sensors' in kwargs.keys() and kwargs['n_sensors'] not in [None,0]:
         n_sensors = kwargs['n_sensors']
     else:
         n_sensors = len(all_sensors)

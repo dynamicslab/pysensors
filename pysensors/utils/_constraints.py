@@ -353,7 +353,7 @@ class BaseConstraint(object):
         elif isinstance(info, pd.DataFrame):
             coords = get_coordinates_from_indices(all_sensors,info, X_axis = self.X_axis, Y_axis = self.Y_axis, Z_axis = self.Z_axis, Field = self.Field)
         nDims,nPoints = np.shape(coords)
-        g = np.zeros(nPoints,dtype = float)
+        g = np.zeros(nPoints,dtype = bool)
         for i in range(nPoints):
             g[i] = self.constraint_function(np.array(coords).reshape(nDims,-1)[:,i])
         # G_const = constraints_eval([g],all_sensors,data = info)

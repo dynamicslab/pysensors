@@ -208,7 +208,7 @@ def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outsid
         x = info.loc[idx,X_axis].values  
         y = info.loc[idx,Y_axis].values
         
-        return (x,y,z)
+        return (x,y,z) if z is not None else (x,y)
     
 def get_indices_from_coordinates(coordinates,shape):
     """

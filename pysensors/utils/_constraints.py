@@ -8,7 +8,6 @@ import pandas as pd
 import sys, os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import math
 
 
 def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
@@ -50,7 +49,7 @@ def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_senso
         idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
     return idx_constrained
 
-def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kwgs):   #### We wanted to change the name of this function. I have made it get_constrained_sensors_indices_dataframe from get_constrained_sensors_indices_linear. Feel free to suggest a better name @Josh, @Mohammad
+def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kwargs):   #### We wanted to change the name of this function. I have made it get_constrained_sensors_indices_dataframe from get_constrained_sensors_indices_linear. Feel free to suggest a better name @Josh, @Mohammad
     """
     Function for obtaining constrained column indices from already existing linear sensor locations on the grid.
 
@@ -76,14 +75,14 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
-    if 'X_axis' in kwgs.keys():
-        X_axis = kwgs['X_axis']
+    if 'X_axis' in kwargs.keys():
+        X_axis = kwargs['X_axis']
     else:
-        raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
-    if 'Y_axis' in kwgs.keys():
-        Y_axis = kwgs['Y_axis']
+        raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+    if 'Y_axis' in kwargs.keys():
+        Y_axis = kwargs['Y_axis']
     else:
-        raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+        raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
     x = df[X_axis].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe. This makes it possible for the user to have any name for the X,Y columns of their dataframe.
     n_features = x.shape[0]
     y = df[Y_axis].to_numpy()
@@ -130,6 +129,25 @@ def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one rem
         # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
         G[:,i] = [x>0 for x in constraints[i]]  ### I had >= 0 and hence Polygon was not working (Polygone gives 0 when False and 1 hen True)
 
+def check_constraints(constraints,senID,info, **kwargs):  ### As discussed this one remains outside the Base_constraint() class
+    """
+    Function for evaluating whether a certain sensor index lies within the constrained region or not.
+
+    Parameters:
+    ---------- 
+        constraints: __(type?)__, The constraint defined by the user 
+        senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
+        data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
+                Dataframe or Matrix which represent the measurement data.
+    Returns
+    -------
+    G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
+    """
+    nConstraints = len(constraints)
+    G = np.zeros((len(senID),nConstraints),dtype=bool)
+    coords = get_coordinates_from_indices(senID,info,**kwargs)
+    for i in range(nConstraints):
+        G[:,i] = constraints[i].constraint_function(coords)
     return G
     
 def order_constrained_sensors(idx_constrained_list, ranks_list):
@@ -150,7 +168,7 @@ def order_constrained_sensors(idx_constrained_list, ranks_list):
     sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
     
-def get_coordinates_from_indices(idx,info,**kwgs): ### This one remains outside and I change what info is as discussed 
+def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outside and I change what info is as discussed 
     """
     Function for obtaining the coordinates on a grid from column indices
 
@@ -174,17 +192,23 @@ def get_coordinates_from_indices(idx,info,**kwgs): ### This one remains outside 
     if isinstance(info,np.ndarray):
         return np.unravel_index(idx,(int(np.sqrt(info.shape[1])),int(np.sqrt(info.shape[1]))),'F')
     elif isinstance(info,pd.DataFrame):
-        if 'X_axis' in kwgs.keys():
-            X_axis = kwgs['X_axis']
+        if 'X_axis' in kwargs.keys():
+            X_axis = kwargs['X_axis']
         else:
-            raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
-        if 'Y_axis' in kwgs.keys():
-            Y_axis = kwgs['Y_axis']
+            raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
+        if 'Y_axis' in kwargs.keys():
+            Y_axis = kwargs['Y_axis']
         else:
-            raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+            raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+        if 'Z_axis' in kwargs.keys() and kwargs['Z_axis'] is not None:
+            Z_axis = kwargs['Z_axis']
+            z = info.loc[idx,Z_axis].values
+        else:
+            z = None
         x = info.loc[idx,X_axis].values  
         y = info.loc[idx,Y_axis].values
-        return (x,y)
+        
+        return (x,y,z)
     
 def get_indices_from_coordinates(coordinates,shape):
     """
@@ -209,7 +233,7 @@ class BaseConstraint(object):
     
     @ authors: Niharika Karnik (@nkarnik2999), Mohammad Abdo (@Jimmy-INL), and Joshua Cogliati (@joshua-cogliati-inl)
     '''
-    def __init__(self,**kwgs):
+    def __init__(self,**kwargs):
         """
         Attributes
         ----------
@@ -224,23 +248,27 @@ class BaseConstraint(object):
         data : pandas.DataFrame/np.darray [n_samples, n_features],
             dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         """
-        if 'data' in kwgs.keys():
-            self.data = kwgs['data']
+        if 'data' in kwargs.keys():
+            self.data = kwargs['data']
         else:
-            raise Exception('Must provide data as **kwgs')
+            raise Exception('Must provide data as **kwargs')
         if isinstance(self.data,pd.DataFrame):
-            if 'X_axis' in kwgs.keys():
-                self.X_axis = kwgs['X_axis']
+            if 'X_axis' in kwargs.keys():
+                self.X_axis = kwargs['X_axis']
             else:
-                raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
-            if 'Y_axis' in kwgs.keys():
-                self.Y_axis = kwgs['Y_axis']
+                raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
+            if 'Y_axis' in kwargs.keys():
+                self.Y_axis = kwargs['Y_axis']
             else:
-                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
-            if 'Field' in kwgs.keys():
-                self.Field = kwgs['Field']
+                raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+            if 'Z_axis' in kwargs.keys():
+                self.Z_axis = kwargs['Z_axis']
             else:
-                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+                self.Z_axis = None
+            if 'Field' in kwargs.keys():
+                self.Field = kwargs['Field']
+            else:
+                raise Exception('Must provide Field as **kwargs as your data is a dataframe')
 
     def functional_constraints(func, idx, info, **kwargs):  ### According to our discussion @Josh is going to split this into two functions: 1) For a python file handler which remains outside the Base_constraint class and 2) String/Equation which goes inside the Base Constraint class.
         """
@@ -271,15 +299,15 @@ class BaseConstraint(object):
             if 'X_axis' in kwargs.keys():
                 X_axis = kwargs['X_axis']
             else:
-                raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
+                raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
             if 'Y_axis' in kwargs.keys():
                 Y_axis = kwargs['Y_axis']
             else:
-                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
+                raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
             if 'Field' in kwargs.keys():
                 Field = kwargs['Field']
             else:
-                raise Exception('Must provide Field as **kwgs as your data is a dataframe')
+                raise Exception('Must provide Field as **kwargs as your data is a dataframe')
             xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Field = Field)
         g = func(xLoc, yLoc,**kwargs)
         return g
@@ -300,7 +328,7 @@ class BaseConstraint(object):
         rank : np.darray, shape [No. of constrained locations], array which contains rank of the constrained sensor locations
         """
         assert (len(senID)==len(g))
-        idx_constrained = senID[~g].tolist()
+        idx_constrained = senID[~g.astype(bool)].tolist()
         rank = np.where(np.isin(senID,idx_constrained))[0].tolist() # ==False
         return idx_constrained, rank
     
@@ -321,14 +349,15 @@ class BaseConstraint(object):
             array which contains rank of the constrained sensor locations
         '''
         if isinstance(info,np.ndarray):
-            x, y = get_coordinates_from_indices(all_sensors,info)
+            coords = get_coordinates_from_indices(all_sensors,info)
         elif isinstance(info, pd.DataFrame):
-            x, y = get_coordinates_from_indices(all_sensors,info, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        g = np.zeros(len(x),dtype = float)
-        for i in range(len(x)):
-            g[i] = self.constraint_function(x[i], y[i])
-        G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,np.squeeze(G_const)) 
+            coords = get_coordinates_from_indices(all_sensors,info, X_axis = self.X_axis, Y_axis = self.Y_axis, Z_axis = self.Z_axis, Field = self.Field)
+        nDims,nPoints = np.shape(coords)
+        g = np.zeros(nPoints,dtype = float)
+        for i in range(nPoints):
+            g[i] = self.constraint_function(np.array(coords).reshape(nDims,-1)[:,i])
+        # G_const = constraints_eval([g],all_sensors,data = info)
+        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,g) 
         return idx_const,rank
     
     def draw_constraint(self):
@@ -338,7 +367,7 @@ class BaseConstraint(object):
         fig , ax = plt.subplots()
         self.draw(ax)
         
-    def plot_constraint_on_data(self,plot_type, plot=None):
+    def plot_constraint_on_data(self,plot_type, plot=None, **kwargs):
         '''
         Function for plotting the user-defined constraint on the data
         Attributes
@@ -357,9 +386,20 @@ class BaseConstraint(object):
         A plot of the constraint on top of the measurement data plot.
         '''
         if plot is None: 
-            self.fig, self.ax = plt.subplots()
+            if isinstance(self,Cylinder):
+                self.fig, self.ax = plt.subplots(subplot_kw={"projection": "3d"})
+            else:
+                self.fig, self.ax = plt.subplots()
         else:
             self.fig, self.ax = plot
+        if 'alpha' not in kwargs.keys():
+            kwargs['alpha'] = 0.3
+        if 'cmap' not in kwargs.keys():
+            kwargs['cmap'] = plt.cm.coolwarm
+        if 's' not in kwargs.keys():
+            kwargs['s'] = 1
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'blue'                
         if plot_type == 'image': 
             image = self.data[1,:].reshape(1,-1)
             n_samples, n_features = self.data.shape
@@ -370,11 +410,21 @@ class BaseConstraint(object):
         elif plot_type == 'scatter': 
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
-            self.ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
+            self.ax.scatter(x_vals, y_vals, color = kwargs['color'], marker = '.')
+        elif plot_type == 'scatter3D': 
+            y_vals = self.data[self.Y_axis]
+            x_vals = self.data[self.X_axis]
+            z_vals = self.data[self.Z_axis]
+            self.ax.scatter(x_vals, y_vals, z_vals,color = kwargs['color'], marker = '.')
         elif plot_type == 'contour_map': 
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
-            self.ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = plt.cm.coolwarm, s = 1)
+            self.ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = kwargs['cmap'], s = kwargs['s'], alpha=kwargs['alpha'])
+        elif plot_type == 'contour_map3D': 
+            y_vals = self.data[self.Y_axis]
+            x_vals = self.data[self.X_axis]
+            z_vals = self.data[self.Z_axis]
+            self.ax.scatter(x_vals, y_vals,z_vals ,c = self.data[self.Field], cmap = kwargs['cmap'], s = kwargs['s'], alpha=kwargs['alpha'])
         self.draw(self.ax)
         
     def plot_grid(self,all_sensors):
@@ -508,8 +558,8 @@ class Intersection(BaseConstraint):
     A General class for dealing with constraint regions that are defined by the combination of 
     two or more individual constraint shapes/equations.
     '''
-    def __init__(self,list_of_constraints, **kwgs): ### We want to make default location as 'in'
-        super().__init__(**kwgs)
+    def __init__(self,list_of_constraints, **kwargs): ### We want to make default location as 'in'
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -536,8 +586,8 @@ class Circle(BaseConstraint):
     General class for dealing with circular user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,radius,loc = 'in', **kwgs): ### We want to make default location as 'in'
-        super().__init__(**kwgs)
+    def __init__(self,center_x,center_y,radius,loc = 'in', **kwargs): ### We want to make default location as 'in'
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -578,7 +628,7 @@ class Circle(BaseConstraint):
         ax.autoscale_view()
         
         
-    def constraint_function(self,x, y):
+    def constraint_function(self,coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         Attributes
@@ -588,18 +638,96 @@ class Circle(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
+        x,y = coords[:]
         if self.loc == 'in':
-            return ((x-self.center_x)**2 + (y-self.center_y)**2) - self.radius**2
+            return ((x-self.center_x)**2 + (y-self.center_y)**2) >= self.radius**2
         else:
-            return -(((x-self.center_x)**2 + (y-self.center_y)**2) - self.radius**2)
-                   
+            return ~(((x-self.center_x)**2 + (y-self.center_y)**2) >= self.radius**2)
+
+class Cylinder(BaseConstraint):
+    '''
+    General class for dealing with circular user defined constraints.
+    Plotting, computing constraints functionalities included. 
+    '''
+    def __init__(self,center_x,center_y,center_z,radius,height,loc = 'in', **kwargs): ### We want to make default location as 'in'
+        super().__init__(**kwargs)
+        '''
+        Attributes
+        ----------
+        center_x : float,
+            x-coordinate of the center of circle
+        center_y : float,
+            y-coordinate of the center of circle
+        radius : float,
+            radius of the circle
+        loc : string- 'in'/'out',
+            specifying whether the inside or outside of the shape is constrained
+            
+        Keyword Arguments
+        -----------------
+        X_axis : string,
+            Name of the column in dataframe to be plotted on the X axis.
+        Y-axis : string,
+            Name of the column in dataframe to be plotted on the Y axis.
+        Field : string,
+            Name of the column in dataframe to be plotted as a contour map.
+        data : pandas.DataFrame/np.darray [n_samples, n_features],
+            dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
+        '''
+        self.center_x = center_x
+        self.center_y = center_y
+        self.center_z = center_z
+        self.radius = radius
+        self.height = height
+        self.loc = loc
+        
+    def draw(self,ax,**kwargs):
+        '''
+        Function to plot a circle based on user-defined coordinates 
+        Attributes
+        ----------
+        ax : axis on which the constraint circle should be plotted
+        '''
+        if 'alpha' not in kwargs:
+            kwargs['alpha'] = 0.3
+        if 'color' not in kwargs:
+            kwargs['color'] = 'red'
+        theta = np.linspace(0, 2*np.pi, 100)
+        z = np.linspace(self.center_z, self.center_z + self.height, 100)
+        theta, z = np.meshgrid(theta, z)
+        x = self.center_x + self.radius * np.cos(theta)
+        y = self.center_y + self.radius * np.sin(theta)
+        ax.plot_surface(x, y, z,alpha=kwargs['alpha'], color=kwargs['color'])
+        ax.autoscale_view()
+
+    def constraint_function(self, coords):
+        '''
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Attributes
+        ----------
+        x : float,
+            x coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
+        y : float,
+            y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
+        '''
+        x,y,z = coords[:]
+        if isinstance(x, float):
+            x,y,z = [x],[y],[z]
+        nPoints = np.shape(np.array(coords).reshape(3,-1))[1]
+        inFlag = np.zeros(nPoints,dtype=bool)
+        for i in range(nPoints):
+            inFlag[i] = not ((((x[i]-self.center_x)**2 + (y[i]-self.center_y)**2) >= self.radius**2) or self.center_z>=z[i] or z[i]>=self.center_z+self.height)
+        if self.loc == 'in':
+            return ~inFlag
+        else:
+            return inFlag                   
 class Line(BaseConstraint):
     '''
     General class for dealing with linear user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,x1,x2,y1,y2,**kwgs):
-        super().__init__(**kwgs)
+    def __init__(self,x1,x2,y1,y2,**kwargs):
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -637,7 +765,7 @@ class Line(BaseConstraint):
         '''
         ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
             
-    def constraint_function(self,x, y):
+    def constraint_function(self,coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         Attributes
@@ -647,6 +775,7 @@ class Line(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
+        x,y = coords[:]
         return (y-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x-self.x1)
     
 class Parabola(BaseConstraint):
@@ -654,8 +783,8 @@ class Parabola(BaseConstraint):
     General class for dealing with parabolic user defined constraints.
     Plotting, computing constraints functionalities included.
     '''
-    def __init__(self,h,k,a,loc, **kwgs):
-        super().__init__(**kwgs)
+    def __init__(self,h,k,a,loc, **kwargs):
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -700,7 +829,7 @@ class Parabola(BaseConstraint):
         y_vals = (self.a*((x-self.h)**2)) - self.k
         ax.scatter(x,y_vals,s=1)
         
-    def constraint_function(self,x, y):
+    def constraint_function(self,coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         Attributes
@@ -710,18 +839,19 @@ class Parabola(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
+        x, y = coords[:]
         if self.loc == 'in':
-            return (self.a*(x-self.h)**2) - (y-self.k)
+            return (self.a*(x-self.h)**2) >= (y-self.k)
         else: 
-            return - ((self.a*(x-self.h)**2) - (y-self.k))
+            return ~((self.a*(x-self.h)**2) >= (y-self.k))
         
 class Ellipse(BaseConstraint):
     '''
     General class for dealing with elliptical user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,center_x,center_y,width, height, angle = 0.0, loc = 'in', **kwgs):
-        super().__init__(**kwgs)
+    def __init__(self,center_x,center_y,width, height, angle = 0.0, loc = 'in', **kwargs):
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -769,7 +899,7 @@ class Ellipse(BaseConstraint):
         ax.autoscale_view()
         ax.axes.set_aspect('equal')
         
-    def constraint_function(self,x, y):
+    def constraint_function(self,coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         Attributes
@@ -779,21 +909,22 @@ class Ellipse(BaseConstraint):
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
+        x, y =coords[:]
         angleInRadians = self.angle * np.pi/180
         u = (x - self.center_x) * np.cos(angleInRadians) + (y - self.center_y) * np.sin(angleInRadians)
         v = -(x - self.center_x) * np.sin(angleInRadians) + (y - self.center_y) * np.cos(angleInRadians)
         if self.loc == 'in':
-            return u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 - 1
+            return u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 >= 1
         elif self.loc == 'out':
-            return 1 - (u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2)
+            return ~((u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2) >= 1)
 
 class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''
     General class for dealing with polygonal user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,xy_coords, **kwgs):
-        super().__init__(**kwgs)
+    def __init__(self,xy_coords, **kwargs):
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -814,7 +945,7 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         ax.autoscale_view()
         
         
-    def constraint_function(self,x, y):
+    def constraint_function(self,coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         Attributes
@@ -824,6 +955,7 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         y : float,
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
+        x,y = coords[:]
         # def point_in_polygon(point, polygon):
         polygon =self.xy_coords 
         n = len(polygon)
@@ -848,8 +980,8 @@ class UserDefinedConstraints(BaseConstraint):
     - As a string with just the equation of the constraint the user wants to implement.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,all_sensors, **kwgs):
-        super().__init__(**kwgs)
+    def __init__(self,all_sensors, **kwargs):
+        super().__init__(**kwargs)
         '''
         Attributes
         ----------
@@ -873,13 +1005,13 @@ class UserDefinedConstraints(BaseConstraint):
         '''
         self.all_sensors = all_sensors
         
-        if 'file' in kwgs.keys():
-            self.file = kwgs['file']
+        if 'file' in kwargs.keys():
+            self.file = kwargs['file']
             self.functions = load_functional_constraints(self.file)
         else:
             self.file = None
-        if 'equation' in kwgs.keys():
-            self.equations = [kwgs['equation']]
+        if 'equation' in kwargs.keys():
+            self.equations = [kwargs['equation']]
         else: 
             self.equations = None
         if self.equations is None and self.file is None:
@@ -888,16 +1020,16 @@ class UserDefinedConstraints(BaseConstraint):
             raise Exception('either file or equation should be provided')
             
         if isinstance(self.data,pd.DataFrame):
-            if 'X_axis' in kwgs.keys():
-                self.X_axis = kwgs['X_axis']
+            if 'X_axis' in kwargs.keys():
+                self.X_axis = kwargs['X_axis']
             else:
-                raise Exception('Must provide X_axis as **kwgs as your data is a dataframe')
-            if 'Y_axis' in kwgs.keys():
-                self.Y_axis = kwgs['Y_axis']
+                raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
+            if 'Y_axis' in kwargs.keys():
+                self.Y_axis = kwargs['Y_axis']
             else:
-                raise Exception('Must provide Y_axis as **kwgs as your data is a dataframe')
-            if 'Field' in kwgs.keys():
-                self.Field = kwgs['Field']
+                raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+            if 'Field' in kwargs.keys():
+                self.Field = kwargs['Field']
             else:
                 raise Exception('Must provide either a python file containing the constraint or an equation of the constraint')
     

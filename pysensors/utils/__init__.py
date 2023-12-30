@@ -10,7 +10,9 @@ from ._constraints import Ellipse
 from ._constraints import Parabola
 from ._constraints import Polygon 
 from ._constraints import UserDefinedConstraints
+from ._constraints import check_constraints
 from ._constraints import constraints_eval
+
 from ._constraints import load_functional_constraints
 from ._constraints import get_coordinates_from_indices
 from ._constraints import get_indices_from_coordinates

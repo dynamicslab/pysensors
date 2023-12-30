@@ -328,7 +328,7 @@ class BaseConstraint(object):
         rank : np.darray, shape [No. of constrained locations], array which contains rank of the constrained sensor locations
         """
         assert (len(senID)==len(g))
-        idx_constrained = senID[~g.astype(bool)].tolist()
+        idx_constrained = senID[~g].tolist()
         rank = np.where(np.isin(senID,idx_constrained))[0].tolist() # ==False
         return idx_constrained, rank
     

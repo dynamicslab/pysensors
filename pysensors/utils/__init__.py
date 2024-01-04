@@ -5,6 +5,7 @@ from ._constraints import get_constraind_sensors_indices
 from ._constraints import get_constrained_sensors_indices_dataframe
 from ._constraints import BaseConstraint
 from ._constraints import Circle
+from ._constraints import Cylinder
 from ._constraints import Line
 from ._constraints import Ellipse
 from ._constraints import Parabola
@@ -30,6 +31,7 @@ __all__ = [
     "get_constrained_sensors_indices_linear",
     "BaseConstraint",
     "Circle",
+    "Cylinder"
     "Line",
     "Parabola",
     "Polygon",

@@ -78,7 +78,7 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
     if 'X_axis' in kwargs.keys():
         X_axis = kwargs['X_axis']
     else:
-        raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+        raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
     if 'Y_axis' in kwargs.keys():
         Y_axis = kwargs['Y_axis']
     else:
@@ -308,7 +308,7 @@ class BaseConstraint(object):
                 Field = kwargs['Field']
             else:
                 raise Exception('Must provide Field as **kwargs as your data is a dataframe')
-            xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Field = Field)
+            xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Z_axis = Z_axis,Field = Field)
         g = func(xLoc, yLoc,**kwargs)
         return g
     
@@ -329,7 +329,7 @@ class BaseConstraint(object):
         """
         assert (len(senID)==len(g))
         idx_constrained = senID[~g].tolist()
-        rank = np.where(np.isin(senID,idx_constrained))[0].tolist() # ==False
+        rank = np.where(np.isin(idx_constrained,senID))[0].tolist() # ==False
         return idx_constrained, rank
     
     def get_constraint_indices(self,all_sensors,info):
@@ -364,7 +364,10 @@ class BaseConstraint(object):
         '''
         Function for drawing the constraint defined by the user
         '''
-        fig , ax = plt.subplots()
+        if isinstance(self,Cylinder):
+            fig , ax = plt.subplots(subplot_kw={"projection": "3d"})
+        else:
+            fig , ax = plt.subplots()
         self.draw(ax)
         
     def plot_constraint_on_data(self,plot_type, plot=None, **kwargs):
@@ -477,11 +480,13 @@ class BaseConstraint(object):
             yconst = np.floor(constrained/np.sqrt(n_features))
             xunconst = np.mod(unconstrained,np.sqrt(n_features))
             yunconst = np.floor(unconstrained/np.sqrt(n_features))
+            self.ax.plot(xconst,yconst,'*',color = color_constrained)
+            self.ax.plot(xunconst,yunconst, '*',color = color_unconstrained)
         elif isinstance(self.data,pd.DataFrame):
-            xconst, yconst = get_coordinates_from_indices(constrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-            xunconst, yunconst = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        self.ax.plot(xconst, yconst,'*',color = color_constrained)
-        self.ax.plot(xunconst, yunconst, '*',color = color_unconstrained)
+            constCoords = get_coordinates_from_indices(constrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+            unconstCoords = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
+            self.ax.plot(constCoords,'*',color = color_constrained)
+            self.ax.plot(unconstCoords, '*',color = color_unconstrained)
         
     def sensors_dataframe(self,sensors):
         '''
@@ -558,7 +563,7 @@ class Intersection(BaseConstraint):
     A General class for dealing with constraint regions that are defined by the combination of 
     two or more individual constraint shapes/equations.
     '''
-    def __init__(self,list_of_constraints, **kwargs): ### We want to make default location as 'in'
+    def __init__(self,constraints, **kwargs): ### We want to make default location as 'in'
         super().__init__(**kwargs)
         '''
         Attributes
@@ -566,7 +571,7 @@ class Intersection(BaseConstraint):
         constraints : np.darray containing instances of classes, for e.g: [circle_instance, line_instance],
            
         '''
-        self.list_of_constraints = list_of_constraints
+        self.constraints = constraints
         
     def draw(self,ax):
         '''
@@ -580,7 +585,7 @@ class Intersection(BaseConstraint):
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
         
         '''
-        
+    
 class Circle(BaseConstraint):
     '''
     General class for dealing with circular user defined constraints.
@@ -640,9 +645,9 @@ class Circle(BaseConstraint):
         '''
         x,y = coords[:]
         if self.loc == 'in':
-            return ((x-self.center_x)**2 + (y-self.center_y)**2) >= self.radius**2
+            return ~(((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
         else:
-            return ~(((x-self.center_x)**2 + (y-self.center_y)**2) >= self.radius**2)
+            return (((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
 
 class Cylinder(BaseConstraint):
     '''
@@ -699,7 +704,6 @@ class Cylinder(BaseConstraint):
         y = self.center_y + self.radius * np.sin(theta)
         ax.plot_surface(x, y, z,alpha=kwargs['alpha'], color=kwargs['color'])
         ax.autoscale_view()
-
     def constraint_function(self, coords):
         '''
         Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
@@ -716,7 +720,7 @@ class Cylinder(BaseConstraint):
         nPoints = np.shape(np.array(coords).reshape(3,-1))[1]
         inFlag = np.zeros(nPoints,dtype=bool)
         for i in range(nPoints):
-            inFlag[i] = not ((((x[i]-self.center_x)**2 + (y[i]-self.center_y)**2) >= self.radius**2) or self.center_z>=z[i] or z[i]>=self.center_z+self.height)
+            inFlag[i] = ((((x[i]-self.center_x)**2 + (y[i]-self.center_y)**2) <= self.radius**2) and self.center_z<=z[i] and z[i]<=self.center_z+self.height)
         if self.loc == 'in':
             return ~inFlag
         else:
@@ -897,7 +901,7 @@ class Ellipse(BaseConstraint):
         c = patches.Ellipse((self.center_x, self.center_y), self.width, self.height, angle = self.angle, fill = False, color = 'r', lw = 2)
         ax.add_patch(c)
         ax.autoscale_view()
-        ax.axes.set_aspect('equal')
+        # ax.axes.set_aspect('equal')
         
     def constraint_function(self,coords):
         '''
@@ -971,7 +975,7 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
                     inside = not inside
 
         return not inside
-    
+            
 class UserDefinedConstraints(BaseConstraint):
     '''
     General class for dealing with any form of user defined constraints. 
@@ -1015,9 +1019,7 @@ class UserDefinedConstraints(BaseConstraint):
         else: 
             self.equations = None
         if self.equations is None and self.file is None:
-            raise Exception('Must provide file or equation to define constraints')
-        if self.equations is not None and self.file is not None:
-            raise Exception('either file or equation should be provided')
+            raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
             
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwargs.keys():
@@ -1061,7 +1063,7 @@ class UserDefinedConstraints(BaseConstraint):
                 if isinstance(self.data,np.ndarray):
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
-                        G[k,i] = not eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
+                        G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
                     idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i]) 
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):

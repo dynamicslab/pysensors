@@ -649,10 +649,11 @@ class Circle(BaseConstraint):
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
         x,y = coords[:]
-        if self.loc == 'in':
-            return ~(((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
+        inFlag = (((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
+        if self.loc.lower() == 'in':
+            return ~inFlag
         else:
-            return (((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
+            return inFlag
 
 class Cylinder(BaseConstraint):
     '''
@@ -746,7 +747,7 @@ class Cylinder(BaseConstraint):
                 inFlag[i] = ((((x[i]-self.center_x)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_y-self.height/2<=y[i] and y[i]<=self.center_y+self.height/2)
             else:
                 inFlag[i] = ((((y[i]-self.center_y)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_x-self.height/2<=x[i] and x[i]<=self.center_x+self.height/2)
-        if self.loc == 'in':
+        if self.loc.lower() == 'in':
             return ~inFlag
         else:
             return inFlag                   
@@ -869,10 +870,11 @@ class Parabola(BaseConstraint):
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
         x, y = coords[:]
-        if self.loc == 'in':
-            return (self.a*(x-self.h)**2) >= (y-self.k)
+        inFlag = (self.a*(x-self.h)**2) <= (y-self.k)
+        if self.loc.lower() == 'in':
+            return ~inFlag
         else: 
-            return ~((self.a*(x-self.h)**2) >= (y-self.k))
+            return inFlag
         
 class Ellipse(BaseConstraint):
     '''
@@ -942,10 +944,11 @@ class Ellipse(BaseConstraint):
         angleInRadians = self.angle * np.pi/180
         u = (x - self.center_x) * np.cos(angleInRadians) + (y - self.center_y) * np.sin(angleInRadians)
         v = -(x - self.center_x) * np.sin(angleInRadians) + (y - self.center_y) * np.cos(angleInRadians)
-        if self.loc == 'in':
-            return u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 >= 1
-        elif self.loc == 'out':
-            return ~((u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2) >= 1)
+        inFlag = u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 <= 1
+        if self.loc.lower() == 'in':
+            return ~inFlag 
+        elif self.loc.lower() == 'out':
+            return inFlag
 
 class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''
@@ -997,9 +1000,12 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
 
             if y1 < y and y2 >= y or y2 < y and y1 >= y:
                 if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
-                    inside = not inside
-
-        return not inside
+                    inFlag = not inside
+        
+        if self.loc.lower() == 'in':
+            return ~inFlag 
+        elif self.loc.lower() == 'out':
+            return inFlag
             
 class UserDefinedConstraints(BaseConstraint):
     '''

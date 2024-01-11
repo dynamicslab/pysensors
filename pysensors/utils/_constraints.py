@@ -360,14 +360,19 @@ class BaseConstraint(object):
         idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,g) 
         return idx_const,rank
     
-    def draw_constraint(self):
+    def draw_constraint(self, plot=None):
         '''
         Function for drawing the constraint defined by the user
         '''
-        if isinstance(self,Cylinder):
-            fig , ax = plt.subplots(subplot_kw={"projection": "3d"})
+        if plot is None:
+            _ , ax = plt.subplots()
         else:
-            fig , ax = plt.subplots()
+            _ , ax = plot
+        # if isinstance(self,Cylinder):
+        #     fig , ax = plt.subplots(subplot_kw={"projection": "3d"})
+        # else:
+        #     fig , ax = plt.subplots()
+        ## TODO assess if plot=(fig,ax) has 3d projection
         self.draw(ax)
         
     def plot_constraint_on_data(self,plot_type, plot=None, **kwargs):
@@ -428,7 +433,7 @@ class BaseConstraint(object):
             x_vals = self.data[self.X_axis]
             z_vals = self.data[self.Z_axis]
             self.ax.scatter(x_vals, y_vals,z_vals ,c = self.data[self.Field], cmap = kwargs['cmap'], s = kwargs['s'], alpha=kwargs['alpha'])
-        self.draw(self.ax)
+        self.draw(self.ax,**kwargs)
         
     def plot_grid(self,all_sensors):
         '''
@@ -685,6 +690,10 @@ class Cylinder(BaseConstraint):
         self.radius = radius
         self.height = height
         self.loc = loc
+        if 'axis' in kwargs.keys():
+            self.axis = kwargs['axis']
+        else:
+            self.axis = 'Z_axis'
         
     def draw(self,ax,**kwargs):
         '''
@@ -693,16 +702,27 @@ class Cylinder(BaseConstraint):
         ----------
         ax : axis on which the constraint circle should be plotted
         '''
-        if 'alpha' not in kwargs:
+        if 'alpha' not in kwargs.keys():
             kwargs['alpha'] = 0.3
-        if 'color' not in kwargs:
+        if 'color' not in kwargs.keys():
             kwargs['color'] = 'red'
         theta = np.linspace(0, 2*np.pi, 100)
-        z = np.linspace(self.center_z, self.center_z + self.height, 100)
-        theta, z = np.meshgrid(theta, z)
-        x = self.center_x + self.radius * np.cos(theta)
-        y = self.center_y + self.radius * np.sin(theta)
-        ax.plot_surface(x, y, z,alpha=kwargs['alpha'], color=kwargs['color'])
+        if self.axis == 'Z_axis':
+            z = np.linspace(self.center_z - self.height/2, self.center_z + self.height/2, 100)
+            theta, z = np.meshgrid(theta, z)
+            x = self.center_x + self.radius * np.cos(theta)
+            y = self.center_y + self.radius * np.sin(theta)
+        elif self.axis == 'X_axis':
+            x = np.linspace(self.center_x - self.height/2, self.center_x + self.height/2, 100)
+            theta, x = np.meshgrid(theta, x)
+            y = self.center_y + self.radius * np.sin(theta)
+            z = self.center_z + self.radius * np.cos(theta)
+        else:
+            y = np.linspace(self.center_y - self.height/2, self.center_y + self.height/2, 100)
+            theta, y = np.meshgrid(theta, y)
+            x = self.center_x + self.radius * np.cos(theta)
+            z = self.center_z + self.radius * np.sin(theta)
+        ax.plot_surface(x, y, z,alpha=min(1.0, 3 * kwargs['alpha']), color=kwargs['color'])
         ax.autoscale_view()
     def constraint_function(self, coords):
         '''
@@ -720,7 +740,12 @@ class Cylinder(BaseConstraint):
         nPoints = np.shape(np.array(coords).reshape(3,-1))[1]
         inFlag = np.zeros(nPoints,dtype=bool)
         for i in range(nPoints):
-            inFlag[i] = ((((x[i]-self.center_x)**2 + (y[i]-self.center_y)**2) <= self.radius**2) and self.center_z<=z[i] and z[i]<=self.center_z+self.height)
+            if self.axis == 'Z_axis':
+                inFlag[i] = ((((x[i]-self.center_x)**2 + (y[i]-self.center_y)**2) <= self.radius**2) and self.center_z-self.height/2<=z[i] and z[i]<=self.center_z+self.height/2)
+            elif self.axis == 'Y_axis':
+                inFlag[i] = ((((x[i]-self.center_x)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_y-self.height/2<=y[i] and y[i]<=self.center_y+self.height/2)
+            else:
+                inFlag[i] = ((((y[i]-self.center_y)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_x-self.height/2<=x[i] and x[i]<=self.center_x+self.height/2)
         if self.loc == 'in':
             return ~inFlag
         else:

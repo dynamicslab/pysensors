@@ -1044,7 +1044,7 @@ class UserDefinedConstraints(BaseConstraint):
         else: 
             self.equations = None
         if self.equations is None and self.file is None:
-            raise Exception('Must provide X_axis as **kwargs as your data is a dataframe')
+            raise Exception('either file or equation should be provided')
             
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwargs.keys():

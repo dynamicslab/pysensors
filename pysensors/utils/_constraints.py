@@ -723,7 +723,7 @@ class Cylinder(BaseConstraint):
             theta, y = np.meshgrid(theta, y)
             x = self.center_x + self.radius * np.cos(theta)
             z = self.center_z + self.radius * np.sin(theta)
-        ax.plot_surface(x, y, z,alpha=min(1.0, 3 * kwargs['alpha']), color=kwargs['color'])
+        ax.plot_surface(x, y, z,alpha=1.0, color=kwargs['color'])
         ax.autoscale_view()
     def constraint_function(self, coords):
         '''

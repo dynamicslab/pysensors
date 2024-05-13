@@ -360,7 +360,7 @@ class BaseConstraint(object):
         idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,g) 
         return idx_const,rank
     
-    def draw_constraint(self, plot=None):
+    def draw_constraint(self, plot=None, **kwargs):
         '''
         Function for drawing the constraint defined by the user
         '''
@@ -373,7 +373,7 @@ class BaseConstraint(object):
         # else:
         #     fig , ax = plt.subplots()
         ## TODO assess if plot=(fig,ax) has 3d projection
-        self.draw(ax)
+        self.draw(ax,**kwargs)
         
     def plot_constraint_on_data(self,plot_type, plot=None, **kwargs):
         '''
@@ -407,7 +407,7 @@ class BaseConstraint(object):
         if 's' not in kwargs.keys():
             kwargs['s'] = 1
         if 'color' not in kwargs.keys():
-            kwargs['color'] = 'blue'                
+            kwargs['color'] = 'red'                
         if plot_type == 'image': 
             image = self.data[1,:].reshape(1,-1)
             n_samples, n_features = self.data.shape
@@ -423,16 +423,16 @@ class BaseConstraint(object):
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             z_vals = self.data[self.Z_axis]
-            self.ax.scatter(x_vals, y_vals, z_vals,color = kwargs['color'], marker = '.')
+            self.ax.scatter(x_vals, y_vals, z_vals, color=kwargs['color'], marker='.')
         elif plot_type == 'contour_map': 
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
-            self.ax.scatter(x_vals, y_vals, c = self.data[self.Field], cmap = kwargs['cmap'], s = kwargs['s'], alpha=kwargs['alpha'])
+            self.ax.scatter(x_vals, y_vals, c=self.data[self.Field], cmap=kwargs['cmap'], s=kwargs['s'], alpha=kwargs['alpha'])
         elif plot_type == 'contour_map3D': 
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             z_vals = self.data[self.Z_axis]
-            self.ax.scatter(x_vals, y_vals,z_vals ,c = self.data[self.Field], cmap = kwargs['cmap'], s = kwargs['s'], alpha=kwargs['alpha'])
+            self.ax.scatter(x_vals, y_vals,z_vals ,c=self.data[self.Field], cmap=kwargs['cmap'], s=kwargs['s'], alpha=kwargs['alpha'])
         self.draw(self.ax,**kwargs)
         
     def plot_grid(self,all_sensors):
@@ -626,14 +626,22 @@ class Circle(BaseConstraint):
         self.radius = radius
         self.loc = loc
         
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot a circle based on user-defined coordinates 
         Attributes
         ----------
         ax : axis on which the constraint circle should be plotted
         '''
-        c = patches.Circle((self.center_x, self.center_y), self.radius, fill = False, color = 'r', lw = 2)
+        if 'fill' not in kwargs.keys():
+             kwargs['fill'] = False
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'r'
+        if 'lw' not in kwargs.keys():
+             kwargs['lw'] = 2
+        if 'alpha' not in kwargs.keys():
+             kwargs['alpha'] = 1.0
+        c = patches.Circle((self.center_x, self.center_y), self.radius, fill=kwargs['fill'], color=kwargs['color'], lw=kwargs['lw'], alpha=kwargs['alpha'])
         ax.add_patch(c)
         ax.autoscale_view()
         
@@ -651,7 +659,7 @@ class Circle(BaseConstraint):
         x,y = coords[:]
         inFlag = (((x-self.center_x)**2 + (y-self.center_y)**2) <= self.radius**2)
         if self.loc.lower() == 'in':
-            return ~inFlag
+            return not inFlag
         else:
             return inFlag
 
@@ -723,7 +731,8 @@ class Cylinder(BaseConstraint):
             theta, y = np.meshgrid(theta, y)
             x = self.center_x + self.radius * np.cos(theta)
             z = self.center_z + self.radius * np.sin(theta)
-        ax.plot_surface(x, y, z,alpha=1.0, color=kwargs['color'])
+        ax.plot_surface(x, y, z,alpha=min(1.0, 3 * kwargs['alpha']), color=kwargs['color'])
+        # ax.plot_surface(x, y, z,alpha=1.0, color=kwargs['color'])
         ax.autoscale_view()
     def constraint_function(self, coords):
         '''
@@ -748,7 +757,7 @@ class Cylinder(BaseConstraint):
             else:
                 inFlag[i] = ((((y[i]-self.center_y)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_x-self.height/2<=x[i] and x[i]<=self.center_x+self.height/2)
         if self.loc.lower() == 'in':
-            return ~inFlag
+            return not inFlag
         else:
             return inFlag                   
 class Line(BaseConstraint):
@@ -786,14 +795,24 @@ class Line(BaseConstraint):
         self.y1 = y1
         self.y2 = y2
         
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot a line based on user-defined coordinates 
         Attributes
         ----------
         ax : axis on which the constraint line should be plotted
         '''
-        ax.plot([self.x1,self.x2],[self.y1,self.y2],'-r')
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'r'
+        if 'lw' not in kwargs.keys():
+             kwargs['lw'] = 2
+        if 'alpha' not in kwargs.keys():
+             kwargs['alpha'] = 1.0
+        if 'marker' not in kwargs.keys():
+             kwargs['marker'] = None
+        if 'linestyle' not in kwargs.keys():
+             kwargs['linestyle'] = '-'
+        ax.plot([self.x1,self.x2], [self.y1,self.y2], color=kwargs['color'], alpha=kwargs['alpha'], marker=kwargs['marker'], linestyle=kwargs['linestyle'])
             
     def constraint_function(self,coords):
         '''
@@ -806,7 +825,7 @@ class Line(BaseConstraint):
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
         x,y = coords[:]
-        return (y-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x-self.x1)
+        return (y-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x-self.x1) >= 0
     
 class Parabola(BaseConstraint):
     '''
@@ -843,7 +862,7 @@ class Parabola(BaseConstraint):
         self.a = a
         self.loc = loc
         
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot a parabola based on user-defined coordinates 
         Attributes
@@ -872,7 +891,7 @@ class Parabola(BaseConstraint):
         x, y = coords[:]
         inFlag = (self.a*(x-self.h)**2) <= (y-self.k)
         if self.loc.lower() == 'in':
-            return ~inFlag
+            return not inFlag
         else: 
             return inFlag
         
@@ -918,14 +937,22 @@ class Ellipse(BaseConstraint):
         self.angle = angle
         self.half_horizontal_axis = self.width / 2
         self.half_vertical_axis = self.height / 2        
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot an ellipse based on user-defined coordinates 
         Attributes
         ----------
         ax : axis on which the constraint ellipse should be plotted
         '''
-        c = patches.Ellipse((self.center_x, self.center_y), self.width, self.height, angle = self.angle, fill = False, color = 'r', lw = 2)
+        if 'fill' not in kwargs.keys():
+             kwargs['fill'] = False
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'r'
+        if 'lw' not in kwargs.keys():
+             kwargs['lw'] = 2
+        if 'alpha' not in kwargs.keys():
+             kwargs['alpha'] = 1.0
+        c = patches.Ellipse((self.center_x, self.center_y), self.width, self.height, angle = self.angle, fill=kwargs['fill'], color=kwargs['color'],  lw=kwargs['lw'], alpha=kwargs['alpha'])
         ax.add_patch(c)
         ax.autoscale_view()
         # ax.axes.set_aspect('equal')
@@ -946,7 +973,7 @@ class Ellipse(BaseConstraint):
         v = -(x - self.center_x) * np.sin(angleInRadians) + (y - self.center_y) * np.cos(angleInRadians)
         inFlag = u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 <= 1
         if self.loc.lower() == 'in':
-            return ~inFlag 
+            return not inFlag 
         elif self.loc.lower() == 'out':
             return inFlag
 
@@ -955,7 +982,7 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
     General class for dealing with polygonal user defined constraints.
     Plotting, computing constraints functionalities included. 
     '''
-    def __init__(self,xy_coords, **kwargs):
+    def __init__(self,xy_coords,loc='in', **kwargs):
         super().__init__(**kwargs)
         '''
         Attributes
@@ -963,16 +990,25 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         xy_coords : (N,2) array_like,
             an array consisting of tuples for (x,y) coordinates of points of the Polygon where N = No. of sides of the polygon
         '''
-        self.xy_coords= xy_coords
+        self.xy_coords = xy_coords
+        self.loc = loc
         
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot a polygon based on user-defined coordinates 
         Attributes
         ----------
         ax : axis on which the constraint polygon should be plotted
         '''
-        c = patches.Polygon(self.xy_coords, fill = False, color = 'r', lw = 2)
+        if 'fill' not in kwargs.keys():
+             kwargs['fill'] = False
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'r'
+        if 'lw' not in kwargs.keys():
+             kwargs['lw'] = 2
+        if 'alpha' not in kwargs.keys():
+             kwargs['alpha'] = 1.0
+        c = patches.Polygon(self.xy_coords, fill=kwargs['fill'], color=kwargs['color'], lw=kwargs['lw'], alpha=kwargs['alpha'])
         ax.add_patch(c)
         ax.autoscale_view()
         
@@ -988,22 +1024,21 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
             y coordinate of point on the grid being evaluated to check whether it lies inside or outside the constrained region
         '''
         x,y = coords[:]
-        # def point_in_polygon(point, polygon):
+        # define point in polygon
         polygon =self.xy_coords 
         n = len(polygon)
-        inside = False
+        inFlag = False
 
-        # x1, y1 = polygon[0]
         for i in range(n):
             x1, y1 = polygon[i]
             x2, y2 = polygon[(i + 1) % n]
 
-            if y1 < y and y2 >= y or y2 < y and y1 >= y:
+            if (y1 < y and y2 >= y) or (y2 < y and y1 >= y):
                 if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
-                    inFlag = not inside
+                    inFlag = not inFlag
         
         if self.loc.lower() == 'in':
-            return ~inFlag 
+            return not inFlag 
         elif self.loc.lower() == 'out':
             return inFlag
             
@@ -1066,7 +1101,7 @@ class UserDefinedConstraints(BaseConstraint):
             else:
                 raise Exception('Must provide either a python file containing the constraint or an equation of the constraint')
     
-    def draw(self,ax):
+    def draw(self,ax,**kwargs):
         '''
         Function to plot the user-defined constraint
         Attributes

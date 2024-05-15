@@ -8,6 +8,7 @@ import pandas as pd
 import sys, os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import operator
 
 
 def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
@@ -706,13 +707,18 @@ class Cylinder(BaseConstraint):
         
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a circle based on user-defined coordinates 
+        Function to plot a cylinder based on user-defined coordinates 
         Attributes
         ----------
         ax : axis on which the constraint circle should be plotted
         '''
         if 'alpha' not in kwargs.keys():
             kwargs['alpha'] = 0.3
+            alpha = 3 * kwargs['alpha']
+        if kwargs['alpha'] * 3 < 0.5:
+            alpha = 1.0
+        else:
+            alpha = kwargs['alpha'] * 3
         if 'color' not in kwargs.keys():
             kwargs['color'] = 'red'
         theta = np.linspace(0, 2*np.pi, 100)
@@ -731,8 +737,7 @@ class Cylinder(BaseConstraint):
             theta, y = np.meshgrid(theta, y)
             x = self.center_x + self.radius * np.cos(theta)
             z = self.center_z + self.radius * np.sin(theta)
-        ax.plot_surface(x, y, z,alpha=min(1.0, 3 * kwargs['alpha']), color=kwargs['color'])
-        # ax.plot_surface(x, y, z,alpha=1.0, color=kwargs['color'])
+        ax.plot_surface(x, y, z,alpha=alpha, color=kwargs['color'])
         ax.autoscale_view()
     def constraint_function(self, coords):
         '''
@@ -757,7 +762,7 @@ class Cylinder(BaseConstraint):
             else:
                 inFlag[i] = ((((y[i]-self.center_y)**2 + (z[i]-self.center_z)**2) <= self.radius**2) and self.center_x-self.height/2<=x[i] and x[i]<=self.center_x+self.height/2)
         if self.loc.lower() == 'in':
-            return not inFlag
+            return map(operator.not_, inFlag)
         else:
             return inFlag                   
 class Line(BaseConstraint):

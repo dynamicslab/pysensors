@@ -104,13 +104,13 @@ def test_gqr_exact_constrainted_case1(data_random):
 
     # Forbidden sensors should not be included
     assert set(sensors_CCQR).isdisjoint(set(totally_forbidden_sensors))
-    
+
 
 
     # Get ranked sensors from GQR
     sensors_GQR = GQR().fit(x.T, idx_constrained=forbidden_sensors,all_sensors=sensors_QR, n_sensors=total_sensors,n_const_sensors=exact_n_const_sensors, constraint_option='exact_n').get_sensors()[:total_sensors]
     assert sensors_CCQR.all() == sensors_GQR.all()
-    
+
 
 ## TODO
 def test_gqr_max_constrained():

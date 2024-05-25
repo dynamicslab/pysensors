@@ -11,27 +11,37 @@ import matplotlib.patches as patches
 import operator
 
 
-def get_constraind_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
+def get_constrained_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
     """
     Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
 
     Parameters
     ----------
-    x_min: int, lower bound for the x-axis constraint
-    x_max : int, upper bound for the x-axis constraint
-    y_min : int, lower bound for the y-axis constraint
-    y_max : int, upper bound for the y-axis constraint
+    x_min: float, lower bound for the x-axis constraint
+    x_max : float, upper bound for the x-axis constraint
+    y_min : float, lower bound for the y-axis constraint
+    y_max : float, upper bound for the y-axis constraint
     nx : int, image pixel (x dimensions of the grid)
     ny : int, image pixel (y dimensions of the grid)
-    all_sensors : np.ndarray, shape [n_features], ranked list of sensor locations.
+    all_sensors : np.ndarray of integers, shape [n_features], ranked list of sensor locations.
 
     Returns
     -------
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
+    if len(all_sensors)==0:
+        raise ValueError('all_sensors must be provided')
+    if not np.issubdtype(all_sensors.dtype, np.integer):
+        raise ValueError('all_sensors must be integers')
+    if x_min >= x_max:
+        raise ValueError('x_min must be less than x_max')
+    if y_min >= y_max:
+        raise ValueError('y_min must be less than y_max')
+    if not isinstance(nx, int) or not isinstance(ny, int):
+        raise ValueError('nx and ny must be integers')
     n_features = len(all_sensors)
-    image_size = int(np.sqrt(n_features))
+    # image_size = int(np.sqrt(n_features))
     a = np.unravel_index(all_sensors, (nx,ny))
     constrained_sensorsx = []
     constrained_sensorsy = []
@@ -56,12 +66,12 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
 
     Parameters
     ----------
-    x_min: int, lower bound for the x-axis constraint
-    x_max : int, upper bound for the x-axis constraint
-    y_min : int, lower bound for the y-axis constraint
-    y_max : int, upper bound for the y-axis constraint
+    x_min: float, lower bound for the x-axis constraint
+    x_max : float, upper bound for the x-axis constraint
+    y_min : float, lower bound for the y-axis constraint
+    y_max : float, upper bound for the y-axis constraint
     df : pandas.DataFrame, a dataframe containing the features  and samples
-    
+
     Keyword Arguments
     -----------------
     X_axis : string,
@@ -70,7 +80,7 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
         Name of the column in dataframe to be plotted on the Y axis.
     Field : string,
         Name of the column in dataframe to be plotted as a contour map.
-
+        ## TODO: Field is not used here @Niha please see this.
     Returns
     -------
     idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
@@ -98,7 +108,7 @@ def load_functional_constraints(functionHandler):
     Parameters:
     ----------
     functionHandler : The python file name that contains the constraint to be evaluated as a string
-    
+
     Return
     -------
     Convert the functionHandler file into a callable function
@@ -109,14 +119,14 @@ def load_functional_constraints(functionHandler):
     module = __import__(functionName)
     func = getattr(module, functionName)
     return func
-    
+
 def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one remains outside the Base_constraint() class
     """
     Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
     Parameters:
-    ---------- 
-        constraints: __(type?)__, The constraint defined by the user 
+    ----------
+        constraints: __(type?)__, The constraint defined by the user
         senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
         data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
                 Dataframe or Matrix which represent the measurement data.
@@ -135,8 +145,8 @@ def check_constraints(constraints,senID,info, **kwargs):  ### As discussed this 
     Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
     Parameters:
-    ---------- 
-        constraints: __(type?)__, The constraint defined by the user 
+    ----------
+        constraints: __(type?)__, The constraint defined by the user
         senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
         data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
                 Dataframe or Matrix which represent the measurement data.
@@ -150,7 +160,7 @@ def check_constraints(constraints,senID,info, **kwargs):  ### As discussed this 
     for i in range(nConstraints):
         G[:,i] = constraints[i].constraint_function(coords)
     return G
-    
+
 def order_constrained_sensors(idx_constrained_list, ranks_list):
     """
     Function for ordering constrained sensor locations on the grid according to their ranks.
@@ -164,12 +174,12 @@ def order_constrained_sensors(idx_constrained_list, ranks_list):
     -------
     sortedConstraints : np.darray, shape [No. of constrained locations], array which contains the constrained
         locations of the grid in terms of column indices of basis_matrix sorted according to their rank.
-    ranks : np.darray, shape [No. of constrained locations], array which contains the ranks of constrained sensors. 
+    ranks : np.darray, shape [No. of constrained locations], array which contains the ranks of constrained sensors.
     """
     sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
-    
-def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outside and I change what info is as discussed 
+
+def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outside and I change what info is as discussed
     """
     Function for obtaining the coordinates on a grid from column indices
 
@@ -177,7 +187,7 @@ def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outsid
     ----------
     idx :  int, sensor ID
     info : pandas.DataFrame/np.ndarray shape [n_features, n_samples], Dataframe or Matrix which represent the measurement data.
-    
+
     Keyword Arguments
     -----------------
     X_axis : string,
@@ -188,7 +198,7 @@ def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outsid
         Name of the column in dataframe to be plotted as a contour map.
 
     Returns:
-        (x,y) : tuple, The coordinates on the grid of each sensor. 
+        (x,y) : tuple, The coordinates on the grid of each sensor.
     """
     if isinstance(info,np.ndarray):
         return np.unravel_index(idx,(int(np.sqrt(info.shape[1])),int(np.sqrt(info.shape[1]))),'F')
@@ -206,15 +216,15 @@ def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outsid
             z = info.loc[idx,Z_axis].values
         else:
             z = None
-        x = info.loc[idx,X_axis].values  
+        x = info.loc[idx,X_axis].values
         y = info.loc[idx,Y_axis].values
-        
+
         return (x,y,z) if z is not None else (x,y)
-    
+
 def get_indices_from_coordinates(coordinates,shape):
     """
     Function for obtaining the indices of columns/sensors from coordinates on a grid when data is in the form of a matrix
-    
+
     Parameters
     ----------
     coordinates : tuple of array_like , (x,y) pair coordinates of sensor locations on the grid
@@ -222,16 +232,16 @@ def get_indices_from_coordinates(coordinates,shape):
 
     Returns
     -------
-    np.ravel_multi_index(coordinates,shape,order='F') : np.ndarray, The indices of the sensors. 
+    np.ravel_multi_index(coordinates,shape,order='F') : np.ndarray, The indices of the sensors.
     """
     return np.ravel_multi_index(coordinates,shape,order='F')
 
 class BaseConstraint(object):
     '''
     A General class for handling various functional and user-defined constraint shapes.
-    It extends the ability of constraint handling with various plotting and annotating 
-    functionalities while constraining various user-defined regions on the grid. 
-    
+    It extends the ability of constraint handling with various plotting and annotating
+    functionalities while constraining various user-defined regions on the grid.
+
     @ authors: Niharika Karnik (@nkarnik2999), Mohammad Abdo (@Jimmy-INL), and Joshua Cogliati (@joshua-cogliati-inl)
     '''
     def __init__(self,**kwargs):
@@ -289,10 +299,10 @@ class BaseConstraint(object):
             Name of the column in dataframe to be plotted on the Y axis.
         Field : string,
             Name of the column in dataframe to be plotted as a contour map.
-            
+
         Return
         ------
-        g : function, Contains the function defined by the user for the functional constraint. 
+        g : function, Contains the function defined by the user for the functional constraint.
         """
         if isinstance(info,np.ndarray):
             xLoc,yLoc = get_coordinates_from_indices(idx,info)
@@ -312,7 +322,7 @@ class BaseConstraint(object):
             xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Z_axis = Z_axis,Field = Field)
         g = func(xLoc, yLoc,**kwargs)
         return g
-    
+
     def get_functionalConstraind_sensors_indices(senID,g):  ### Moving this function inside the Base_constraint class as discussed
         """
         Function for finding constrained sensor locations on the grid and their ranks
@@ -332,7 +342,7 @@ class BaseConstraint(object):
         idx_constrained = senID[~g].tolist()
         rank = np.where(np.isin(idx_constrained,senID))[0].tolist() # ==False
         return idx_constrained, rank
-    
+
     def get_constraint_indices(self,all_sensors,info):
         '''
         A function for computing indices which lie within the region constrained by the user
@@ -344,9 +354,9 @@ class BaseConstraint(object):
             Dataframe or Matrix which represent the measurement data.
         Returns
         -----------
-        idx_const : np.darray, shape [No. of constrained locations], 
+        idx_const : np.darray, shape [No. of constrained locations],
             array which contains the constrained locations of the grid in terms of column indices of basis_matrix.
-        rank : np.darray, shape [No. of constrained locations], 
+        rank : np.darray, shape [No. of constrained locations],
             array which contains rank of the constrained sensor locations
         '''
         if isinstance(info,np.ndarray):
@@ -358,9 +368,9 @@ class BaseConstraint(object):
         for i in range(nPoints):
             g[i] = self.constraint_function(np.array(coords).reshape(nDims,-1)[:,i])
         # G_const = constraints_eval([g],all_sensors,data = info)
-        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,g) 
+        idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(all_sensors,g)
         return idx_const,rank
-    
+
     def draw_constraint(self, plot=None, **kwargs):
         '''
         Function for drawing the constraint defined by the user
@@ -375,7 +385,7 @@ class BaseConstraint(object):
         #     fig , ax = plt.subplots()
         ## TODO assess if plot=(fig,ax) has 3d projection
         self.draw(ax,**kwargs)
-        
+
     def plot_constraint_on_data(self,plot_type, plot=None, **kwargs):
         '''
         Function for plotting the user-defined constraint on the data
@@ -394,7 +404,7 @@ class BaseConstraint(object):
         -----------
         A plot of the constraint on top of the measurement data plot.
         '''
-        if plot is None: 
+        if plot is None:
             if isinstance(self,Cylinder):
                 self.fig, self.ax = plt.subplots(subplot_kw={"projection": "3d"})
             else:
@@ -408,34 +418,34 @@ class BaseConstraint(object):
         if 's' not in kwargs.keys():
             kwargs['s'] = 1
         if 'color' not in kwargs.keys():
-            kwargs['color'] = 'red'                
-        if plot_type == 'image': 
+            kwargs['color'] = 'red'
+        if plot_type == 'image':
             image = self.data[1,:].reshape(1,-1)
             n_samples, n_features = self.data.shape
             image_shape = (int(np.sqrt(n_features)),int(np.sqrt(n_features)))
             for i, comp in enumerate(image):
                 vmax = max(comp.max(), -comp.min())
                 self.ax.imshow(comp.reshape(image_shape), cmap = plt.cm.gray, interpolation='nearest', vmin=-vmax, vmax=vmax )
-        elif plot_type == 'scatter': 
+        elif plot_type == 'scatter':
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             self.ax.scatter(x_vals, y_vals, color = kwargs['color'], marker = '.')
-        elif plot_type == 'scatter3D': 
+        elif plot_type == 'scatter3D':
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             z_vals = self.data[self.Z_axis]
             self.ax.scatter(x_vals, y_vals, z_vals, color=kwargs['color'], marker='.')
-        elif plot_type == 'contour_map': 
+        elif plot_type == 'contour_map':
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             self.ax.scatter(x_vals, y_vals, c=self.data[self.Field], cmap=kwargs['cmap'], s=kwargs['s'], alpha=kwargs['alpha'])
-        elif plot_type == 'contour_map3D': 
+        elif plot_type == 'contour_map3D':
             y_vals = self.data[self.Y_axis]
             x_vals = self.data[self.X_axis]
             z_vals = self.data[self.Z_axis]
             self.ax.scatter(x_vals, y_vals,z_vals ,c=self.data[self.Field], cmap=kwargs['cmap'], s=kwargs['s'], alpha=kwargs['alpha'])
         self.draw(self.ax,**kwargs)
-        
+
     def plot_grid(self,all_sensors):
         '''
         Function to plot the grid with data points that signify sensor locations to choose from
@@ -443,10 +453,10 @@ class BaseConstraint(object):
         ----------
         all_sensors : np.darray,
             A ranked list of all sensor indices computed from just QR optimizer
-            
+
         Returns
         -----------
-        A plot of the user defined grid showing all possible sensor locations 
+        A plot of the user defined grid showing all possible sensor locations
         '''
         if isinstance(self.data,np.ndarray):
             n_samples, n_features = self.data.shape
@@ -458,11 +468,11 @@ class BaseConstraint(object):
             x_vals = self.data[self.X_axis]
             fig , ax = plt.subplots()
             ax.scatter(x_vals, y_vals, color = 'blue', marker = '.')
-    
+
     def plot_selected_sensors(self,sensors, all_sensors, color_constrained = 'red', color_unconstrained = 'green'):
         '''
         Function to plot the sensor locations choosen during the optimization procedure.
-        This function plots near-optimal sensors which are unconstrained sensor locations choosen by QR in the user defined color_unconstrained/green and sensors that are choosen through constraining certain regions of the grid in the under defined color_constrained/red. 
+        This function plots near-optimal sensors which are unconstrained sensor locations choosen by QR in the user defined color_unconstrained/green and sensors that are choosen through constraining certain regions of the grid in the under defined color_constrained/red.
         Attributes
         ----------
         sensors : np.darray,
@@ -472,10 +482,10 @@ class BaseConstraint(object):
         color_constrained : string,
             The color the sensors that were selected due to the applied constraints should be plotted in
         color_unconstrained : string,
-            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in 
+            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in
         Returns
         -----------
-        A plot of the user defined grid showing chosen sensor locations 
+        A plot of the user defined grid showing chosen sensor locations
         '''
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
@@ -493,10 +503,10 @@ class BaseConstraint(object):
             unconstCoords = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
             self.ax.plot(constCoords,'*',color = color_constrained)
             self.ax.plot(unconstCoords, '*',color = color_unconstrained)
-        
+
     def sensors_dataframe(self,sensors):
         '''
-        Function to form a dataframe of the sensor index along with it's coordinate (X,Y,Z) positions 
+        Function to form a dataframe of the sensor index along with it's coordinate (X,Y,Z) positions
         Attributes
         ----------
         sensors : np.darray,
@@ -512,11 +522,11 @@ class BaseConstraint(object):
             yTop = np.floor(sensors/np.sqrt(n_features))
         elif isinstance(self.data,pd.DataFrame):
             xTop, yTop = get_coordinates_from_indices(sensors,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
-        columns = ['Sensor ID','SensorX','sensorY'] 
+        columns = ['Sensor ID','SensorX','sensorY']
         Sensors_df = pd.DataFrame(data = np.vstack([sensors,xTop,yTop]).T,columns=columns,dtype=float)
         Sensors_df.head(n_sensors)
         return Sensors_df
-        
+
     def annotate_sensors(self,sensors,all_sensors,color_constrained = 'red', color_unconstrained = 'green'):
         '''
         Function to annotate the sensor location on the grid while also plotting the sensor location
@@ -529,7 +539,7 @@ class BaseConstraint(object):
         color_constrained : string,
             The color the sensors that were selected due to the applied constraints should be plotted in
         color_unconstrained : string,
-            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in 
+            The color the sensors that were a part of the near-optimal sensors choosen through unconstrained QR optimizer should be plotted in
 
         Returns
         -----------
@@ -554,7 +564,7 @@ class BaseConstraint(object):
                     xytext=(-20,20), textcoords='offset points',color='r',fontsize=12,
                     arrowprops=dict(arrowstyle="->", color='black'))
         elif isinstance(self.data,pd.DataFrame):
-            xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)   
+            xTop, yTop = get_coordinates_from_indices(sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
             xconst, yconst = get_coordinates_from_indices(constrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
             xunconst, yunconst = get_coordinates_from_indices(unconstrained,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
             self.ax.plot(xconst, yconst, '*', color = color_constrained, alpha =0.5)
@@ -566,7 +576,7 @@ class BaseConstraint(object):
 
 class Intersection(BaseConstraint):
     '''
-    A General class for dealing with constraint regions that are defined by the combination of 
+    A General class for dealing with constraint regions that are defined by the combination of
     two or more individual constraint shapes/equations.
     '''
     def __init__(self,constraints, **kwargs): ### We want to make default location as 'in'
@@ -575,10 +585,10 @@ class Intersection(BaseConstraint):
         Attributes
         ----------
         constraints : np.darray containing instances of classes, for e.g: [circle_instance, line_instance],
-           
+
         '''
         self.constraints = constraints
-        
+
     def draw(self,ax):
         '''
         Function to plot the constraint based on two or more constraint shapes/equations
@@ -588,14 +598,14 @@ class Intersection(BaseConstraint):
         '''
     def constraint_function(self):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
-        
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
+
         '''
-    
+
 class Circle(BaseConstraint):
     '''
     General class for dealing with circular user defined constraints.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,center_x,center_y,radius,loc = 'in', **kwargs): ### We want to make default location as 'in'
         super().__init__(**kwargs)
@@ -610,7 +620,7 @@ class Circle(BaseConstraint):
             radius of the circle
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
-            
+
         Keyword Arguments
         -----------------
         X_axis : string,
@@ -626,10 +636,10 @@ class Circle(BaseConstraint):
         self.center_y = center_y
         self.radius = radius
         self.loc = loc
-        
+
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a circle based on user-defined coordinates 
+        Function to plot a circle based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint circle should be plotted
@@ -645,11 +655,11 @@ class Circle(BaseConstraint):
         c = patches.Circle((self.center_x, self.center_y), self.radius, fill=kwargs['fill'], color=kwargs['color'], lw=kwargs['lw'], alpha=kwargs['alpha'])
         ax.add_patch(c)
         ax.autoscale_view()
-        
-        
+
+
     def constraint_function(self,coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -667,7 +677,7 @@ class Circle(BaseConstraint):
 class Cylinder(BaseConstraint):
     '''
     General class for dealing with circular user defined constraints.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,center_x,center_y,center_z,radius,height,loc = 'in', **kwargs): ### We want to make default location as 'in'
         super().__init__(**kwargs)
@@ -682,7 +692,7 @@ class Cylinder(BaseConstraint):
             radius of the circle
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
-            
+
         Keyword Arguments
         -----------------
         X_axis : string,
@@ -704,10 +714,10 @@ class Cylinder(BaseConstraint):
             self.axis = kwargs['axis']
         else:
             self.axis = 'Z_axis'
-        
+
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a cylinder based on user-defined coordinates 
+        Function to plot a cylinder based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint circle should be plotted
@@ -741,7 +751,7 @@ class Cylinder(BaseConstraint):
         ax.autoscale_view()
     def constraint_function(self, coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -764,11 +774,11 @@ class Cylinder(BaseConstraint):
         if self.loc.lower() == 'in':
             return map(operator.not_, inFlag)
         else:
-            return inFlag                   
+            return inFlag
 class Line(BaseConstraint):
     '''
     General class for dealing with linear user defined constraints.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,x1,x2,y1,y2,**kwargs):
         super().__init__(**kwargs)
@@ -783,7 +793,7 @@ class Line(BaseConstraint):
             y-coordinate of one end-point of the line
         y2 : float,
             y-coordinate of the other end-point of the line
-            
+
         Keyword Arguments
         -----------------
         X_axis : string,
@@ -799,10 +809,10 @@ class Line(BaseConstraint):
         self.x2 = x2
         self.y1 = y1
         self.y2 = y2
-        
+
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a line based on user-defined coordinates 
+        Function to plot a line based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint line should be plotted
@@ -818,10 +828,10 @@ class Line(BaseConstraint):
         if 'linestyle' not in kwargs.keys():
              kwargs['linestyle'] = '-'
         ax.plot([self.x1,self.x2], [self.y1,self.y2], color=kwargs['color'], alpha=kwargs['alpha'], marker=kwargs['marker'], linestyle=kwargs['linestyle'])
-            
+
     def constraint_function(self,coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -831,7 +841,7 @@ class Line(BaseConstraint):
         '''
         x,y = coords[:]
         return (y-self.y1)*(self.x2-self.x1) - (self.y2-self.y1)*(x-self.x1) >= 0
-    
+
 class Parabola(BaseConstraint):
     '''
     General class for dealing with parabolic user defined constraints.
@@ -850,7 +860,7 @@ class Parabola(BaseConstraint):
             x-coordinate of the focus of the parabola
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
-        
+
         Keyword Arguments
         -----------------
         X_axis : string,
@@ -866,10 +876,10 @@ class Parabola(BaseConstraint):
         self.k = k
         self.a = a
         self.loc = loc
-        
+
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a parabola based on user-defined coordinates 
+        Function to plot a parabola based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint parabola should be plotted
@@ -882,10 +892,10 @@ class Parabola(BaseConstraint):
             x, y = get_coordinates_from_indices(grid_points,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         y_vals = (self.a*((x-self.h)**2)) - self.k
         ax.scatter(x,y_vals,s=1)
-        
+
     def constraint_function(self,coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -897,13 +907,13 @@ class Parabola(BaseConstraint):
         inFlag = (self.a*(x-self.h)**2) <= (y-self.k)
         if self.loc.lower() == 'in':
             return not inFlag
-        else: 
+        else:
             return inFlag
-        
+
 class Ellipse(BaseConstraint):
     '''
     General class for dealing with elliptical user defined constraints.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,center_x,center_y,width, height, angle = 0.0, loc = 'in', **kwargs):
         super().__init__(**kwargs)
@@ -922,7 +932,7 @@ class Ellipse(BaseConstraint):
             angle of the orientation of the ellipse in degrees
         loc : string- 'in'/'out',
             specifying whether the inside or outside of the shape is constrained
-            
+
         Keyword Arguments
         -----------------
         X_axis : string,
@@ -941,10 +951,10 @@ class Ellipse(BaseConstraint):
         self.loc = loc
         self.angle = angle
         self.half_horizontal_axis = self.width / 2
-        self.half_vertical_axis = self.height / 2        
+        self.half_vertical_axis = self.height / 2
     def draw(self,ax,**kwargs):
         '''
-        Function to plot an ellipse based on user-defined coordinates 
+        Function to plot an ellipse based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint ellipse should be plotted
@@ -961,10 +971,10 @@ class Ellipse(BaseConstraint):
         ax.add_patch(c)
         ax.autoscale_view()
         # ax.axes.set_aspect('equal')
-        
+
     def constraint_function(self,coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -978,14 +988,14 @@ class Ellipse(BaseConstraint):
         v = -(x - self.center_x) * np.sin(angleInRadians) + (y - self.center_y) * np.cos(angleInRadians)
         inFlag = u**2/self.half_horizontal_axis**2 + v**2/self.half_vertical_axis**2 <= 1
         if self.loc.lower() == 'in':
-            return not inFlag 
+            return not inFlag
         elif self.loc.lower() == 'out':
             return inFlag
 
 class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinking this part (Fill up with Mohammad's implementation of the Polygon)
     '''
     General class for dealing with polygonal user defined constraints.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,xy_coords,loc='in', **kwargs):
         super().__init__(**kwargs)
@@ -997,10 +1007,10 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         '''
         self.xy_coords = xy_coords
         self.loc = loc
-        
+
     def draw(self,ax,**kwargs):
         '''
-        Function to plot a polygon based on user-defined coordinates 
+        Function to plot a polygon based on user-defined coordinates
         Attributes
         ----------
         ax : axis on which the constraint polygon should be plotted
@@ -1016,11 +1026,11 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         c = patches.Polygon(self.xy_coords, fill=kwargs['fill'], color=kwargs['color'], lw=kwargs['lw'], alpha=kwargs['alpha'])
         ax.add_patch(c)
         ax.autoscale_view()
-        
-        
+
+
     def constraint_function(self,coords):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         Attributes
         ----------
         x : float,
@@ -1030,7 +1040,7 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
         '''
         x,y = coords[:]
         # define point in polygon
-        polygon =self.xy_coords 
+        polygon =self.xy_coords
         n = len(polygon)
         inFlag = False
 
@@ -1041,19 +1051,19 @@ class Polygon(BaseConstraint): ### Based on previous discussion we are re-thinki
             if (y1 < y and y2 >= y) or (y2 < y and y1 >= y):
                 if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
                     inFlag = not inFlag
-        
+
         if self.loc.lower() == 'in':
-            return not inFlag 
+            return not inFlag
         elif self.loc.lower() == 'out':
             return inFlag
-            
+
 class UserDefinedConstraints(BaseConstraint):
     '''
-    General class for dealing with any form of user defined constraints. 
-    The user can input the constraint in two forms: 
+    General class for dealing with any form of user defined constraints.
+    The user can input the constraint in two forms:
     - As a python file which has the equation of the constraint the user wants to implement.
     - As a string with just the equation of the constraint the user wants to implement.
-    Plotting, computing constraints functionalities included. 
+    Plotting, computing constraints functionalities included.
     '''
     def __init__(self,all_sensors, **kwargs):
         super().__init__(**kwargs)
@@ -1062,11 +1072,11 @@ class UserDefinedConstraints(BaseConstraint):
         ----------
         all_sensors : np.darray,
             A ranked list of all sensor indices computed from just QR optimizer
-            
+
         Keyword Arguments
         -----------------
         file : string,
-            Name of the python file containing the equation of the constraint 
+            Name of the python file containing the equation of the constraint
         equation : string,
             Equation of the constraint the user wants to implement
         X_axis : string,
@@ -1079,7 +1089,7 @@ class UserDefinedConstraints(BaseConstraint):
             dataframe (used for scatter and contour plots) or matrix (used for images) containing measurement data
         '''
         self.all_sensors = all_sensors
-        
+
         if 'file' in kwargs.keys():
             self.file = kwargs['file']
             self.functions = load_functional_constraints(self.file)
@@ -1087,11 +1097,11 @@ class UserDefinedConstraints(BaseConstraint):
             self.file = None
         if 'equation' in kwargs.keys():
             self.equations = [kwargs['equation']]
-        else: 
+        else:
             self.equations = None
         if self.equations is None and self.file is None:
             raise Exception('either file or equation should be provided')
-            
+
         if isinstance(self.data,pd.DataFrame):
             if 'X_axis' in kwargs.keys():
                 self.X_axis = kwargs['X_axis']
@@ -1105,7 +1115,7 @@ class UserDefinedConstraints(BaseConstraint):
                 self.Field = kwargs['Field']
             else:
                 raise Exception('Must provide either a python file containing the constraint or an equation of the constraint')
-    
+
     def draw(self,ax,**kwargs):
         '''
         Function to plot the user-defined constraint
@@ -1120,12 +1130,12 @@ class UserDefinedConstraints(BaseConstraint):
                 if isinstance(self.data,np.ndarray):
                     temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data)
                     G[:,i] = [x > 0 for x in temp]
-                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i]) 
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i])
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
                     temp = BaseConstraint.functional_constraints(self.functions,self.all_sensors,self.data, X_axis = self.X_axis, Y_axis = self.Y_axis, Field = self.Field)
                     G[:,i] = [x == 0 for x in temp]
-                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i]) 
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i])
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         elif self.equations is not None:
             nConstraints = len(self.equations)
@@ -1135,19 +1145,19 @@ class UserDefinedConstraints(BaseConstraint):
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data)
                     for k in range(len(xValue)):
                         G[k,i] = eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
-                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i]) 
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i])
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data)
                 elif isinstance(self.data,pd.DataFrame):
                     xValue,yValue = get_coordinates_from_indices(self.all_sensors,self.data,Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
                     for k in range(len(xValue)):
                         G[k,i] = not eval(self.equations[i], {"x":xValue[k],"y":yValue[k]})
-                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i]) 
+                    idx_const, rank = BaseConstraint.get_functionalConstraind_sensors_indices(self.all_sensors,G[:,i])
                     x_val,y_val = get_coordinates_from_indices(idx_const,self.data, Y_axis = self.Y_axis, X_axis = self.X_axis, Field = self.Field)
         ax.scatter(x_val,y_val,s = 1)
-         
+
     def constraint(self):
         '''
-        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region 
+        Function to compute whether a certain point on the grid lies inside/outside the defined constrained region
         '''
         if self.file != None :
             nConstraints = len([self.functions])

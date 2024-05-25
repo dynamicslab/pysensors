@@ -1,7 +1,7 @@
 from ._base import validate_input
 from ._optimizers import constrained_binary_solve
 from ._optimizers import constrained_multiclass_solve
-from ._constraints import get_constraind_sensors_indices
+from ._constraints import get_constrained_sensors_indices
 from ._constraints import get_constrained_sensors_indices_dataframe
 from ._constraints import BaseConstraint
 from ._constraints import Circle
@@ -9,7 +9,7 @@ from ._constraints import Cylinder
 from ._constraints import Line
 from ._constraints import Ellipse
 from ._constraints import Parabola
-from ._constraints import Polygon 
+from ._constraints import Polygon
 from ._constraints import UserDefinedConstraints
 from ._constraints import check_constraints
 from ._constraints import constraints_eval

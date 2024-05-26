@@ -94,12 +94,14 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
         Y_axis = kwargs['Y_axis']
     else:
         raise Exception('Must provide Y_axis as **kwargs as your data is a dataframe')
+    if df.isnull().values.any():
+        df = df.dropna()
     x = df[X_axis].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe. This makes it possible for the user to have any name for the X,Y columns of their dataframe.
     n_features = x.shape[0]
     y = df[Y_axis].to_numpy()
     idx_constrained = []
     for i in range(n_features):
-        if (x[i] >= x_min and x[i] <= x_max) and (y[i] >= y_min and y[i] <= y_max):
+        if (x[i] >= x_min and x[i] < x_max) and (y[i] >= y_min and y[i] < y_max):
             idx_constrained.append(i)
     return idx_constrained
 

@@ -70,11 +70,15 @@ To implement constrained sensing we initialize the optimizer GQR and provide it 
 sensors in the constrained region and the type of constraint. 
 
 Three strategies to deal with constraints are currently developed: 
+
 * ``max_n`` - Number of sensors in the constrained region should be less than or equal to the allowable constrained sensors.
+
 * ``exact_n`` - Number of sensors in the constrained region should be exactly equal to the allowable constrained sensors.
+
 * ``predetermined`` - A number of sensor locations are predetermined and the aim is to optimize the rest.
 
 .. code-block:: python
+
   optimizer_exact = ps.optimizers.GQR()
   opt_exact_kws={'idx_constrained':sensors_constrained,
           'n_sensors':n_sensors,
@@ -86,13 +90,21 @@ We have further provided functions to compute the sensors in the constrained reg
 constrained region, the constraints in utils compute the constrained sensor indices. Direct constraint plotting capabilities have also been developed. 
 
 The constrained shapes currently implemented are: 
+
 * ``Circle``
+
 * ``Cylinder``
+
 * ``Line``
+
 * ``Parabola``
+
 * ``Ellipse``
+
 * ``Polygon``
+
 * ``UserDefinedConstraints``
+
   - This type of constraint has the ability to take in either a function from the user or a 
   .py file which contains a functional definition of the constrained region.
 

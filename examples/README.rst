@@ -37,6 +37,17 @@ ocean at any given point.
 Reproduces an example from `Manohar et al. (2018) <https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8361090>`_
 where sensor locations are learned for a monomial basis for the task of reconstruction.
 
+`Spatial constraints example <https://python-sensors.readthedocs.io/en/latest/examples/spatially_constrained_qr.html>`_
+----------------------------------------------------------------------------------------------------
+Sensor locations are learned for a constrained sensing problem for the task of reconstruction. For further details of constrained sensing refer 
+`Karnik et al. (2024) <https://ieeexplore.ieee.org/abstract/document/10453459>`_
+
+`Functional constraints example <https://python-sensors.readthedocs.io/en/latest/examples/functional_constraints.html>`_
+----------------------------------------------------------------------------------------------------
+Sensor locations are learned for various shapes of constrained regions. For further details refer to 
+`Karnik et al. (2024) <https://www.mdpi.com/1996-1073/17/13/3355>`_
+
+
 
 Full table of contents
 ----------------------

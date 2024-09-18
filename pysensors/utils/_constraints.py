@@ -122,46 +122,47 @@ def load_functional_constraints(functionHandler):
     func = getattr(module, functionName)
     return func
 
-def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one remains outside the Base_constraint() class
-    """
-    Function for evaluating whether a certain sensor index lies within the constrained region or not.
+# def constraints_eval(constraints,senID,**kwargs):  ### As discussed this one remains outside the Base_constraint() class
+#     """
+#     Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
-    Parameters:
-    ----------
-        constraints: __(type?)__, The constraint defined by the user
-        senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
-        data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
-                Dataframe or Matrix which represent the measurement data.
-    Returns
-    -------
-    G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
-    """
-    nConstraints = len(constraints)
-    G = np.zeros((len(senID),nConstraints),dtype=bool)
-    for i in range(nConstraints):
-        # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
-        G[:,i] = [x>0 for x in constraints[i]]  ### I had >= 0 and hence Polygon was not working (Polygone gives 0 when False and 1 hen True)
+#     Parameters:
+#     ----------
+#         constraints: __(type?)__, The constraint defined by the user
+#         senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
+#         data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
+#                 Dataframe or Matrix which represent the measurement data.
+#     Returns
+#     -------
+#     G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
+#     """
+#     nConstraints = len(constraints)
+#     G = np.zeros((len(senID),nConstraints),dtype=bool)
+#     for i in range(nConstraints):
+#         # temp = BaseConstraint.functional_constraints(constraints[i],senID,kwargs)
+#         G[:,i] = [x>0 for x in constraints[i]]  ### I had >= 0 and hence Polygon was not working (Polygone gives 0 when False and 1 hen True)
+#     return G
 
-def check_constraints(constraints,senID,info, **kwargs):  ### As discussed this one remains outside the Base_constraint() class
-    """
-    Function for evaluating whether a certain sensor index lies within the constrained region or not.
+# def check_constraints(constraints,senID,info, **kwargs):  ### As discussed this one remains outside the Base_constraint() class
+#     """
+#     Function for evaluating whether a certain sensor index lies within the constrained region or not.
 
-    Parameters:
-    ----------
-        constraints: __(type?)__, The constraint defined by the user
-        senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
-        data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
-                Dataframe or Matrix which represent the measurement data.
-    Returns
-    -------
-    G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
-    """
-    nConstraints = len(constraints)
-    G = np.zeros((len(senID),nConstraints),dtype=bool)
-    coords = get_coordinates_from_indices(senID,info,**kwargs)
-    for i in range(nConstraints):
-        G[:,i] = constraints[i].constraint_function(coords)
-    return G
+#     Parameters:
+#     ----------
+#         constraints: __(type?)__, The constraint defined by the user
+#         senID: np.ndarray, shape [n_features], ranked list of sensor locations (column indices)
+#         data : pandas.DataFrame/np.ndarray shape [n_features, n_samples]
+#                 Dataframe or Matrix which represent the measurement data.
+#     Returns
+#     -------
+#     G : Boolean np.darray, shape [n_features], array which contains a Boolean value based on whether a column index is constrained or not.
+#     """
+#     nConstraints = len(constraints)
+#     G = np.zeros((len(senID),nConstraints),dtype=bool)
+#     coords = get_coordinates_from_indices(senID,info,**kwargs)
+#     for i in range(nConstraints):
+#         G[:,i] = constraints[i].constraint_function(coords)
+#     return G
 
 def order_constrained_sensors(idx_constrained_list, ranks_list):
     """
@@ -170,7 +171,7 @@ def order_constrained_sensors(idx_constrained_list, ranks_list):
     Parameters
     ----------
     idx_constrained_list : np.darray shape [No. of constrained locations], Constrained sensor locations
-    ranks_list : no.darray shape [No. of constrained locations], Ranks of each constrained sensor location
+    ranks_list : np.darray shape [No. of constrained locations], Ranks of each constrained sensor location
 
     Returns
     -------
@@ -178,7 +179,11 @@ def order_constrained_sensors(idx_constrained_list, ranks_list):
         locations of the grid in terms of column indices of basis_matrix sorted according to their rank.
     ranks : np.darray, shape [No. of constrained locations], array which contains the ranks of constrained sensors.
     """
-    sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
+    if len(ranks_list) == 0 or len(idx_constrained_list) == 0:
+        sortedConstraints = []
+        ranks = []
+    else:
+        sortedConstraints,ranks =zip(*[[x,y] for x,y in sorted(zip(idx_constrained_list, ranks_list),key=lambda x: (x[1]))])
     return sortedConstraints,ranks
 
 def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outside and I change what info is as discussed
@@ -205,6 +210,8 @@ def get_coordinates_from_indices(idx,info,**kwargs): ### This one remains outsid
     if isinstance(info,np.ndarray):
         return np.unravel_index(idx,(int(np.sqrt(info.shape[1])),int(np.sqrt(info.shape[1]))),'F')
     elif isinstance(info,pd.DataFrame):
+        if set(idx).issubset(np.arange(0,len(info))) == False:
+            raise Exception("Sensor ID must be within dataframe entries")
         if 'X_axis' in kwargs.keys():
             X_axis = kwargs['X_axis']
         else:
@@ -321,6 +328,10 @@ class BaseConstraint(object):
                 Field = kwargs['Field']
             else:
                 raise Exception('Must provide Field as **kwargs as your data is a dataframe')
+            if 'Z_axis' in kwargs.keys():
+                Z_axis = kwargs['Z_axis']
+            else:
+                Z_axis = None
             xLoc,yLoc =  get_coordinates_from_indices(idx,info,X_axis = X_axis, Y_axis = Y_axis, Z_axis = Z_axis,Field = Field)
         g = func(xLoc, yLoc,**kwargs)
         return g

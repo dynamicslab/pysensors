@@ -3,14 +3,14 @@ Identity basis class.
 
 This is essentially a dummy basis which just uses raw, unaltered features.
 """
+
 from warnings import warn
 
 from numpy import identity
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
-from ._base import InvertibleBasis
-from ._base import MatrixMixin
+from ._base import InvertibleBasis, MatrixMixin
 
 
 class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):

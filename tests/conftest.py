@@ -1,6 +1,7 @@
 """
 Shared pytest fixtures for unit tests.
 """
+
 import numpy as np
 import pytest
 

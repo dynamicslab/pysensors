@@ -1,13 +1,12 @@
 """Unit tests for basis classes"""
+
 import warnings
 
 import numpy as np
 import pytest
 from sklearn.exceptions import NotFittedError
 
-from pysensors.basis import Identity
-from pysensors.basis import RandomProjection
-from pysensors.basis import SVD
+from pysensors.basis import SVD, Identity, RandomProjection
 
 
 @pytest.mark.parametrize("basis", [Identity(), SVD(), RandomProjection()])

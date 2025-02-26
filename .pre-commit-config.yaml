@@ -1,22 +1,26 @@
- 
 fail_fast: false
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.3.0
+  rev: v5.0.0
   hooks:
     - id: check-added-large-files
       args: ["--maxkb=775"]
     - id: check-merge-conflict
-- repo: https://github.com/asottile/reorder_python_imports
-  rev: v3.8.2
+- repo: https://github.com/PyCQA/isort
+  rev: 5.12.0
   hooks:
-    - id: reorder-python-imports
-- repo: https://github.com/ambv/black
-  rev: 22.8.0
+    - id: isort
+      args: [--profile=black]
+- repo: https://github.com/psf/black
+  rev: 25.1.0
   hooks:
     - id: black
-- repo: https://gitlab.com/pycqa/flake8
-  rev: 3.9.2
+-   repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.6.1
+    hooks:
+    - id: sphinx-lint
+- repo: https://github.com/pycqa/flake8
+  rev: 7.1.1
   hooks:
     - id: flake8
       args: ["--config=setup.cfg"]

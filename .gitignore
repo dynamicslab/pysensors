@@ -17,6 +17,7 @@ coverage.xml
 
 # virtual environment
 venv/*
+env/*
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*

@@ -1,6 +1,7 @@
 """
 Various utility functions.
 """
+
 import numpy as np
 
 # from sklearn.utils.validation import check_array

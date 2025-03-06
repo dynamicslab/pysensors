@@ -1,14 +1,12 @@
-from pkg_resources import DistributionNotFound
-from pkg_resources import get_distribution
+from importlib.metadata import PackageNotFoundError, distribution
 
 try:
-    __version__ = get_distribution("python-sensors").version
-except DistributionNotFound:
+    __version__ = distribution("python-sensors").version
+except PackageNotFoundError:
     pass
 
 from .classification import SSPOC
 from .reconstruction import SSPOR
-
 
 __all__ = [
     # Modules:

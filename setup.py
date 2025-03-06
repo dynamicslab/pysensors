@@ -1,9 +1,7 @@
 import pathlib
 import sys
 
-from setuptools import find_packages
-from setuptools import setup
-
+from setuptools import find_packages, setup
 
 assert sys.version_info >= (3, 6, 0), "pysensors requires Python 3.6+"
 

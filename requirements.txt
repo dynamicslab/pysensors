@@ -1,3 +1,4 @@
 scikit-learn>=0.23
+matplotlib
 numpy
 scipy

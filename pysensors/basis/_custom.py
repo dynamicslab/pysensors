@@ -1,8 +1,9 @@
 """
 custom mode basis class.
 """
-from ._base import InvertibleBasis
-from ._base import MatrixMixin
+
+from ._base import InvertibleBasis, MatrixMixin
+
 
 class Custom(InvertibleBasis, MatrixMixin):
     """
@@ -27,11 +28,11 @@ class Custom(InvertibleBasis, MatrixMixin):
     """
 
     def __init__(self, U, n_basis_modes=10, **kwargs):
-        '''
-            kwargs : Not defined but added to remain consistent with prior basis functions. 
-        '''
+        """
+        kwargs : Not defined but added to remain consistent with prior basis functions.
+        """
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
-            super(Custom, self).__init__()#n_components=n_basis_modes, **kwargs
+            super(Custom, self).__init__()  # n_components=n_basis_modes, **kwargs
             self._n_basis_modes = n_basis_modes
             self.custom_basis_ = U
         else:
@@ -48,13 +49,22 @@ class Custom(InvertibleBasis, MatrixMixin):
         -------
         self : instance
         """
-        # self.basis_matrix_ = self.custom_basis_[:,: self.n_basis_modes] @ self.custom_basis_[:,: self.n_basis_modes].T @ X[: self.n_basis_modes, :].T.copy()
-        # self.basis_matrix_ = self.custom_basis_ @ self.custom_basis_.T @ X[: self.n_basis_modes, :].T.copy()
-        self.basis_matrix_ = self.custom_basis_[:,:self.n_basis_modes]
-        # self.basis_matrix_ = (X @ self.custom_basis_[:,:self.n_basis_modes] @ self.custom_basis_[:,:self.n_basis_modes].T)[:self.n_basis_modes,:].T
+        # self.basis_matrix_ = self.custom_basis_[
+        #     :,: self.n_basis_modes] @ self.custom_basis_[
+        #         :,: self.n_basis_modes].T @ X[
+        #             : self.n_basis_modes, :].T.copy()
+        # self.basis_matrix_ = self.custom_basis_ @ self.custom_basis_.T @ X[
+        #     : self.n_basis_modes, :].T.copy()
+        self.basis_matrix_ = self.custom_basis_[:, : self.n_basis_modes]
+        # self.basis_matrix_ = (X @ self.custom_basis_[
+        #     :,:self.n_basis_modes] @ self.custom_basis_[
+        #         :,:self.n_basis_modes].T)[:self.n_basis_modes,:].T
 
-        # self.basis_matrix_ = ((X @ self.custom_basis_).T)[:,:self.n_basis_modes]
-        # self.basis_matrix_ = ((X @ self.custom_basis_ @ self.custom_basis_.T).T)[:,:self.n_basis_modes]
+        # self.basis_matrix_ = ((X @ self.custom_basis_).T)[
+        #     :,:self.n_basis_modes]
+        # self.basis_matrix_ = ((
+        #     X @ self.custom_basis_ @ self.custom_basis_.T).T)[
+        #         :,:self.n_basis_modes]
         return self
 
     def matrix_inverse(self, n_basis_modes=None):

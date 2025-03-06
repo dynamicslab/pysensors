@@ -14,6 +14,7 @@ See also the following paper for improvements on this method
     Proceedings of the National Academy of Sciences
     115.42 (2018): 10564-10569.
 """
+
 import warnings
 
 import numpy as np
@@ -24,10 +25,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
-from ..utils import constrained_binary_solve
-from ..utils import constrained_multiclass_solve
-from ..utils import validate_input
-
+from ..utils import (
+    constrained_binary_solve,
+    constrained_multiclass_solve,
+    validate_input,
+)
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 
@@ -259,7 +261,7 @@ class SSPOC(BaseEstimator):
 
         if self.threshold is None:
             # Chosen as in Brunton et al. (2016)
-            threshold = np.sqrt(np.sum(s ** 2)) / (
+            threshold = np.sqrt(np.sum(s**2)) / (
                 2 * self.basis_matrix_inverse_.shape[0] * n_classes
             )
         else:

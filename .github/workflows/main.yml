@@ -1,0 +1,85 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+
+jobs:
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Linting
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: build
+      run: pip install .
+    - name: test import
+      run: python -c "import pysensors"
+  
+  tests:
+      name: Tests
+      needs: linting
+      runs-on: ubuntu-latest
+      strategy:
+          fail-fast: false
+          max-parallel: 4
+          matrix:
+            python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+      steps:
+        - uses: actions/checkout@v4
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v5
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Install dependencies
+          run: |
+            pip install -r requirements-dev.txt
+        - name: Test with pytest
+          run: |
+            pytest tests --cov=pysensors --cov-report=xml
+        - name: Upload coverage to Codecov
+          uses: codecov/codecov-action@v5
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            file: ./coverage.xml
+        - name: Execute feature notebook with papermill
+          run: |
+            pip install papermill
+            cd examples
+            papermill --report-mode pysensors_overview.ipynb out.json
+        - uses: actions/cache@v4
+          with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+            restore-keys: |
+              ${{ runner.os }}-pip-

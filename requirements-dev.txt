@@ -1,7 +1,7 @@
 -e .
 -r requirements.txt
 -r requirements-examples.txt
-pytest < 8
+pytest >=6.2.4, <8.0.0
 pytest-cov
 pytest-lazy-fixture
 flake8-builtins-unleashed

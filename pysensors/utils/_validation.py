@@ -1,8 +1,10 @@
 """
 Various utility functions for validation and computing reconstruction scores and errors.
 """
+
 import numpy as np
 from scipy.sparse import lil_matrix
+
 
 def determinant(top_sensors, n_features, basis_matrix):
     """
@@ -27,7 +29,7 @@ def determinant(top_sensors, n_features, basis_matrix):
     c = lil_matrix((p,n),dtype=np.int8)
 
     for i in range(p):
-        c[i,top_sensors[i]] = 1
+        c[i, top_sensors[i]] = 1
     phi = basis_matrix
     theta = c @ phi
     if p==r:
@@ -39,6 +41,7 @@ def determinant(top_sensors, n_features, basis_matrix):
         pass
     optimality = abs(np.linalg.det(M_gamma))
     return optimality
+
 
 def relative_reconstruction_error(data, prediction):
     """
@@ -55,5 +58,5 @@ def relative_reconstruction_error(data, prediction):
         error_val : Float,
             The relative error calculated.
     """
-    error_val = (np.linalg.norm((data - prediction)/np.linalg.norm(data)))*100
-    return (error_val)
+    error_val = (np.linalg.norm((data - prediction) / np.linalg.norm(data))) * 100
+    return error_val

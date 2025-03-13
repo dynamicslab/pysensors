@@ -1,8 +1,7 @@
 import warnings
 
 import numpy as np
-from scipy.linalg import lstsq
-from scipy.linalg import solve
+from scipy.linalg import lstsq, solve
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
@@ -11,7 +10,6 @@ from ..optimizers import CCQR
 from ..optimizers import QR
 from ..optimizers import GQR
 from ..utils import validate_input
-
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
 

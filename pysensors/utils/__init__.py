@@ -46,5 +46,5 @@ __all__ = [
     "max_n",
     "predetermined",
     "determinant",
-    "relative_reconstruction_error"
+    "relative_reconstruction_error",
 ]

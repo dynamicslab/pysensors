@@ -1,10 +1,10 @@
 """
 SVD mode basis class.
 """
+
 from sklearn.decomposition import TruncatedSVD
 
-from ._base import InvertibleBasis
-from ._base import MatrixMixin
+from ._base import InvertibleBasis, MatrixMixin
 
 
 class SVD(TruncatedSVD, InvertibleBasis, MatrixMixin):

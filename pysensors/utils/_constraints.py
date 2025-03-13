@@ -1,6 +1,6 @@
-
 """
-Various utility functions for mapping constrained sensors locations with the column indices for class GQR.
+Various utility functions for mapping constrained sensors locations with the column
+indices for class GQR.
 """
 
 import numpy as np
@@ -13,7 +13,8 @@ import operator
 
 def get_constrained_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sensors):
     """
-    Function for mapping constrained sensor locations on the grid with the column indices of the basis_matrix.
+    Function for mapping constrained sensor locations on the grid with the column
+    indices of the basis_matrix.
 
     Parameters
     ----------
@@ -27,7 +28,8 @@ def get_constrained_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sens
 
     Returns
     -------
-    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
+    idx_constrained : np.darray, shape [No. of constrained locations], array which
+    contains the constrained
         locations of the grid in terms of column indices of basis_matrix.
     """
     if len(all_sensors)==0:
@@ -46,23 +48,30 @@ def get_constrained_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sens
     constrained_sensorsx = []
     constrained_sensorsy = []
     for i in range(n_features):
-        if (a[0][i] >= x_min and a[0][i] <= x_max) and (a[1][i] >= y_min and a[1][i] <= y_max):
+        if (a[0][i] >= x_min and a[0][i] <= x_max) and (
+            a[1][i] >= y_min and a[1][i] <= y_max
+        ):
             constrained_sensorsx.append(a[0][i])
             constrained_sensorsy.append(a[1][i])
 
     constrained_sensorsx = np.array(constrained_sensorsx)
     constrained_sensorsy = np.array(constrained_sensorsy)
-    constrained_sensors_array = np.stack((constrained_sensorsy, constrained_sensorsx), axis=1)
+    constrained_sensors_array = np.stack(
+        (constrained_sensorsy, constrained_sensorsx), axis=1
+    )
     constrained_sensors_tuple = np.transpose(constrained_sensors_array)
-    if len(constrained_sensorsx) == 0: ##Check to handle condition when number of sensors in the constrained region = 0
+    if (
+        len(constrained_sensorsx) == 0
+    ):  # Check to handle condition when number of sensors in the constrained region = 0
         idx_constrained = []
     else:
-        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx,ny))
+        idx_constrained = np.ravel_multi_index(constrained_sensors_tuple, (nx, ny))
     return idx_constrained
 
 def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kwargs):   #### We wanted to change the name of this function. I have made it get_constrained_sensors_indices_dataframe from get_constrained_sensors_indices_linear. Feel free to suggest a better name @Josh, @Mohammad
     """
-    Function for obtaining constrained column indices from already existing linear sensor locations on the grid.
+    Function for obtaining constrained column indices from already existing linear
+    sensor locations on the grid.
 
     Parameters
     ----------
@@ -83,8 +92,9 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
         ## TODO: Field is not used here @Niha please see this.
     Returns
     -------
-    idx_constrained : np.darray, shape [No. of constrained locations], array which contains the constrained
-        locations of the grid in terms of column indices of basis_matrix.
+    idx_constrained : np.darray, shape [No. of constrained locations], array which
+    contains the constrained locations of the grid in terms of column indices of
+    basis_matrix.
     """
     if 'X_axis' in kwargs.keys():
         X_axis = kwargs['X_axis']
@@ -99,6 +109,7 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max,df,**kw
     x = df[X_axis].to_numpy()   ### Needs to be changed to get the X_axis and Y_axis value of what is in the user dataframe. This makes it possible for the user to have any name for the X,Y columns of their dataframe.
     n_features = x.shape[0]
     y = df[Y_axis].to_numpy()
+
     idx_constrained = []
     for i in range(n_features):
         if (x[i] >= x_min and x[i] < x_max) and (y[i] >= y_min and y[i] < y_max):

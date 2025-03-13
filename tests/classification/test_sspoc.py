@@ -1,4 +1,5 @@
 """Tests for SSPOC class."""
+
 import numpy as np
 import pytest
 from sklearn.datasets import make_classification
@@ -6,9 +7,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_is_fitted
 
-from pysensors.basis import Identity
-from pysensors.basis import RandomProjection
-from pysensors.basis import SVD
+from pysensors.basis import SVD, Identity, RandomProjection
 from pysensors.classification import SSPOC
 from pytest_lazyfixture import lazy_fixture
 

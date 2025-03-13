@@ -47,6 +47,11 @@ Sensor locations are learned for a constrained sensing problem for the task of r
 Sensor locations are learned for various shapes of constrained regions. For further details refer to 
 `Karnik et al. (2024) <https://www.mdpi.com/1996-1073/17/13/3355>`_
 
+`Spatially Constrained sensing for a nuclear application <https://python-sensors.readthedocs.io/en/latest/examples/nuclear_application.html>`_
+----------------------------------------------------------------------------------------------------
+See how `PySensors` can be used to pick near optimal locations for sensors that accurateely reconstruct temperature in a nuclear fuel rod prototype 
+. For further details refer to `Karnik et al. (2024) <https://ieeexplore.ieee.org/abstract/document/10453459>`_
+
 
 
 Full table of contents

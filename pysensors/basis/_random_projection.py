@@ -3,11 +3,11 @@ Random projections basis class.
 
 Project data onto random features.
 """
+
 from numpy.linalg import pinv
 from sklearn.random_projection import GaussianRandomProjection
 
-from ._base import InvertibleBasis
-from ._base import MatrixMixin
+from ._base import InvertibleBasis, MatrixMixin
 
 
 class RandomProjection(GaussianRandomProjection, InvertibleBasis, MatrixMixin):

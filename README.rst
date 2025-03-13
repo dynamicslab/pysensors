@@ -32,11 +32,11 @@ PySensors provides the ``SSPOR`` (Sparse Sensor Placement Optimization for Recon
 Take representative examples of the types of data to be reconstructed (in this case polynomials)
 
 .. code-block:: python
-  
+
   x = numpy.linspace(0, 1, 1001)
   data = numpy.vander(x, 11).T  # Create an array whose rows are powers of x
 
-feed them to a ``SSPOR`` instance with 10 sensors, and 
+feed them to a ``SSPOR`` instance with 10 sensors, and
 
 .. code-block:: python
 
@@ -265,7 +265,7 @@ References
 
 .. |JOSS| image:: https://joss.theoj.org/papers/10.21105/joss.02828/status.svg
     :target: https://doi.org/10.21105/joss.02828
-    
+
 .. |Zenodo| image:: https://zenodo.org/badge/260577702.svg
     :target: https://zenodo.org/badge/latestdoi/260577702
 

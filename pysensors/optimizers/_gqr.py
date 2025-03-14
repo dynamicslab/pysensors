@@ -94,6 +94,10 @@ class GQR(QR):
             r = R[j:, j:]
 
             # Norm of each column
+            if j == 0:
+                dlens_old = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
+            else:
+                dlens_old = dlens
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             dlens_updated = self._norm_calc_Instance(
                 self.idx_constrained,

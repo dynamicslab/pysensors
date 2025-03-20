@@ -6,7 +6,9 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
-from ..optimizers import CCQR, QR
+from ..optimizers import CCQR
+from ..optimizers import QR
+from ..optimizers import GQR
 from ..utils import validate_input
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
@@ -507,7 +509,7 @@ class SSPOR(BaseEstimator):
         # If n_sensors exceeds n_samples, the cost-constrained QR algorithm may
         # place sensors in constrained areas.
         if (
-            isinstance(self.optimizer, CCQR)
+            (isinstance(self.optimizer, CCQR) or isinstance(self.optimizer, QR) or isinstance(self.optimizer, GQR))
             and self.n_sensors > self.basis_matrix_.shape[1]
         ):
             warnings.warn(

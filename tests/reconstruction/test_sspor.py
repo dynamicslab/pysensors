@@ -21,6 +21,7 @@ from sklearn.utils.validation import check_is_fitted
 from pysensors.basis import SVD, Identity, RandomProjection
 from pysensors.optimizers import CCQR
 from pysensors.reconstruction import SSPOR
+from pytest_lazyfixture import lazy_fixture
 
 
 def test_not_fitted(data_vandermonde):
@@ -64,7 +65,7 @@ def test_set_number_of_sensors(data_vandermonde):
 
 @pytest.mark.parametrize(
     "data",
-    [pytest.lazy_fixture("data_vandermonde"), pytest.lazy_fixture("data_random")],
+    [lazy_fixture("data_vandermonde"), lazy_fixture("data_random")],
 )
 def test_get_all_sensors(data):
     x = data

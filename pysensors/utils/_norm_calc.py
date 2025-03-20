@@ -149,8 +149,8 @@ def returnInstance(cls, name):
     Returns
     -------
     __norm_calc_type[name], instance of class
-  """
-  if name not in __norm_calc_type:
-    raise NotImplementedError("{} NOT IMPLEMENTED!!!!!\n".format(name))
-  return __norm_calc_type[name]
+    """
+    if name not in __norm_calc_type:
+        raise NotImplementedError("{} NOT IMPLEMENTED!!!!!\n".format(name))
+    return __norm_calc_type[name]
 

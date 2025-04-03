@@ -39,17 +39,17 @@ where sensor locations are learned for a monomial basis for the task of reconstr
 
 `Spatial constraints example <https://python-sensors.readthedocs.io/en/latest/examples/spatially_constrained_qr.html>`_
 ----------------------------------------------------------------------------------------------------
-Sensor locations are learned for a constrained sensing problem for the task of reconstruction. For further details of constrained sensing refer 
+Sensor locations are learned for a constrained sensing problem for the task of reconstruction. For further details of constrained sensing refer
 `Karnik et al. (2024) <https://ieeexplore.ieee.org/abstract/document/10453459>`_
 
 `Functional constraints example <https://python-sensors.readthedocs.io/en/latest/examples/functional_constraints.html>`_
 ----------------------------------------------------------------------------------------------------
-Sensor locations are learned for various shapes of constrained regions. For further details refer to 
+Sensor locations are learned for various shapes of constrained regions. For further details refer to
 `Karnik et al. (2024) <https://www.mdpi.com/1996-1073/17/13/3355>`_
 
 `Spatially Constrained sensing for a nuclear application <https://python-sensors.readthedocs.io/en/latest/examples/nuclear_application.html>`_
 ----------------------------------------------------------------------------------------------------
-See how `PySensors` can be used to pick near optimal locations for sensors that accurateely reconstruct temperature in a nuclear fuel rod prototype 
+See how `PySensors` can be used to pick near optimal locations for sensors that accurateely reconstruct temperature in a nuclear fuel rod prototype
 . For further details refer to `Karnik et al. (2024) <https://ieeexplore.ieee.org/abstract/document/10453459>`_
 
 

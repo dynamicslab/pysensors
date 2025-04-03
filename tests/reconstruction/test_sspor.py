@@ -15,13 +15,13 @@ pytest file_to_test.py
 
 import pytest
 from numpy import isnan, mean, nan, sqrt, zeros
+from pytest_lazyfixture import lazy_fixture
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pysensors.basis import SVD, Identity, RandomProjection
 from pysensors.optimizers import CCQR
 from pysensors.reconstruction import SSPOR
-from pytest_lazyfixture import lazy_fixture
 
 
 def test_not_fitted(data_vandermonde):

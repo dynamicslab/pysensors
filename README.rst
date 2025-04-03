@@ -58,18 +58,18 @@ Use the ``predict`` method to reconstruct a new function sampled at the chosen s
 Reconstruction with constraints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In most engineering applications, certain areas within the region of interest might allow a limited number of sensors or none at all.
-We develop a data-driven technique that incorporates constraints into an optimization framework for sensor placement, with the primary objective 
-of minimizing reconstruction errors under noisy sensor measurements. 
+We develop a data-driven technique that incorporates constraints into an optimization framework for sensor placement, with the primary objective
+of minimizing reconstruction errors under noisy sensor measurements.
 
-This work has been implemented in the general QR optimizer for sensor selection. 
+This work has been implemented in the general QR optimizer for sensor selection.
 This is an extension that requires a more intrusive access to the QR optimizer to facilitate a more adaptive optimization. It is a generalized version of cost constraints
-in the sense that users can allow `n_const_sensors` in the constrained area. If n = 0 this converges to the CCQR results. If there is 
+in the sense that users can allow `n_const_sensors` in the constrained area. If n = 0 this converges to the CCQR results. If there is
 no constrained region it should converge to the results from QR optimizer.
 
-To implement constrained sensing we initialize the optimizer GQR and provide it additional kwargs such as the constrained region, number of allowable 
-sensors in the constrained region and the type of constraint. 
+To implement constrained sensing we initialize the optimizer GQR and provide it additional kwargs such as the constrained region, number of allowable
+sensors in the constrained region and the type of constraint.
 
-Three strategies to deal with constraints are currently developed: 
+Three strategies to deal with constraints are currently developed:
 
 * ``max_n`` - Number of sensors in the constrained region should be less than or equal to the allowable constrained sensors.
 
@@ -87,9 +87,9 @@ Three strategies to deal with constraints are currently developed:
           'constraint_option':"exact_n"}
 
 We have further provided functions to compute the sensors in the constrained regions. For example if the user provides the center and radius of a circular
-constrained region, the constraints in utils compute the constrained sensor indices. Direct constraint plotting capabilities have also been developed. 
+constrained region, the constraints in utils compute the constrained sensor indices. Direct constraint plotting capabilities have also been developed.
 
-The constrained shapes currently implemented are: 
+The constrained shapes currently implemented are:
 
 * ``Circle``
 
@@ -105,7 +105,7 @@ The constrained shapes currently implemented are:
 
 * ``UserDefinedConstraints``
 
-  - This type of constraint has the ability to take in either a function from the user or a 
+  - This type of constraint has the ability to take in either a function from the user or a
   .py file which contains a functional definition of the constrained region.
 
 Classification
@@ -299,6 +299,12 @@ References
    "Greedy sensor placement with cost constraints." IEEE Sensors Journal 19, no. 7
    (2018): 2642-2656.
    `[DOI] <https://doi.org/10.1109/JSEN.2018.2887044>`__
+
+-  Karnik, Niharika, Mohammad G. Abdo, Carlos E. Estrada-Perez, Jun Soo Yoo,
+    Joshua J. Cogliati, Richard S. Skifton, Pattrick Calderoni, Steven L. Brunton, and Krithika Manohar.
+   "Constrained Optimization of Sensor Plcaement for Nuclear Digital Twins" IEEE Sensors Journal 24, no. 9
+   (2024): 15501 - 15516.
+   `[DOI] <https://doi.org/10.1109/JSEN.2024.3368875>`__
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ATests

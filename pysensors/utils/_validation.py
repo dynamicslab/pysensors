@@ -24,19 +24,19 @@ def determinant(top_sensors, n_features, basis_matrix):
         The dterminant value obtained.
     """
 
-    p = len(top_sensors) # Number of sensors
-    n,r = np.shape(basis_matrix) # state dimension X Number of modes
-    c = lil_matrix((p,n),dtype=np.int8)
+    p = len(top_sensors)  # Number of sensors
+    n, r = np.shape(basis_matrix)  # state dimension X Number of modes
+    c = lil_matrix((p, n), dtype=np.int8)
 
     for i in range(p):
         c[i, top_sensors[i]] = 1
     phi = basis_matrix
     theta = c @ phi
-    if p==r:
+    if p == r:
         M_gamma = theta
     elif p > r:
         M_gamma = theta.T @ theta
-    else:# TODO
+    else:  # TODO
         # raise an error that p cannot be less than r
         pass
     optimality = abs(np.linalg.det(M_gamma))

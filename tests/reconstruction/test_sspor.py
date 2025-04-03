@@ -15,6 +15,7 @@ pytest file_to_test.py
 
 import pytest
 from numpy import isnan, mean, nan, sqrt, zeros
+from pytest_lazyfixture import lazy_fixture
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -64,7 +65,7 @@ def test_set_number_of_sensors(data_vandermonde):
 
 @pytest.mark.parametrize(
     "data",
-    [pytest.lazy_fixture("data_vandermonde"), pytest.lazy_fixture("data_random")],
+    [lazy_fixture("data_vandermonde"), lazy_fixture("data_random")],
 )
 def test_get_all_sensors(data):
     x = data

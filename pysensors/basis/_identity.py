@@ -90,7 +90,6 @@ class Identity(BaseEstimator, InvertibleBasis, MatrixMixin):
         B : numpy ndarray, shape (n_features, n_features)
             The inverse matrix. In this case B is the identity matrix.
         """
-        # TODO: validate this
         n_basis_modes = self._validate_input(n_basis_modes)
 
         return identity(self.basis_matrix_.shape[0])

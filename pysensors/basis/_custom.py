@@ -32,39 +32,19 @@ class Custom(InvertibleBasis, MatrixMixin):
         kwargs : Not defined but added to remain consistent with prior basis functions.
         """
         if isinstance(n_basis_modes, int) and n_basis_modes > 0:
-            super(Custom, self).__init__()  # n_components=n_basis_modes, **kwargs
+            super(Custom, self).__init__()
             self._n_basis_modes = n_basis_modes
             self.custom_basis_ = U
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
 
-    def fit(self, X):
+    def fit(self):
         """
-        Parameters
-        ----------
-        X : array-like, shape (n_samples, n_features)
-            The training data.
-
         Returns
         -------
         self : instance
         """
-        # self.basis_matrix_ = self.custom_basis_[
-        #     :,: self.n_basis_modes] @ self.custom_basis_[
-        #         :,: self.n_basis_modes].T @ X[
-        #             : self.n_basis_modes, :].T.copy()
-        # self.basis_matrix_ = self.custom_basis_ @ self.custom_basis_.T @ X[
-        #     : self.n_basis_modes, :].T.copy()
         self.basis_matrix_ = self.custom_basis_[:, : self.n_basis_modes]
-        # self.basis_matrix_ = (X @ self.custom_basis_[
-        #     :,:self.n_basis_modes] @ self.custom_basis_[
-        #         :,:self.n_basis_modes].T)[:self.n_basis_modes,:].T
-
-        # self.basis_matrix_ = ((X @ self.custom_basis_).T)[
-        #     :,:self.n_basis_modes]
-        # self.basis_matrix_ = ((
-        #     X @ self.custom_basis_ @ self.custom_basis_.T).T)[
-        #         :,:self.n_basis_modes]
         return self
 
     def matrix_inverse(self, n_basis_modes=None):

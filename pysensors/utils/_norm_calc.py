@@ -85,11 +85,7 @@ def max_n(lin_idx, dlens, piv, j, n_const_sensors, **kwargs):
     else:
         n_sensors = len(all_sensors)
     counter = 0
-    # create a mask for constrained sensors in all sensors
-    # i.e., (mask[all_sensors[i]] == True means that sensor i is unconstrained
-    # and vise versa)
     mask = np.isin(all_sensors, lin_idx, invert=False)
-    # indices of all constrained sensors
     const_idx = all_sensors[mask]
     updated_lin_idx = const_idx[n_const_sensors:]
     for i in range(n_sensors):

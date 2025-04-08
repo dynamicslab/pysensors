@@ -46,7 +46,6 @@ def get_constrained_sensors_indices(x_min, x_max, y_min, y_max, nx, ny, all_sens
     if not isinstance(nx, int) or not isinstance(ny, int):
         raise ValueError("nx and ny must be integers")
     n_features = len(all_sensors)
-    # image_size = int(np.sqrt(n_features))
     a = np.unravel_index(all_sensors, (nx, ny))
     constrained_sensorsx = []
     constrained_sensorsy = []
@@ -91,9 +90,6 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max, df, **
         Name of the column in dataframe to be plotted on the X axis.
     Y-axis : string,
         Name of the column in dataframe to be plotted on the Y axis.
-    Field : string,
-        Name of the column in dataframe to be plotted as a contour map.
-        ## TODO: Field is not used here @Niha please see this.
     Returns
     -------
     idx_constrained : np.darray, shape [No. of constrained locations], array which
@@ -648,10 +644,10 @@ class BaseConstraint(object):
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
         constrained = sensors[
-            np.where(np.in1d(all_sensors[:n_sensors], sensors) is False)[0]
+            np.where(np.isin(all_sensors[:n_sensors], sensors) is False)[0]
         ]
         unconstrained = sensors[
-            np.where(np.in1d(all_sensors[:n_sensors], sensors) is True)[0]
+            np.where(np.isin(all_sensors[:n_sensors], sensors) is True)[0]
         ]
         if isinstance(self.data, np.ndarray):
             xTop = np.mod(sensors, np.sqrt(n_features))
@@ -1169,7 +1165,6 @@ class Ellipse(BaseConstraint):
         )
         ax.add_patch(c)
         ax.autoscale_view()
-        # ax.axes.set_aspect('equal')
 
     def constraint_function(self, coords):
         """

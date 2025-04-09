@@ -556,10 +556,10 @@ class BaseConstraint(object):
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
         constrained = sensors[
-            np.where(np.in1d(all_sensors[:n_sensors], sensors) is False)[0]
+            np.where(np.isin(all_sensors[:n_sensors], sensors) is False)[0]
         ]
         unconstrained = sensors[
-            np.where(np.in1d(all_sensors[:n_sensors], sensors) is True)[0]
+            np.where(np.isin(all_sensors[:n_sensors], sensors) is True)[0]
         ]
         if isinstance(self.data, np.ndarray):
             xconst = np.mod(constrained, np.sqrt(n_features))

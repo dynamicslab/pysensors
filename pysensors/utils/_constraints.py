@@ -555,12 +555,8 @@ class BaseConstraint(object):
         """
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        constrained = sensors[
-            np.where(~np.isin(all_sensors[:n_sensors], sensors))[0]
-        ]
-        unconstrained = sensors[
-            np.where(np.isin(all_sensors[:n_sensors], sensors))[0]
-        ]
+        constrained = sensors[np.where(~np.isin(all_sensors[:n_sensors], sensors))[0]]
+        unconstrained = sensors[np.where(np.isin(all_sensors[:n_sensors], sensors))[0]]
         if isinstance(self.data, np.ndarray):
             xconst = np.mod(constrained, np.sqrt(n_features))
             yconst = np.floor(constrained / np.sqrt(n_features))
@@ -643,12 +639,8 @@ class BaseConstraint(object):
         """
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        constrained = sensors[
-            np.where(np.isin(all_sensors[:n_sensors], sensors) is False)[0]
-        ]
-        unconstrained = sensors[
-            np.where(np.isin(all_sensors[:n_sensors], sensors) is True)[0]
-        ]
+        constrained = sensors[np.where(~np.isin(all_sensors[:n_sensors], sensors))[0]]
+        unconstrained = sensors[np.where(np.isin(all_sensors[:n_sensors], sensors))[0]]
         if isinstance(self.data, np.ndarray):
             xTop = np.mod(sensors, np.sqrt(n_features))
             yTop = np.floor(sensors / np.sqrt(n_features))

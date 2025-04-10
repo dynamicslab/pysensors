@@ -504,12 +504,9 @@ class SSPOR(BaseEstimator):
                 )
             )
 
-        # If n_sensors exceeds n_samples, the cost-constrained QR algorithm may
-        # place sensors in constrained areas.
         if (
             isinstance(self.optimizer, CCQR)
-            and self.n_sensors > self.basis_matrix_.shape[1]
-        ):
+        ) and self.n_sensors > self.basis_matrix_.shape[1]:
             warnings.warn(
                 "Number of sensors exceeds number of samples, which may cause CCQR to "
                 "select sensors in constrained regions."

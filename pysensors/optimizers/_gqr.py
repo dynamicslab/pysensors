@@ -93,7 +93,6 @@ class GQR(QR):
         for j in range(k):
             r = R[j:, j:]
 
-            # Norm of each column
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             dlens_updated = self._norm_calc_Instance(
                 self.idx_constrained,

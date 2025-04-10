@@ -41,8 +41,6 @@ class QR(BaseEstimator):
         -------
 
         """
-
-        # TODO: implement checks on basis_matrix
         _, _, self.pivots_ = qr(basis_matrix.conj().T, pivoting=True, **optimizer_kws)
 
         return self

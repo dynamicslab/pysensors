@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from pytest_lazyfixture import lazy_fixture
 from sklearn.datasets import make_classification
 from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
@@ -54,8 +55,8 @@ def test_prefit_basis(data_binary_classification):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_initialize_with_n_sensors(data):
@@ -70,8 +71,8 @@ def test_initialize_with_n_sensors(data):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_initialize_with_threshold(data):
@@ -87,8 +88,8 @@ def test_initialize_with_threshold(data):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_update_n_sensors(data, n_sensors):
@@ -103,8 +104,8 @@ def test_update_n_sensors(data, n_sensors):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_update_threshold(data):
@@ -121,8 +122,8 @@ def test_update_threshold(data):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_large_threshold(data):
@@ -145,8 +146,8 @@ def test_bad_update_sensors_input(data_binary_classification):
 @pytest.mark.parametrize(
     "data, baseline_accuracy",
     [
-        (pytest.lazy_fixture("data_binary_classification"), 0.55),
-        (pytest.lazy_fixture("data_multiclass_classification"), 0.25),
+        (lazy_fixture("data_binary_classification"), 0.55),
+        (lazy_fixture("data_multiclass_classification"), 0.25),
     ],
 )
 def test_predict_accuracy(data, baseline_accuracy):
@@ -162,8 +163,8 @@ def test_predict_accuracy(data, baseline_accuracy):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 def test_dummy_predict(data):
@@ -182,8 +183,8 @@ def test_dummy_predict(data):
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.lazy_fixture("data_binary_classification"),
-        pytest.lazy_fixture("data_multiclass_classification"),
+        lazy_fixture("data_binary_classification"),
+        lazy_fixture("data_multiclass_classification"),
     ],
 )
 @pytest.mark.parametrize(
@@ -200,8 +201,8 @@ def test_basis_integration(basis, data):
 @pytest.mark.parametrize(
     "data, shape",
     [
-        (pytest.lazy_fixture("data_binary_classification"), (20,)),
-        (pytest.lazy_fixture("data_multiclass_classification"), (20, 5)),
+        (lazy_fixture("data_binary_classification"), (20,)),
+        (lazy_fixture("data_multiclass_classification"), (20, 5)),
     ],
 )
 def test_coefficient_shape(data, shape):

@@ -95,6 +95,7 @@ class SSPOR(BaseEstimator):
         else:
             raise ValueError("n_sensors must be a positive integer.")
         self.n_basis_modes = None
+        self.sigma = None
 
     def fit(self, x, quiet=False, prefit_basis=False, seed=None, **optimizer_kws):
         """
@@ -511,3 +512,28 @@ class SSPOR(BaseEstimator):
                 "Number of sensors exceeds number of samples, which may cause CCQR to "
                 "select sensors in constrained regions."
             )
+
+    def variance(self, eta=None):
+        """
+        Computes the uncertainty of the reconstructed state.
+
+        Parameters
+        ----------
+        eta: float (default None)
+
+        Returns
+        -------
+        sigma: 
+            
+        """
+        check_is_fitted(self, "basis_matrix_")
+        if eta is None:
+            eta = 0.01
+        s = self.get_selected_sensors()
+        C = np.zeros((s.size, self.basis_matrix_.shape[0]))
+        C[np.arange(s.size), s] = 1
+        theta = C @ self.basis_matrix_
+        A = np.eye(self.basis_matrix_.shape[1]) + (theta.T @ theta) / (eta**2)
+        B = self.basis_matrix_ @ np.linalg.inv(A) @ theta.T / (eta**2)
+        self.sigma = 3 * eta * np.sqrt(np.sum(B**2, axis=1))
+        return self.sigma

@@ -12,4 +12,4 @@ sphinx >= 2
 sphinxcontrib-apidoc
 sphinx_rtd_theme
 pre-commit
-sphinx-nbexamples
+nbsphinx

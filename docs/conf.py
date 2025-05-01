@@ -1,5 +1,7 @@
 import importlib
+import os
 import pathlib
+import sys
 
 author = "Brian de Silva, Krithika Manohar, Emily Clark"
 project = "pysensors"  # package name
@@ -11,6 +13,7 @@ copyright = f"2020, {author}"
 
 module = importlib.import_module(project)
 version = release = getattr(module, "__version__")
+sys.path.insert(0, os.path.abspath("."))
 
 # The master toctree document.
 master_doc = "index"
@@ -22,7 +25,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
-    "sphinx_nbexamples",
+    "nbsphinx",
+    "sphinx_copy_examples",
 ]
 
 apidoc_module_dir = f"../{project}"
@@ -33,7 +37,7 @@ autodoc_default_options = {"members": True}
 autodoc_member_order = "bysource"
 autoclass_content = "init"
 
-language = None
+language = "en"
 
 here = pathlib.Path(__file__).parent
 

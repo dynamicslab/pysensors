@@ -435,17 +435,17 @@ def test_load_functional_constraints_loads_valid_python_file():
     """
     Test that the function loads a valid Python file and returns a callable function.
     """
-    test_file = "user_function.py"
+    test_file = "test_user_function.py"
     abspath = os.path.dirname(os.path.realpath(__file__))
     final_path = abspath + "/" + test_file
     with open(final_path, "w") as f:
         f.write(
             """
-def user_function():
+def test_user_function():
     return 1"""
         )
     func = load_functional_constraints(test_file)
-    assert func.__name__ == "user_function"
+    assert func.__name__ == "test_user_function"
     assert func() == 1
 
 

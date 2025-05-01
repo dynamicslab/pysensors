@@ -14,4 +14,4 @@ PySensors Examples
    vandermonde
    spatially_constrained_qr
    functional_constraints_class
-   nuclear_application
+   simulation_constrained_sensing

@@ -1,8 +1,9 @@
 """Unit tests for optimizers"""
 
 import numpy as np
+import pytest
 
-from pysensors.optimizers import CCQR, GQR, QR
+from pysensors.optimizers import CCQR, GQR, QR, qr_reflector
 
 
 def test_num_sensors(data_vandermonde):
@@ -131,3 +132,92 @@ def test_gqr_exact_constrainted_case1(data_random):
         .get_sensors()[:total_sensors]
     )
     assert sensors_CCQR.all() == sensors_GQR.all()
+
+
+def test_qr_reflector_zero_norm():
+    """Test qr_reflector when column norms are zero (forcing the else branch)."""
+    n_features = 3
+    n_examples = 4
+    r = np.zeros((n_features, n_examples))
+    costs = np.array([0.1, 0.2, 0.3, 0.4])
+    u, i_piv = qr_reflector(r, costs)
+    assert i_piv == 0
+    assert u.shape == (n_features,)
+    assert u[0] == np.sqrt(2)
+    assert np.all(u[1:] == 0)
+
+
+def test_qr_reflector_with_positive_norm():
+    """Test qr_reflector normal behavior with positive column norms."""
+    r = np.array([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0]]).T
+    costs = np.array([0.5, 0.5, 0.5])
+    u, i_piv = qr_reflector(r, costs)
+    assert i_piv == 2
+    expected_u0 = 0
+    if expected_u0 == 0:
+        expected_u0 = 1
+    expected_u = np.array([expected_u0, 0, 1]) / np.sqrt(np.abs(expected_u0))
+    np.testing.assert_almost_equal(u, expected_u)
+
+
+def test_qr_reflector_cost_affects_pivot():
+    """Test that the cost function properly influences pivot selection."""
+    r = np.array([[3.0, 0.0, 0.0], [0.0, 4.0, 0.0], [0.0, 0.0, 5.0]]).T
+    costs = np.array([0.0, 0.0, 2.0])
+    u, i_piv = qr_reflector(r, costs)
+    assert i_piv == 1
+    expected_u = np.array([1, 1, 0]) / np.sqrt(1)
+    np.testing.assert_almost_equal(u, expected_u)
+
+
+def test_ccqr_init_raises_error_for_non_1d_sensor_costs():
+    """Test that CCQR raises ValueError when sensor_costs is not 1D."""
+    sensor_costs_2d = np.array([[1, 2, 3], [4, 5, 6]])
+    with pytest.raises(ValueError) as excinfo:
+        CCQR(sensor_costs=sensor_costs_2d)
+    error_msg = str(excinfo.value)
+    assert "sensor_costs must be a 1D array" in error_msg
+    assert "2D array was given" in error_msg
+    sensor_costs_0d = np.array(5)
+    with pytest.raises(ValueError) as excinfo:
+        CCQR(sensor_costs=sensor_costs_0d)
+    error_msg = str(excinfo.value)
+    assert "sensor_costs must be a 1D array" in error_msg
+    assert "0D array was given" in error_msg
+    sensor_costs_3d = np.zeros((2, 3, 4))
+    with pytest.raises(ValueError) as excinfo:
+        CCQR(sensor_costs=sensor_costs_3d)
+    error_msg = str(excinfo.value)
+    assert "sensor_costs must be a 1D array" in error_msg
+    assert "3D array was given" in error_msg
+    sensor_costs_1d = np.array([1, 2, 3, 4])
+    ccqr = CCQR(sensor_costs=sensor_costs_1d)
+    assert ccqr.sensor_costs is sensor_costs_1d
+    ccqr = CCQR(sensor_costs=None)
+    assert ccqr.sensor_costs is None
+
+
+def test_ccqr_fit_raises_error_for_mismatched_dimensions():
+    """Test CCQR.fit raise ValueError when sensor_costs dimension doesn't match data."""
+    sensor_costs = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+    ccqr = CCQR(sensor_costs=sensor_costs)
+    basis_matrix = np.random.rand(3, 4)
+    with pytest.raises(ValueError) as excinfo:
+        ccqr.fit(basis_matrix)
+    error_msg = str(excinfo.value)
+    assert "Dimension of sensor_costs (5)" in error_msg
+    assert "does not match number of sensors in data (3)" in error_msg
+    sensor_costs = np.array([0.1, 0.2])
+    ccqr = CCQR(sensor_costs=sensor_costs)
+    basis_matrix = np.random.rand(4, 3)
+    with pytest.raises(ValueError) as excinfo:
+        ccqr.fit(basis_matrix)
+    error_msg = str(excinfo.value)
+    assert "Dimension of sensor_costs (2)" in error_msg
+    assert "does not match number of sensors in data (4)" in error_msg
+    sensor_costs = np.array([0.1, 0.2, 0.3, 0.4])
+    ccqr = CCQR(sensor_costs=sensor_costs)
+    basis_matrix = np.random.rand(4, 5)
+    ccqr.fit(basis_matrix)
+    assert hasattr(ccqr, "pivots_")
+    assert ccqr.pivots_.shape == (4,)

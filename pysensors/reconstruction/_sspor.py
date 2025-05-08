@@ -165,7 +165,7 @@ class SSPOR(BaseEstimator):
 
         return self
 
-    def predict(self, x, **solve_kws):
+    def predict(self, x, method=None, noise=None, prior=None, **solve_kws):
         """
         Predict values at all positions given measurements at sensor locations.
 
@@ -199,16 +199,57 @@ class SSPOR(BaseEstimator):
                 "n_sensors exceeds dimension of basis modes. Performance may be poor"
             )
 
-        # Square matrix
-        if self.n_sensors == self.basis_matrix_.shape[1]:
-            return self._square_predict(
-                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
-            )
-        # Rectangular matrix
-        else:
-            return self._rectangular_predict(
-                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
-            )
+        if method is None:
+            # Square matrix
+            if self.n_sensors == self.basis_matrix_.shape[1]:
+                return self._square_predict(
+                    x, self.ranked_sensors_[: self.n_sensors], **solve_kws
+                )
+            # Rectangular matrix
+            else:
+                return self._rectangular_predict(
+                    x, self.ranked_sensors_[: self.n_sensors], **solve_kws
+                )
+        if method == "mle":
+            return self._max_likelihood_reconstruction(x, prior, noise)
+
+    def _max_likelihood_reconstruction(self, x, prior, noise):
+        """
+        Reconstruct the state using maximum likelihood reconstruction
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        x: numpy array, shape (n_features, n_sensors)
+            Measurements
+
+        prior: numpy array (n_basis_modes,)
+            Prior variance
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise
+        """
+        if noise is None:
+            noise = 1
+        prior_cov = np.diag(prior**2)
+        sensor_selection_matrix = np.zeros(
+            (len(self.selected_sensors), self.basis_matrix_.shape[0])
+        )
+        sensor_selection_matrix[
+            np.arange(len(self.selected_sensors)), self.selected_sensors
+        ] = 1
+        low_rank_selection_matrix = sensor_selection_matrix @ self.basis_matrix_
+        composite_matrix = np.linalg.inv(prior_cov) + (
+            low_rank_selection_matrix.T @ low_rank_selection_matrix
+        ) / (noise**2)
+        rhs = low_rank_selection_matrix.T @ x
+        reconstructed_state = self.basis_matrix_ @ np.linalg.solve(
+            composite_matrix, rhs / noise**2
+        )
+        return reconstructed_state.T
 
     def _square_predict(self, x, sensors, **solve_kws):
         """Get prediction when the problem is square."""

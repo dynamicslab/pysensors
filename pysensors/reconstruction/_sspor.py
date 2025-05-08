@@ -511,3 +511,53 @@ class SSPOR(BaseEstimator):
                 "Number of sensors exceeds number of samples, which may cause CCQR to "
                 "select sensors in constrained regions."
             )
+
+    def std(self, prior, noise=None):
+        """
+        Compute standard deviation of noise in each pixel of the reconstructed state.
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: np.ndarray (n_basis_modes,)
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized sigular values.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+
+        Returns
+        -------
+        sigma: numpy array, shape (n_features,)
+            Level of uncertainty of each pixel of the reconstructed state
+
+        """
+        check_is_fitted(self, "basis_matrix_")
+        if noise is None:
+            noise = 1
+        if noise <= 0:
+            raise ValueError("Noise must be positive")
+        prior_sq = prior**2
+        sensor_selection_matrix = np.zeros(
+            (len(self.selected_sensors), self.basis_matrix_.shape[0])
+        )
+        sensor_selection_matrix[
+            np.arange(len(self.selected_sensors)), self.selected_sensors
+        ] = 1
+        low_rank_selection_matrix = sensor_selection_matrix @ self.basis_matrix_
+        composite_matrix = np.diag(prior_sq) + (
+            low_rank_selection_matrix.T @ low_rank_selection_matrix
+        ) / (noise**2)
+        diag_cov_matrix = (
+            self.basis_matrix_
+            @ np.linalg.inv(composite_matrix)
+            @ low_rank_selection_matrix.T
+            / (noise**2)
+        )
+        sigma = noise * np.sqrt(np.sum(diag_cov_matrix**2, axis=1))
+        return sigma

@@ -31,6 +31,7 @@ from pysensors.reconstruction import SSPOR
 def test_not_fitted(data_vandermonde):
     x = data_vandermonde
     model = SSPOR()
+    prior = np.random.rand(2)
 
     # Should not be able to call any of these methods before fitting
     with pytest.raises(NotFittedError):
@@ -45,6 +46,8 @@ def test_not_fitted(data_vandermonde):
         model.score(x)
     with pytest.raises(NotFittedError):
         model.reconstruction_error(x)
+    with pytest.raises(NotFittedError):
+        model.std(prior)
 
 
 def test_set_number_of_sensors(data_vandermonde):
@@ -702,3 +705,37 @@ def test_validate_n_sensors_warning():
         "which may cause CCQR to select sensors in constrained regions.",
     ):
         model._validate_n_sensors()
+
+
+def test_std_function():
+    X = np.random.rand(5, 10)
+    n_basis_modes = 2
+    prior = np.random.rand(n_basis_modes)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    sigma = model.std(prior=prior, noise=0.1)
+
+    assert sigma is not None
+    assert isinstance(sigma, np.ndarray)
+    assert sigma.shape == (X.shape[1],)
+    assert np.all(sigma >= 0)
+    assert not np.any(np.isnan(sigma))
+
+
+def test_maximal_likelihood_reconstruction():
+    n_samples = 5
+    n_features = 10
+    X = np.random.rand(n_samples, n_features)
+    n_basis_modes = 2
+    prior = np.random.rand(n_basis_modes)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    selected = model.get_selected_sensors()
+    x_sensors = X[:, selected]
+
+    y_pred = model.predict(x_sensors, method="mle", prior=prior, noise=0.1)
+
+    assert isinstance(y_pred, np.ndarray)
+    assert y_pred.shape == (n_samples, n_features)
+    assert not np.any(np.isnan(y_pred))
+    assert np.isrealobj(y_pred)

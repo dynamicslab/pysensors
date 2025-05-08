@@ -20,7 +20,7 @@ class TPGR(BaseEstimator):
         self.n_sensors = n_sensors
         self.noise = noise
         self.sensors_ = None
-        self.G =None
+        self.G = None
 
     def fit(self, basis_matrix):
         if self.n_sensors is None:
@@ -46,7 +46,9 @@ class TPGR(BaseEstimator):
             selected_index = remaining_indices[q]
             self.sensors_.append(selected_index)
             mask[selected_index] = False
-            G_selected = np.vstack((G_selected, G[selected_index:selected_index + 1, :]))
+            G_selected = np.vstack(
+                (G_selected, G[selected_index : selected_index + 1, :])
+            )
         return self
 
     def _one_pt_energy(self, G):
@@ -61,10 +63,13 @@ class TPGR(BaseEstimator):
         """
         J = 0.5 * np.sum(
             ((G_remaining @ G_selected.T) ** 2)
-            / (np.outer(
-                1 + (np.sum(G_remaining**2, axis=1)) / self.noise**2,
-                1 + (np.sum(G_selected**2, axis=1)) / self.noise**2,
-            ) * self.noise**4),
+            / (
+                np.outer(
+                    1 + (np.sum(G_remaining**2, axis=1)) / self.noise**2,
+                    1 + (np.sum(G_selected**2, axis=1)) / self.noise**2,
+                )
+                * self.noise**4
+            ),
             axis=1,
         )
         return J

@@ -602,3 +602,32 @@ class SSPOR(BaseEstimator):
         )
         sigma = noise * np.sqrt(np.sum(diag_cov_matrix**2, axis=1))
         return sigma
+
+    def one_pt_energy_landscape(self, prior, noise):
+        check_is_fitted(self, "optimizer")
+        G = self.basis_matrix_ @ np.diag(prior)
+        return -np.log(1 + np.einsum("ij,ij->i", G, G) / noise**2)
+
+    def two_pt_energy_landscape(self, prior, noise, selected_sensors):
+        check_is_fitted(self, "optimizer")
+        G = self.basis_matrix_ @ np.diag(prior)
+        mask = np.ones(G.shape[0], dtype=bool)
+        mask[selected_sensors] = False
+        G_selected = G[selected_sensors, :]
+        if len(selected_sensors) == 1:
+            G_selected.reshape(-1, 1)
+        G_remaining = G[mask, :]
+        J = 0.5 * np.sum(
+            ((G_remaining @ G_selected.T) ** 2)
+            / (
+                np.outer(
+                    1 + (np.sum(G_remaining**2, axis=1)) / noise**2,
+                    1 + (np.sum(G_selected**2, axis=1)) / noise**2,
+                )
+                * noise**4
+            ),
+            axis=1,
+        )
+        J_full = np.full(G.shape[0], np.nan)
+        J_full[mask] = J
+        return J_full

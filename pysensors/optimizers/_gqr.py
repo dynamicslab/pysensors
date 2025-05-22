@@ -57,6 +57,9 @@ class GQR(QR):
         self.n_const_sensors = 0
         self.all_sensors = []
         self.constraint_option = ""
+        self.info = None
+        self.X_axis = None
+        self.Y_axis = None
         self.nx = None
         self.ny = None
         self.r = 1
@@ -95,14 +98,17 @@ class GQR(QR):
 
             dlens = np.sqrt(np.sum(np.abs(r) ** 2, axis=0))
             dlens_updated = self._norm_calc_Instance(
-                self.idx_constrained,
                 dlens,
                 p,
                 j,
-                self.n_const_sensors,
                 dlens_old=dlens,
+                idx_constrained=self.idx_constrained,
+                n_const_sensors=self.n_const_sensors,
                 all_sensors=self.all_sensors,
                 n_sensors=self.n_sensors,
+                info=self.info,
+                X_axis=self.X_axis,
+                Y_axis=self.Y_axis,
                 nx=self.nx,
                 ny=self.ny,
                 r=self.r,

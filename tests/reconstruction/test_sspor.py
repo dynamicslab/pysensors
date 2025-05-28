@@ -31,6 +31,7 @@ from pysensors.reconstruction import SSPOR
 def test_not_fitted(data_vandermonde):
     x = data_vandermonde
     model = SSPOR()
+    prior = np.random.rand(2)
 
     # Should not be able to call any of these methods before fitting
     with pytest.raises(NotFittedError):
@@ -45,6 +46,8 @@ def test_not_fitted(data_vandermonde):
         model.score(x)
     with pytest.raises(NotFittedError):
         model.reconstruction_error(x)
+    with pytest.raises(NotFittedError):
+        model.std(prior)
 
 
 def test_set_number_of_sensors(data_vandermonde):
@@ -144,11 +147,24 @@ def test_predict_accuracy(data_vandermonde_testing):
     model.fit(data, seed=1)
     model.set_number_of_sensors(8)
     sensors = model.get_selected_sensors()
-    assert sqrt(mean((x_test - model.predict(x_test[sensors])) ** 2)) <= 1.0e-3
+    assert (
+        sqrt(
+            mean((x_test - model.predict(x_test[sensors], method="unregularized")) ** 2)
+        )
+        <= 1.0e-3
+    )
 
     # Should also work for row vectors
     x_test = x_test.reshape(1, -1)
-    assert sqrt(mean((x_test - model.predict(x_test[:, sensors])) ** 2)) <= 1.0e-3
+    assert (
+        sqrt(
+            mean(
+                (x_test - model.predict(x_test[:, sensors], method="unregularized"))
+                ** 2
+            )
+        )
+        <= 1.0e-3
+    )
 
 
 def test_reconstruction_error(data_vandermonde_testing):
@@ -221,7 +237,7 @@ def test_update_n_basis_modes(data_random):
     assert model.basis_matrix_.shape[1] == data.shape[0]
 
     n_basis_modes = 5
-    model.update_n_basis_modes(n_basis_modes)
+    model.update_n_basis_modes(n_basis_modes, x=data)
     assert model.basis.n_basis_modes == data.shape[0]
     assert model.basis_matrix_.shape[1] == n_basis_modes
 
@@ -347,7 +363,7 @@ def test_predict_warns_when_n_sensors_exceeds_basis_dimension():
             UserWarning, match="n_sensors exceeds dimension of basis modes"
         ):
             predictor.predict.__globals__["validate_input"] = lambda x, y: X.T
-            predictor.predict(X)
+            predictor.predict(X, method="unregularized")
     finally:
         if "validate_input" in predictor.predict.__globals__:
             predictor.predict.__globals__["validate_input"] = original_validate_input
@@ -373,7 +389,7 @@ def test_predict_no_warning_when_n_sensors_not_exceeds_basis_dimension():
         X = np.random.rand(2, 3)
         with warnings.catch_warnings(record=True) as recorded_warnings:
             predictor.predict.__globals__["validate_input"] = lambda x, y: X.T
-            predictor.predict(X)
+            predictor.predict(X, method="unregularized")
             relevant_warnings = [
                 w
                 for w in recorded_warnings
@@ -702,3 +718,37 @@ def test_validate_n_sensors_warning():
         "which may cause CCQR to select sensors in constrained regions.",
     ):
         model._validate_n_sensors()
+
+
+def test_std_function():
+    X = np.random.rand(5, 10)
+    n_basis_modes = 2
+    prior = np.random.rand(n_basis_modes)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    sigma = model.std(prior=prior, noise=0.1)
+
+    assert sigma is not None
+    assert isinstance(sigma, np.ndarray)
+    assert sigma.shape == (X.shape[1],)
+    assert np.all(sigma >= 0)
+    assert not np.any(np.isnan(sigma))
+
+
+def test_maximal_likelihood_reconstruction():
+    n_samples = 5
+    n_features = 10
+    X = np.random.rand(n_samples, n_features)
+    n_basis_modes = 2
+    prior = np.random.rand(n_basis_modes)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    selected = model.get_selected_sensors()
+    x_sensors = X[:, selected]
+
+    y_pred = model.predict(x_sensors, method=None, prior=prior, noise=0.1)
+
+    assert isinstance(y_pred, np.ndarray)
+    assert y_pred.shape == (n_samples, n_features)
+    assert not np.any(np.isnan(y_pred))
+    assert np.isrealobj(y_pred)

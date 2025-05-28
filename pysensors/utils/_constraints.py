@@ -1330,33 +1330,45 @@ class Polygon(BaseConstraint):
         """
         Function to compute whether a certain point on the grid lies inside/outside
         the defined constrained region
+
         Attributes
         ----------
-        x : float,
-            x coordinate of point on the grid being evaluated to check whether it lies
+        coords : list or tuple
+            [x, y] coordinates of point on the grid being evaluated to check whether
+            it lies
             inside or outside the constrained region
-        y : float,
-            y coordinate of point on the grid being evaluated to check whether it lies
-            inside or outside the constrained region
+
+        Returns
+        -------
+        bool
+            True if point satisfies the constraint (inside for "in", outside for "out"),
+            False otherwise
         """
+        if len(coords) != 2:
+            raise ValueError("coords must contain exactly 2 elements [x, y]")
+
         x, y = coords[:]
-        # define point in polygon
         polygon = self.xy_coords
         n = len(polygon)
+
+        if n < 3:
+            raise ValueError("Polygon must have at least 3 vertices")
         inFlag = False
 
         for i in range(n):
             x1, y1 = polygon[i]
             x2, y2 = polygon[(i + 1) % n]
-
-            if (y1 < y and y2 >= y) or (y2 < y and y1 >= y):
-                if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
-                    inFlag = not inFlag
-
+            if (y1 > y) != (y2 > y):
+                if y1 != y2:
+                    x_intersect = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+                    if x < x_intersect:
+                        inFlag = not inFlag
         if self.loc.lower() == "in":
             return not inFlag
         elif self.loc.lower() == "out":
             return inFlag
+        else:
+            raise ValueError(f"Invalid constraint type: {self.loc}.Must be'in' or'out'")
 
 
 class UserDefinedConstraints(BaseConstraint):

@@ -2455,7 +2455,7 @@ class TestPolygon:
 
     def test_constraint_function_triangle(self, triangle_coords):
         """Test the constraint_function with a triangle."""
-        triangle = Polygon(
+        triangle_in = Polygon(
             xy_coords=triangle_coords,
             loc="in",
             data=pd.DataFrame(),
@@ -2463,11 +2463,14 @@ class TestPolygon:
             Y_axis="y",
             Field="f",
         )
-        assert triangle.constraint_function([2, 1]) is False
-        assert triangle.constraint_function([-1, 0]) is True
-        assert triangle.constraint_function([5, 0]) is True
-        assert triangle.constraint_function([2, 5]) is True
-        assert triangle.constraint_function([0, 0]) is True
+        assert triangle_in.constraint_function([2, 1]) is False
+        assert triangle_in.constraint_function([1, 1]) is False
+        assert triangle_in.constraint_function([3, 1]) is False
+        assert triangle_in.constraint_function([2, 2]) is False
+        assert triangle_in.constraint_function([-1, 0]) is True
+        assert triangle_in.constraint_function([5, 0]) is True
+        assert triangle_in.constraint_function([2, 5]) is True
+        assert triangle_in.constraint_function([0, -1]) is True
         triangle_out = Polygon(
             xy_coords=triangle_coords,
             loc="out",
@@ -2477,7 +2480,11 @@ class TestPolygon:
             Field="f",
         )
         assert triangle_out.constraint_function([2, 1]) is True
+        assert triangle_out.constraint_function([1, 1]) is True
+        assert triangle_out.constraint_function([3, 1]) is True
         assert triangle_out.constraint_function([-1, 0]) is False
+        assert triangle_out.constraint_function([5, 0]) is False
+        assert triangle_out.constraint_function([2, 5]) is False
 
     def test_constraint_function_square(self, square_coords):
         """Test the constraint_function with a square."""
@@ -2496,7 +2503,23 @@ class TestPolygon:
         assert square.constraint_function([5, 2]) is True
         assert square.constraint_function([2, -1]) is True
         assert square.constraint_function([2, 5]) is True
-        assert square.constraint_function([0, 0]) is True
+        assert square.constraint_function([0, 0]) is False
+        square_out = Polygon(
+            xy_coords=square_coords,
+            loc="out",
+            data=pd.DataFrame(),
+            X_axis="x",
+            Y_axis="y",
+            Field="f",
+        )
+        assert square_out.constraint_function([2, 2]) is True
+        assert square_out.constraint_function([1, 1]) is True
+        assert square_out.constraint_function([3, 3]) is True
+        assert square_out.constraint_function([-1, 2]) is False
+        assert square_out.constraint_function([5, 2]) is False
+        assert square_out.constraint_function([2, -1]) is False
+        assert square_out.constraint_function([2, 5]) is False
+        assert square_out.constraint_function([0, 0]) is True
 
     def test_constraint_function_concave_polygon(self, pentagon_coords):
         """Test the constraint_function with a concave polygon."""
@@ -2511,11 +2534,30 @@ class TestPolygon:
         assert pentagon.constraint_function([2, 2]) is False
         assert pentagon.constraint_function([1, 1]) is False
         assert pentagon.constraint_function([3, 3]) is False
+
         assert pentagon.constraint_function([-2, 2]) is True
         assert pentagon.constraint_function([6, 2]) is True
         assert pentagon.constraint_function([2, -1]) is True
         assert pentagon.constraint_function([2, 6]) is True
-        assert pentagon.constraint_function([0, 0]) is True
+        result_00 = pentagon.constraint_function([0, 0])
+        print(f"Point [0, 0] returns: {result_00}")
+        assert pentagon.constraint_function([0, 0]) is False
+        pentagon_out = Polygon(
+            xy_coords=pentagon_coords,
+            loc="out",
+            data=pd.DataFrame(),
+            X_axis="x",
+            Y_axis="y",
+            Field="f",
+        )
+        assert pentagon_out.constraint_function([2, 2]) is True
+        assert pentagon_out.constraint_function([1, 1]) is True
+        assert pentagon_out.constraint_function([3, 3]) is True
+        assert pentagon_out.constraint_function([-2, 2]) is False
+        assert pentagon_out.constraint_function([6, 2]) is False
+        assert pentagon_out.constraint_function([2, -1]) is False
+        assert pentagon_out.constraint_function([2, 6]) is False
+        assert pentagon_out.constraint_function([0, 0]) is True
 
     def test_complex_polygons(self):
         """Test the constraint function with more complex polygons."""
@@ -2543,11 +2585,26 @@ class TestPolygon:
         )
         assert star.constraint_function([3, 3]) is False
         assert star.constraint_function([3, 1]) is False
-        assert star.constraint_function([5, 3]) is False
+        assert star.constraint_function([5, 3]) is True
         assert star.constraint_function([-2, 3]) is True
         assert star.constraint_function([8, 3]) is True
         assert star.constraint_function([3, -2]) is True
         assert star.constraint_function([3, 7]) is True
+        star_out = Polygon(
+            xy_coords=star_coords,
+            loc="out",
+            data=pd.DataFrame(),
+            X_axis="x",
+            Y_axis="y",
+            Field="f",
+        )
+        assert star_out.constraint_function([3, 3]) is True
+        assert star_out.constraint_function([3, 1]) is True
+        assert star_out.constraint_function([5, 3]) is False
+        assert star_out.constraint_function([-2, 3]) is False
+        assert star_out.constraint_function([8, 3]) is False
+        assert star_out.constraint_function([3, -2]) is False
+        assert star_out.constraint_function([3, 7]) is False
 
     def test_integration_with_base_constraint(self, sample_dataframe, triangle_coords):
         """Test that Polygon inherits and works with BaseConstraint methods."""

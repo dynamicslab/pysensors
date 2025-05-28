@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
@@ -15,19 +17,30 @@ class TPGR(BaseEstimator):
 
     """
 
-    def __init__(self, prior, n_sensors=None, noise=1):
-        self.prior = prior
+    def __init__(self, n_sensors=None, noise=None, prior="decreasing"):
         self.n_sensors = n_sensors
         self.noise = noise
         self.sensors_ = None
-        self.G = None
+        self.prior = prior
 
-    def fit(self, basis_matrix):
-        if self.n_sensors is None:
-            self.n_sensors = basis_matrix.shape[
-                1
-            ]  # Set number of sensors to number of basis modes if unspecified
-        G = basis_matrix @ np.diag(self.prior)
+    def fit(self, basis_matrix, singular_values=None):
+        if isinstance(self.prior, str) and self.prior == "decreasing":
+            computed_prior = singular_values
+        elif isinstance(self.prior, np.ndarray):
+            if self.prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if self.prior.shape[0] != basis_matrix.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(basis_matrix.shape[1],)},"
+                    f" but got {self.prior.shape[0]}"
+                )
+            computed_prior = self.prior
+        if self.noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the " "average of the prior"
+            )
+            self.noise = computed_prior.mean()
+        G = basis_matrix @ np.diag(computed_prior)
         self.G = G
         n = G.shape[0]
         mask = np.ones(n, dtype=bool)

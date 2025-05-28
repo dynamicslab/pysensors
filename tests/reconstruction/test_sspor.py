@@ -147,11 +147,24 @@ def test_predict_accuracy(data_vandermonde_testing):
     model.fit(data, seed=1)
     model.set_number_of_sensors(8)
     sensors = model.get_selected_sensors()
-    assert sqrt(mean((x_test - model.predict(x_test[sensors])) ** 2)) <= 1.0e-3
+    assert (
+        sqrt(
+            mean((x_test - model.predict(x_test[sensors], method="unregularized")) ** 2)
+        )
+        <= 1.0e-3
+    )
 
     # Should also work for row vectors
     x_test = x_test.reshape(1, -1)
-    assert sqrt(mean((x_test - model.predict(x_test[:, sensors])) ** 2)) <= 1.0e-3
+    assert (
+        sqrt(
+            mean(
+                (x_test - model.predict(x_test[:, sensors], method="unregularized"))
+                ** 2
+            )
+        )
+        <= 1.0e-3
+    )
 
 
 def test_reconstruction_error(data_vandermonde_testing):
@@ -224,7 +237,7 @@ def test_update_n_basis_modes(data_random):
     assert model.basis_matrix_.shape[1] == data.shape[0]
 
     n_basis_modes = 5
-    model.update_n_basis_modes(n_basis_modes)
+    model.update_n_basis_modes(n_basis_modes, x=data)
     assert model.basis.n_basis_modes == data.shape[0]
     assert model.basis_matrix_.shape[1] == n_basis_modes
 
@@ -350,7 +363,7 @@ def test_predict_warns_when_n_sensors_exceeds_basis_dimension():
             UserWarning, match="n_sensors exceeds dimension of basis modes"
         ):
             predictor.predict.__globals__["validate_input"] = lambda x, y: X.T
-            predictor.predict(X)
+            predictor.predict(X, method="unregularized")
     finally:
         if "validate_input" in predictor.predict.__globals__:
             predictor.predict.__globals__["validate_input"] = original_validate_input
@@ -376,7 +389,7 @@ def test_predict_no_warning_when_n_sensors_not_exceeds_basis_dimension():
         X = np.random.rand(2, 3)
         with warnings.catch_warnings(record=True) as recorded_warnings:
             predictor.predict.__globals__["validate_input"] = lambda x, y: X.T
-            predictor.predict(X)
+            predictor.predict(X, method="unregularized")
             relevant_warnings = [
                 w
                 for w in recorded_warnings
@@ -733,7 +746,7 @@ def test_maximal_likelihood_reconstruction():
     selected = model.get_selected_sensors()
     x_sensors = X[:, selected]
 
-    y_pred = model.predict(x_sensors, method="mle", prior=prior, noise=0.1)
+    y_pred = model.predict(x_sensors, method=None, prior=prior, noise=0.1)
 
     assert isinstance(y_pred, np.ndarray)
     assert y_pred.shape == (n_samples, n_features)

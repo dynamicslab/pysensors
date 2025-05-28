@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
-from ..optimizers import CCQR, QR
+from ..optimizers import CCQR, QR, TPGR
 from ..utils import validate_input
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
@@ -150,11 +150,19 @@ class SSPOR(BaseEstimator):
         # Check that n_sensors doesn't exceed dimension of basis vectors and
         # that it doesn't exceed the number of samples when using the CCQR optimizer.
         self._validate_n_sensors()
-
+        # Calculate the singular values
+        X_proj = x @ self.basis_matrix_
+        # Normalized singular values
+        self.singular_values = np.linalg.norm(X_proj, axis=0) / np.sqrt(x.shape[0])
         # Find sparse sensor locations
-        self.ranked_sensors_ = self.optimizer.fit(
-            self.basis_matrix_, **optimizer_kws
-        ).get_sensors()
+        if isinstance(self.optimizer, TPGR):
+            self.ranked_sensors_ = self.optimizer.fit(
+                self.basis_matrix_, self.singular_values, **optimizer_kws
+            ).get_sensors()
+        else:
+            self.ranked_sensors_ = self.optimizer.fit(
+                self.basis_matrix_, **optimizer_kws
+            ).get_sensors()
 
         # Randomly shuffle sensors after self.basis.n_basis_modes
         rng = np.random.default_rng(seed)
@@ -165,7 +173,7 @@ class SSPOR(BaseEstimator):
 
         return self
 
-    def predict(self, x, method=None, noise=None, prior=None, **solve_kws):
+    def predict(self, x, method=None, noise=None, prior="decreasing", **solve_kws):
         """
         Predict values at all positions given measurements at sensor locations.
 
@@ -200,6 +208,25 @@ class SSPOR(BaseEstimator):
             )
 
         if method is None:
+            if isinstance(prior, str) and prior == "decreasing":
+                computed_prior = self.singular_values
+            elif isinstance(prior, np.ndarray):
+                if prior.ndim != 1:
+                    raise ValueError("prior must be a 1D array")
+                if prior.shape[0] != self.basis_matrix_.shape[1]:
+                    raise ValueError(
+                        f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                        f" but got {prior.shape}"
+                    )
+                computed_prior = prior
+            if noise is None:
+                warnings.warn(
+                    "noise is None. noise will be set to the "
+                    "average of the normalized prior"
+                )
+                noise = computed_prior.mean()
+            return self._regularized_reconstruction(x, computed_prior, noise)
+        elif method == "unregularized":
             # Square matrix
             if self.n_sensors == self.basis_matrix_.shape[1]:
                 return self._square_predict(
@@ -210,12 +237,12 @@ class SSPOR(BaseEstimator):
                 return self._rectangular_predict(
                     x, self.ranked_sensors_[: self.n_sensors], **solve_kws
                 )
-        if method == "mle":
-            return self._max_likelihood_reconstruction(x, prior, noise)
+        else:
+            raise NotImplementedError("Method not implemented")
 
-    def _max_likelihood_reconstruction(self, x, prior, noise):
+    def _regularized_reconstruction(self, x, prior, noise):
         """
-        Reconstruct the state using maximum likelihood reconstruction
+        Reconstruct the state using regularized reconstruction
 
         See the following reference for more information
 
@@ -234,15 +261,11 @@ class SSPOR(BaseEstimator):
         """
         if noise is None:
             noise = 1
-        prior_cov = np.diag(prior**2)
-        sensor_selection_matrix = np.zeros(
-            (len(self.selected_sensors), self.basis_matrix_.shape[0])
-        )
-        sensor_selection_matrix[
-            np.arange(len(self.selected_sensors)), self.selected_sensors
-        ] = 1
-        low_rank_selection_matrix = sensor_selection_matrix @ self.basis_matrix_
-        composite_matrix = np.linalg.inv(prior_cov) + (
+        if not isinstance(prior, np.ndarray):
+            raise ValueError("prior must be a numpy array")
+        prior_cov = 1 / (prior**2)
+        low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
+        composite_matrix = np.diag(prior_cov) + (
             low_rank_selection_matrix.T @ low_rank_selection_matrix
         ) / (noise**2)
         rhs = low_rank_selection_matrix.T @ x
@@ -583,15 +606,20 @@ class SSPOR(BaseEstimator):
             noise = 1
         if noise <= 0:
             raise ValueError("Noise must be positive")
-        prior_sq = prior**2
-        sensor_selection_matrix = np.zeros(
-            (len(self.selected_sensors), self.basis_matrix_.shape[0])
-        )
-        sensor_selection_matrix[
-            np.arange(len(self.selected_sensors)), self.selected_sensors
-        ] = 1
-        low_rank_selection_matrix = sensor_selection_matrix @ self.basis_matrix_
-        composite_matrix = np.diag(prior_sq) + (
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        sq_inv_prior = 1.0 / (computed_prior**2)
+        low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
+        composite_matrix = np.diag(sq_inv_prior) + (
             low_rank_selection_matrix.T @ low_rank_selection_matrix
         ) / (noise**2)
         diag_cov_matrix = (
@@ -603,14 +631,48 @@ class SSPOR(BaseEstimator):
         sigma = noise * np.sqrt(np.sum(diag_cov_matrix**2, axis=1))
         return sigma
 
-    def one_pt_energy_landscape(self, prior, noise):
+    def one_pt_energy_landscape(self, prior="decreasing", noise=None):
         check_is_fitted(self, "optimizer")
-        G = self.basis_matrix_ @ np.diag(prior)
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the "
+                "average of the normalized prior"
+            )
+            noise = computed_prior.mean()
+        G = self.basis_matrix_ @ np.diag(computed_prior)
         return -np.log(1 + np.einsum("ij,ij->i", G, G) / noise**2)
 
-    def two_pt_energy_landscape(self, prior, noise, selected_sensors):
+    def two_pt_energy_landscape(self, selected_sensors, prior="decreasing", noise=None):
         check_is_fitted(self, "optimizer")
-        G = self.basis_matrix_ @ np.diag(prior)
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the "
+                "average of the normalized prior"
+            )
+            noise = computed_prior.mean()
+        G = self.basis_matrix_ @ np.diag(computed_prior)
         mask = np.ones(G.shape[0], dtype=bool)
         mask[selected_sensors] = False
         G_selected = G[selected_sensors, :]

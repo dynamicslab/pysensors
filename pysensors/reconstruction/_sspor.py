@@ -79,7 +79,7 @@ class SSPOR(BaseEstimator):
     >>> print(x[model.selected_sensors])
     [1.    0.754 0.    0.92  0.37  0.572 0.134]
     >>> f = np.sin(3*x)
-    >>> f_pred = model.predict(f[model.selected_sensors])
+    >>> f_pred = model.predict(f[model.selected_sensors], method='unregularized')
     >>> print(np.linalg.norm(f - f_pred))
     0.022405698005838044
     """
@@ -493,12 +493,18 @@ class SSPOR(BaseEstimator):
         sensors = self.get_selected_sensors()
         if score_function is None:
             return -np.sqrt(
-                np.mean((self.predict(x[:, sensors], **solve_kws) - x) ** 2)
+                np.mean(
+                    (
+                        self.predict(x[:, sensors], method="unregularized", **solve_kws)
+                        - x
+                    )
+                    ** 2
+                )
             )
         else:
             return score_function(
                 x,
-                self.predict(x[:, sensors], **solve_kws),
+                self.predict(x[:, sensors], method="unregularized", **solve_kws),
                 **score_kws,
             )
 

@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 from ..basis import Identity
-from ..optimizers import CCQR, QR
+from ..optimizers import CCQR, QR, TPGR
 from ..utils import validate_input
 
 INT_DTYPES = (int, np.int64, np.int32, np.int16, np.int8)
@@ -57,6 +57,9 @@ class SSPOR(BaseEstimator):
     ranked_sensors_: np.ndarray
         Sensor locations ranked in descending order of importance.
 
+    singular_values: np.ndarray
+        Normalized singular values of the fitted data
+
     Examples
     --------
     >>> import numpy as np
@@ -76,7 +79,7 @@ class SSPOR(BaseEstimator):
     >>> print(x[model.selected_sensors])
     [1.    0.754 0.    0.92  0.37  0.572 0.134]
     >>> f = np.sin(3*x)
-    >>> f_pred = model.predict(f[model.selected_sensors])
+    >>> f_pred = model.predict(f[model.selected_sensors], method='unregularized')
     >>> print(np.linalg.norm(f - f_pred))
     0.022405698005838044
     """
@@ -150,11 +153,18 @@ class SSPOR(BaseEstimator):
         # Check that n_sensors doesn't exceed dimension of basis vectors and
         # that it doesn't exceed the number of samples when using the CCQR optimizer.
         self._validate_n_sensors()
-
+        # Calculate the normalized singular values
+        X_proj = x @ self.basis_matrix_
+        self.singular_values = np.linalg.norm(X_proj, axis=0) / np.sqrt(x.shape[0])
         # Find sparse sensor locations
-        self.ranked_sensors_ = self.optimizer.fit(
-            self.basis_matrix_, **optimizer_kws
-        ).get_sensors()
+        if isinstance(self.optimizer, TPGR):
+            self.ranked_sensors_ = self.optimizer.fit(
+                self.basis_matrix_, self.singular_values, **optimizer_kws
+            ).get_sensors()
+        else:
+            self.ranked_sensors_ = self.optimizer.fit(
+                self.basis_matrix_, **optimizer_kws
+            ).get_sensors()
 
         # Randomly shuffle sensors after self.basis.n_basis_modes
         rng = np.random.default_rng(seed)
@@ -165,7 +175,7 @@ class SSPOR(BaseEstimator):
 
         return self
 
-    def predict(self, x, **solve_kws):
+    def predict(self, x, method=None, prior="decreasing", noise=None, **solve_kws):
         """
         Predict values at all positions given measurements at sensor locations.
 
@@ -175,6 +185,21 @@ class SSPOR(BaseEstimator):
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
             ``self.get_selected_sensors()``.
+
+        method : {'unregularized', None}, optional
+            If None (default), performs regularized reconstruction using the prior
+            and noise. If 'unregularized', uses direct or least-squares inversion
+            depending on matrix shape.
+
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert
@@ -194,21 +219,80 @@ class SSPOR(BaseEstimator):
         # Although if the user changes the number of sensors between calls
         # the factorization will be wasted.
 
-        if self.n_sensors > self.basis_matrix_.shape[0]:
+        if self.n_sensors > self.basis_matrix_.shape[0] and method == "unregularized":
             warnings.warn(
-                "n_sensors exceeds dimension of basis modes. Performance may be poor"
+                "n_sensors exceeds dimension of basis modes. Performance may be poor "
+                "for unregularized reconstruction. Consider using regularized "
+                "reconstruction"
             )
 
-        # Square matrix
-        if self.n_sensors == self.basis_matrix_.shape[1]:
-            return self._square_predict(
-                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
-            )
-        # Rectangular matrix
+        if method is None:
+            if isinstance(prior, str) and prior == "decreasing":
+                computed_prior = self.singular_values
+            elif isinstance(prior, np.ndarray):
+                if prior.ndim != 1:
+                    raise ValueError("prior must be a 1D array")
+                if prior.shape[0] != self.basis_matrix_.shape[1]:
+                    raise ValueError(
+                        f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                        f" but got {prior.shape}"
+                    )
+                computed_prior = prior
+            else:
+                raise ValueError(
+                    "Invalid prior: must be 'decreasing' or a 1D "
+                    "ndarray of appropriate length."
+                )
+            if noise is None:
+                warnings.warn(
+                    "noise is None. noise will be set to the "
+                    "average of the computed prior"
+                )
+                noise = computed_prior.mean()
+            return self._regularized_reconstruction(x, computed_prior, noise)
+        elif method == "unregularized":
+            # Square matrix
+            if self.n_sensors == self.basis_matrix_.shape[1]:
+                return self._square_predict(
+                    x, self.ranked_sensors_[: self.n_sensors], **solve_kws
+                )
+            # Rectangular matrix
+            else:
+                return self._rectangular_predict(
+                    x, self.ranked_sensors_[: self.n_sensors], **solve_kws
+                )
         else:
-            return self._rectangular_predict(
-                x, self.ranked_sensors_[: self.n_sensors], **solve_kws
-            )
+            raise NotImplementedError("Method not implemented")
+
+    def _regularized_reconstruction(self, x, prior, noise):
+        """
+        Reconstruct the state using regularized reconstruction
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        x: numpy array, shape (n_features, n_sensors)
+            Measurements
+
+        prior: numpy array (n_basis_modes,)
+            Prior variance
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise
+        """
+        prior_cov = 1 / (prior**2)
+        low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
+        composite_matrix = np.diag(prior_cov) + (
+            low_rank_selection_matrix.T @ low_rank_selection_matrix
+        ) / (noise**2)
+        rhs = low_rank_selection_matrix.T @ x
+        reconstructed_state = self.basis_matrix_ @ np.linalg.solve(
+            composite_matrix, rhs / noise**2
+        )
+        return reconstructed_state.T
 
     def _square_predict(self, x, sensors, **solve_kws):
         """Get prediction when the problem is square."""
@@ -409,12 +493,18 @@ class SSPOR(BaseEstimator):
         sensors = self.get_selected_sensors()
         if score_function is None:
             return -np.sqrt(
-                np.mean((self.predict(x[:, sensors], **solve_kws) - x) ** 2)
+                np.mean(
+                    (
+                        self.predict(x[:, sensors], method="unregularized", **solve_kws)
+                        - x
+                    )
+                    ** 2
+                )
             )
         else:
             return score_function(
                 x,
-                self.predict(x[:, sensors], **solve_kws),
+                self.predict(x[:, sensors], method="unregularized", **solve_kws),
                 **score_kws,
             )
 
@@ -511,3 +601,206 @@ class SSPOR(BaseEstimator):
                 "Number of sensors exceeds number of samples, which may cause CCQR to "
                 "select sensors in constrained regions."
             )
+
+    def std(self, prior, noise=None):
+        """
+        Compute standard deviation of noise in each pixel of the reconstructed state.
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
+
+        Returns
+        -------
+        sigma: numpy array, shape (n_features,)
+            Level of uncertainty of each pixel of the reconstructed state
+
+        """
+        check_is_fitted(self, "basis_matrix_")
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the average of the computed prior"
+            )
+            noise = computed_prior.mean()
+        sq_inv_prior = 1.0 / (computed_prior**2)
+        low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
+        composite_matrix = np.diag(sq_inv_prior) + (
+            low_rank_selection_matrix.T @ low_rank_selection_matrix
+        ) / (noise**2)
+        diag_cov_matrix = (
+            self.basis_matrix_
+            @ np.linalg.inv(composite_matrix)
+            @ low_rank_selection_matrix.T
+            / (noise**2)
+        )
+        sigma = noise * np.sqrt(np.sum(diag_cov_matrix**2, axis=1))
+        return sigma
+
+    def one_pt_energy_landscape(self, prior="decreasing", noise=None):
+        """
+        Compute the one-point energy landscape of the sensors
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
+
+        Returns
+        -------
+        np.ndarray, shape (n_features,)
+        """
+        if isinstance(self.optimizer, TPGR):
+            check_is_fitted(self, "optimizer")
+        else:
+            raise TypeError(
+                "Energy landscapes can only be computed if TPGR optimizer is used."
+            )
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the average of the computed prior"
+            )
+            noise = computed_prior.mean()
+        G = self.basis_matrix_ @ np.diag(computed_prior)
+        return -np.log(1 + np.einsum("ij,ij->i", G, G) / noise**2)
+
+    def two_pt_energy_landscape(self, selected_sensors, prior="decreasing", noise=None):
+        """
+        Compute the two-point energy landscape of the sensors. If selected_sensors is a
+        singular sensor, the landscape will be the two point energy interations of that
+        sensor with the remaining sensors. If selected_sensors is a list of sensors,
+        the landscape will be the sum of two point energy interactions of the selected
+        sensors with the remaining sensors.
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
+
+        selected_sensors: list
+            Indices of selected sensors for two point energy computation.
+
+        Returns
+        -------
+        np.ndarray, shape (n_features,)
+        """
+        if isinstance(self.optimizer, TPGR):
+            check_is_fitted(self, "optimizer")
+        else:
+            raise TypeError(
+                "Energy landscapes can only be computed if TPGR optimizer is used."
+            )
+        check_is_fitted(self, "optimizer")
+        if isinstance(prior, str) and prior == "decreasing":
+            computed_prior = self.singular_values
+        elif isinstance(prior, np.ndarray):
+            if prior.ndim != 1:
+                raise ValueError("prior must be a 1D array")
+            if prior.shape[0] != self.basis_matrix_.shape[1]:
+                raise ValueError(
+                    f"prior must be of shape {(self.basis_matrix_.shape[1],)},"
+                    f" but got {prior.shape}"
+                )
+            computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the average of the computed prior"
+            )
+            noise = computed_prior.mean()
+        G = self.basis_matrix_ @ np.diag(computed_prior)
+        mask = np.ones(G.shape[0], dtype=bool)
+        mask[selected_sensors] = False
+        G_selected = G[selected_sensors, :]
+        if len(selected_sensors) == 1:
+            G_selected.reshape(-1, 1)
+        G_remaining = G[mask, :]
+        J = 0.5 * np.sum(
+            ((G_remaining @ G_selected.T) ** 2)
+            / (
+                np.outer(
+                    1 + (np.sum(G_remaining**2, axis=1)) / noise**2,
+                    1 + (np.sum(G_selected**2, axis=1)) / noise**2,
+                )
+                * noise**4
+            ),
+            axis=1,
+        )
+        J_full = np.full(G.shape[0], np.nan)
+        J_full[mask] = J
+        return J_full

@@ -31,7 +31,7 @@ from pysensors.reconstruction import SSPOR
 def test_not_fitted(data_vandermonde):
     x = data_vandermonde
     model = SSPOR()
-    prior = np.random.rand(2)
+    prior = np.full(2, 1)
 
     # Should not be able to call any of these methods before fitting
     with pytest.raises(NotFittedError):

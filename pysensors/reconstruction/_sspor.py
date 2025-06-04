@@ -695,7 +695,9 @@ class SSPOR(BaseEstimator):
         if isinstance(self.optimizer, TPGR):
             check_is_fitted(self, "optimizer")
         else:
-            "Energy landscapes can only be computed if TPGR optimizer is used."
+            raise TypeError(
+                "Energy landscapes can only be computed if TPGR optimizer is used."
+            )
         if isinstance(prior, str) and prior == "decreasing":
             computed_prior = self.singular_values
         elif isinstance(prior, np.ndarray):
@@ -756,7 +758,9 @@ class SSPOR(BaseEstimator):
         if isinstance(self.optimizer, TPGR):
             check_is_fitted(self, "optimizer")
         else:
-            "Energy landscapes can only be computed if TPGR optimizer is used."
+            raise TypeError(
+                "Energy landscapes can only be computed if TPGR optimizer is used."
+            )
         check_is_fitted(self, "optimizer")
         if isinstance(prior, str) and prior == "decreasing":
             computed_prior = self.singular_values

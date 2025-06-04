@@ -24,7 +24,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pysensors.basis import SVD, Identity, RandomProjection
-from pysensors.optimizers import CCQR
+from pysensors.optimizers import CCQR, TPGR
 from pysensors.reconstruction import SSPOR
 
 
@@ -668,7 +668,7 @@ def test_score_with_custom_score_function():
         return 0.95
 
     score_kws = {"beta": 2, "sample_weight": np.ones(10)}
-    solve_kws = {"method": "lstsq"}
+    solve_kws = {"solver": "lstsq"}
     with patch("sklearn.utils.validation.check_is_fitted"):
         result = model.score(
             X,
@@ -680,8 +680,8 @@ def test_score_with_custom_score_function():
     model.predict.assert_called_once()
     predict_args, predict_kwargs = model.predict.call_args
     assert np.array_equal(predict_args[0], X[:, selected_sensors])
-    assert "method" in predict_kwargs
-    assert predict_kwargs["method"] == "lstsq"
+    assert "solver" in predict_kwargs
+    assert predict_kwargs["solver"] == "lstsq"
     assert len(calls) == 1
     y_true, y_pred, kwargs = calls[0]
     assert np.array_equal(y_true, X)
@@ -722,33 +722,241 @@ def test_validate_n_sensors_warning():
 
 def test_std_function():
     X = np.random.rand(5, 10)
-    n_basis_modes = 2
-    prior = np.random.rand(n_basis_modes)
+    n_basis_modes = 3
+    flat_prior = np.full(n_basis_modes, 1)
     model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
     model.fit(x=X)
-    sigma = model.std(prior=prior, noise=0.1)
+    sigma_flat = model.std(prior=flat_prior, noise=0.1)
+    sigma_decreasing = model.std(prior="decreasing", noise=0.1)
+    sigmas = [sigma_flat, sigma_decreasing]
 
-    assert sigma is not None
-    assert isinstance(sigma, np.ndarray)
-    assert sigma.shape == (X.shape[1],)
-    assert np.all(sigma >= 0)
-    assert not np.any(np.isnan(sigma))
+    for sigma in sigmas:
+        assert sigma is not None
+        assert isinstance(sigma, np.ndarray)
+        assert sigma.shape == (X.shape[1],)
+        assert np.all(sigma >= 0)
+        assert not np.any(np.isnan(sigma))
 
 
-def test_maximal_likelihood_reconstruction():
-    n_samples = 5
-    n_features = 10
-    X = np.random.rand(n_samples, n_features)
+def test_std_none_noise():
+    X = np.random.rand(5, 10)
+    n_basis_modes = 3
+    prior = np.full(n_basis_modes, 1)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+
+    # Test with None noise - should trigger warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        sigma = model.std(prior=prior, noise=None)  # noqa:F841
+        # Check that warning was raised
+        assert len(w) == 1
+        assert "noise is None" in str(w[0].message)
+
+
+def test_std_invalid_prior():
+    X = np.random.rand(5, 10)
     n_basis_modes = 2
-    prior = np.random.rand(n_basis_modes)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    # Invalid string
+    with pytest.raises(ValueError):
+        model.std(prior="invalid_string", noise=0.1)
+    # Invalid 2d prior
+    invalid_prior_2d = np.random.rand(2, 2)
+    with pytest.raises(ValueError):
+        model.std(prior=invalid_prior_2d, noise=0.1)
+    # Prior with invalid shape
+    wrong_shape_prior = np.random.rand(3)  # Should be length 2
+    with pytest.raises(ValueError):
+        model.std(prior=wrong_shape_prior, noise=0.1)
+
+
+def test_std_model_not_fitted():
+    model = SSPOR(basis=SVD(n_basis_modes=2))
+    prior = np.full(2, 1)
+
+    with pytest.raises(Exception):
+        model.std(prior=prior, noise=0.1)
+
+
+def test_regularized_reconstruction():
+    X = np.random.rand(5, 10)
+    n_basis_modes = 3
+    flat_prior = np.full(n_basis_modes, 1)
     model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
     model.fit(x=X)
     selected = model.get_selected_sensors()
     x_sensors = X[:, selected]
 
-    y_pred = model.predict(x_sensors, method=None, prior=prior, noise=0.1)
+    y_pred_flat = model.predict(x_sensors, method=None, prior=flat_prior, noise=0.1)
+    y_pred_decreasing = model.predict(
+        x_sensors, method=None, prior="decreasing", noise=0.1
+    )
+    y_preds = [y_pred_flat, y_pred_decreasing]
 
-    assert isinstance(y_pred, np.ndarray)
-    assert y_pred.shape == (n_samples, n_features)
-    assert not np.any(np.isnan(y_pred))
-    assert np.isrealobj(y_pred)
+    for y_pred in y_preds:
+        assert isinstance(y_pred, np.ndarray)
+        assert y_pred.shape == (5, 10)
+        assert not np.any(np.isnan(y_pred))
+        assert np.isrealobj(y_pred)
+
+
+def test_regularized_reconstruction_sensor_consistency():
+    X = np.random.rand(5, 10)
+    n_basis_modes = 3
+    prior = np.full(n_basis_modes, 1)
+    model = SSPOR(basis=SVD(n_basis_modes=n_basis_modes))
+    model.fit(x=X)
+    selected = model.get_selected_sensors()
+    x_sensors = X[:, selected]
+
+    # Reconstruction should be consistent when using the same sensor data
+    y_pred1 = model.predict(x_sensors, method=None, prior=prior, noise=0.1)
+    y_pred2 = model.predict(x_sensors, method=None, prior=prior, noise=0.1)
+
+    np.testing.assert_array_equal(y_pred1, y_pred2)
+
+
+def test_one_pt_landscape():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=3), optimizer=TPGR(n_sensors=3))
+    model.fit(x=X)
+    flat_prior = np.full(3, 1)
+
+    landscape_flat = model.one_pt_energy_landscape(prior=flat_prior, noise=0.1)
+    landscape_decreasing = model.one_pt_energy_landscape(prior="decreasing", noise=0.1)
+
+    landscapes = [landscape_flat, landscape_decreasing]
+
+    for landscape in landscapes:
+        assert isinstance(landscape, np.ndarray)
+        assert landscape.shape == (10,)
+        # One-point landscape should not contain NaN values
+        assert not np.any(np.isnan(landscape))
+        assert not np.any(np.isinf(landscape))
+
+
+def test_two_pt_landscape_single_sensor():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=3), optimizer=TPGR(n_sensors=3))
+    model.fit(x=X)
+    flat_prior = np.full(3, 1)
+    selected_sensors = [3]  # Single sensor
+    landscape_flat = model.two_pt_energy_landscape(
+        selected_sensors=selected_sensors, prior=flat_prior, noise=0.1
+    )
+    landscape_decreasing = model.two_pt_energy_landscape(
+        selected_sensors=selected_sensors, prior="decreasing", noise=0.1
+    )
+    landscapes = [landscape_flat, landscape_decreasing]
+
+    for landscape in landscapes:
+        assert isinstance(landscape, np.ndarray)
+        assert landscape.shape == (10,)
+        # Selected sensor position should be NaN
+        assert np.isnan(landscape[3])
+        # Other positions should have finite values
+        remaining_mask = np.ones(10, dtype=bool)
+        remaining_mask[selected_sensors] = False
+        assert not np.any(np.isnan(landscape[remaining_mask]))
+
+
+def test_two_pt_landscape_multiple_sensors():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=3), optimizer=TPGR(n_sensors=3))
+    model.fit(x=X)
+    flat_prior = np.full(3, 1)
+    selected_sensors = [1, 5, 8]  # Multiple sensors
+    landscape_flat = model.two_pt_energy_landscape(
+        selected_sensors=selected_sensors, prior=flat_prior, noise=0.1
+    )
+    landscape_decreasing = model.two_pt_energy_landscape(
+        selected_sensors=selected_sensors, prior="decreasing", noise=0.1
+    )
+    landscapes = [landscape_flat, landscape_decreasing]
+
+    for landscape in landscapes:
+        assert isinstance(landscape, np.ndarray)
+        assert landscape.shape == (10,)
+        # Selected sensor positions should be NaN
+        for sensor in selected_sensors:
+            assert np.isnan(landscape[sensor])
+        # Other positions should have finite values
+        remaining_mask = np.ones(10, dtype=bool)
+        remaining_mask[selected_sensors] = False
+        assert not np.any(np.isnan(landscape[remaining_mask]))
+
+
+def test_landscapes_none_noise():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=3), optimizer=TPGR(n_sensors=3))
+    model.fit(x=X)
+    flat_prior = np.full(3, 1)
+    selected_sensors = [3]
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        landscape = model.one_pt_energy_landscape(  # noqa:F841
+            prior=flat_prior, noise=None
+        )
+        # Check that warning was raised
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        landscape = model.two_pt_energy_landscape(  # noqa:F841
+            selected_sensors=selected_sensors, prior=flat_prior, noise=None
+        )
+
+        # Check that warning was raised
+        assert len(w) == 1
+        assert "noise is None" in str(w[0].message)
+
+
+def test_landscapes_optimizer_requirement():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=3))
+    model.fit(x=X)
+    flat_prior = np.full(3, 1)
+    selected_sensor = [3]
+
+    with pytest.raises(TypeError):
+        model.one_pt_energy_landscape(prior=flat_prior, noise=0.1)
+    with pytest.raises(TypeError):
+        model.two_pt_energy_landscape(
+            selected_sensors=selected_sensor, prior=flat_prior, noise=0.1
+        )
+
+
+def test_landscapes_invalid_prior():
+    X = np.random.rand(5, 10)
+    model = SSPOR(basis=SVD(n_basis_modes=2), optimizer=TPGR(n_sensors=3))
+    model.fit(x=X)
+    selected_sensors = [1]
+
+    # Invalid string
+    with pytest.raises(ValueError):
+        model.one_pt_energy_landscape(prior="invalid_string", noise=0.1)
+    with pytest.raises(ValueError):
+        model.two_pt_energy_landscape(
+            selected_sensors=selected_sensors, prior="invalid_string", noise=0.1
+        )
+
+    # Invalid 2d prior
+    invalid_prior_2d = np.random.rand(2, 2)
+    with pytest.raises(ValueError):
+        model.one_pt_energy_landscape(prior=invalid_prior_2d, noise=0.1)
+    with pytest.raises(ValueError):
+        model.two_pt_energy_landscape(
+            selected_sensors=selected_sensors, prior=invalid_prior_2d, noise=0.1
+        )
+
+    # Prior with invalid shape
+    wrong_shape_prior = np.random.rand(3)  # Should be length 2
+    with pytest.raises(ValueError):
+        model.one_pt_energy_landscape(prior=wrong_shape_prior, noise=0.1)
+    with pytest.raises(ValueError):
+        model.two_pt_energy_landscape(
+            selected_sensors=selected_sensors, prior=wrong_shape_prior, noise=0.1
+        )

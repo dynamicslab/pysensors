@@ -57,6 +57,9 @@ class SSPOR(BaseEstimator):
     ranked_sensors_: np.ndarray
         Sensor locations ranked in descending order of importance.
 
+    singular_values: np.ndarray
+        Normalized singular values of the fitted data
+
     Examples
     --------
     >>> import numpy as np
@@ -150,9 +153,8 @@ class SSPOR(BaseEstimator):
         # Check that n_sensors doesn't exceed dimension of basis vectors and
         # that it doesn't exceed the number of samples when using the CCQR optimizer.
         self._validate_n_sensors()
-        # Calculate the singular values
+        # Calculate the normalized singular values
         X_proj = x @ self.basis_matrix_
-        # Normalized singular values
         self.singular_values = np.linalg.norm(X_proj, axis=0) / np.sqrt(x.shape[0])
         # Find sparse sensor locations
         if isinstance(self.optimizer, TPGR):
@@ -173,7 +175,7 @@ class SSPOR(BaseEstimator):
 
         return self
 
-    def predict(self, x, method=None, noise=None, prior="decreasing", **solve_kws):
+    def predict(self, x, method=None, prior="decreasing", noise=None, **solve_kws):
         """
         Predict values at all positions given measurements at sensor locations.
 
@@ -183,6 +185,21 @@ class SSPOR(BaseEstimator):
             Measurements from which to form prediction.
             The measurements should be taken at the sensor locations specified by
             ``self.get_selected_sensors()``.
+
+        method : {'unregularized', None}, optional
+            If None (default), performs regularized reconstruction using the prior
+            and noise. If 'unregularized', uses direct or least-squares inversion
+            depending on matrix shape.
+
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
 
         solve_kws: dict, optional
             keyword arguments to be passed to the linear solver used to invert
@@ -202,9 +219,11 @@ class SSPOR(BaseEstimator):
         # Although if the user changes the number of sensors between calls
         # the factorization will be wasted.
 
-        if self.n_sensors > self.basis_matrix_.shape[0]:
+        if self.n_sensors > self.basis_matrix_.shape[0] and method == "unregularized":
             warnings.warn(
-                "n_sensors exceeds dimension of basis modes. Performance may be poor"
+                "n_sensors exceeds dimension of basis modes. Performance may be poor "
+                "for unregularized reconstruction. Consider using regularized "
+                "reconstruction"
             )
 
         if method is None:
@@ -219,10 +238,15 @@ class SSPOR(BaseEstimator):
                         f" but got {prior.shape}"
                     )
                 computed_prior = prior
+            else:
+                raise ValueError(
+                    "Invalid prior: must be 'decreasing' or a 1D "
+                    "ndarray of appropriate length."
+                )
             if noise is None:
                 warnings.warn(
                     "noise is None. noise will be set to the "
-                    "average of the normalized prior"
+                    "average of the computed prior"
                 )
                 noise = computed_prior.mean()
             return self._regularized_reconstruction(x, computed_prior, noise)
@@ -259,10 +283,6 @@ class SSPOR(BaseEstimator):
         noise: float (default None)
             Magnitude of the gaussian uncorrelated sensor measurement noise
         """
-        if noise is None:
-            noise = 1
-        if not isinstance(prior, np.ndarray):
-            raise ValueError("prior must be a numpy array")
         prior_cov = 1 / (prior**2)
         low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
         composite_matrix = np.diag(prior_cov) + (
@@ -588,12 +608,15 @@ class SSPOR(BaseEstimator):
 
         Parameters
         ----------
-        prior: np.ndarray (n_basis_modes,)
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
             Prior Covariance Vector, typically a scaled identity vector or a vector
-            containing normalized sigular values.
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
 
         noise: float (default None)
             Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
 
         Returns
         -------
@@ -602,10 +625,6 @@ class SSPOR(BaseEstimator):
 
         """
         check_is_fitted(self, "basis_matrix_")
-        if noise is None:
-            noise = 1
-        if noise <= 0:
-            raise ValueError("Noise must be positive")
         if isinstance(prior, str) and prior == "decreasing":
             computed_prior = self.singular_values
         elif isinstance(prior, np.ndarray):
@@ -617,6 +636,16 @@ class SSPOR(BaseEstimator):
                     f" but got {prior.shape}"
                 )
             computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
+        if noise is None:
+            warnings.warn(
+                "noise is None. noise will be set to the average of the computed prior"
+            )
+            noise = computed_prior.mean()
         sq_inv_prior = 1.0 / (computed_prior**2)
         low_rank_selection_matrix = self.basis_matrix_[self.selected_sensors, :]
         composite_matrix = np.diag(sq_inv_prior) + (
@@ -632,7 +661,35 @@ class SSPOR(BaseEstimator):
         return sigma
 
     def one_pt_energy_landscape(self, prior="decreasing", noise=None):
-        check_is_fitted(self, "optimizer")
+        """
+        Compute the one-point energy landscape of the sensors
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
+
+        Returns
+        -------
+        np.ndarray, shape (n_features,)
+        """
+        if isinstance(self.optimizer, TPGR):
+            check_is_fitted(self, "optimizer")
+        else:
+            "Energy landscapes can only be computed if TPGR optimizer is used."
         if isinstance(prior, str) and prior == "decreasing":
             computed_prior = self.singular_values
         elif isinstance(prior, np.ndarray):
@@ -644,16 +701,56 @@ class SSPOR(BaseEstimator):
                     f" but got {prior.shape}"
                 )
             computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
         if noise is None:
             warnings.warn(
-                "noise is None. noise will be set to the "
-                "average of the normalized prior"
+                "noise is None. noise will be set to the average of the computed prior"
             )
             noise = computed_prior.mean()
         G = self.basis_matrix_ @ np.diag(computed_prior)
         return -np.log(1 + np.einsum("ij,ij->i", G, G) / noise**2)
 
     def two_pt_energy_landscape(self, selected_sensors, prior="decreasing", noise=None):
+        """
+        Compute the two-point energy landscape of the sensors. If selected_sensors is a
+        singular sensor, the landscape will be the two point energy interations of that
+        sensor with the remaining sensors. If selected_sensors is a list of sensors,
+        the landscape will be the sum of two point energy interactions of the selected
+        sensors with the remaining sensors.
+
+        See the following reference for more information
+
+            Klishin, Andrei A., et. al.
+            Data-Induced Interactions of Sparse Sensors. 2023.
+            arXiv:2307.11838 [cond-mat.stat-mech]
+
+        Parameters
+        ----------
+        prior: str or np.ndarray, shape (n_basis_modes,), optional
+               (default='decreasing')
+            Prior Covariance Vector, typically a scaled identity vector or a vector
+            containing normalized singular values. If 'decreasing', normalized singular
+            values are used.
+
+        noise: float (default None)
+            Magnitude of the gaussian uncorrelated sensor measurement noise.
+            If None, noise will default to the average of the computed prior.
+
+        selected_sensors: list
+            Indices of selected sensors for two point energy computation.
+
+        Returns
+        -------
+        np.ndarray, shape (n_features,)
+        """
+        if isinstance(self.optimizer, TPGR):
+            check_is_fitted(self, "optimizer")
+        else:
+            "Energy landscapes can only be computed if TPGR optimizer is used."
         check_is_fitted(self, "optimizer")
         if isinstance(prior, str) and prior == "decreasing":
             computed_prior = self.singular_values
@@ -666,10 +763,14 @@ class SSPOR(BaseEstimator):
                     f" but got {prior.shape}"
                 )
             computed_prior = prior
+        else:
+            raise ValueError(
+                "Invalid prior: must be 'decreasing' or a 1D "
+                "ndarray of appropriate length."
+            )
         if noise is None:
             warnings.warn(
-                "noise is None. noise will be set to the "
-                "average of the normalized prior"
+                "noise is None. noise will be set to the average of the computed prior"
             )
             noise = computed_prior.mean()
         G = self.basis_matrix_ @ np.diag(computed_prior)

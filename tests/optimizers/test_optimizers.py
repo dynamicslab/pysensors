@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pysensors.optimizers import CCQR, GQR, QR, qr_reflector
+from pysensors.optimizers import CCQR, GQR, QR, TPGR, qr_reflector
 
 
 def test_num_sensors(data_vandermonde):
@@ -221,3 +221,124 @@ def test_ccqr_fit_raises_error_for_mismatched_dimensions():
     ccqr.fit(basis_matrix)
     assert hasattr(ccqr, "pivots_")
     assert ccqr.pivots_.shape == (4,)
+
+
+def test_tpgr_init_parameters():
+    tpgr_default = TPGR(n_sensors=3)
+
+    flat_prior = np.full(3, 1)
+    tpgr_custom = TPGR(n_sensors=5, prior=flat_prior, noise=0.1)
+
+    assert tpgr_default.n_sensors == 3
+    assert tpgr_default.prior == "decreasing"
+    assert tpgr_default.noise is None
+    assert tpgr_default.sensors_ is None
+    assert tpgr_custom.n_sensors == 5
+    assert tpgr_custom.noise == 0.1
+    np.testing.assert_array_equal(tpgr_custom.prior, flat_prior)
+
+
+def test_tpgr_fit_decreasing_prior(data_random):
+    x = data_random
+    n_sensors = 5
+    singular_values = np.linspace(1.0, 0.1, x.shape[1])
+    tpgr = TPGR(n_sensors=n_sensors, prior="decreasing", noise=0.1)
+    tpgr.fit(x, singular_values)
+
+    sensors = tpgr.get_sensors()
+
+    assert len(sensors) == n_sensors
+    assert len(set(sensors)) == n_sensors  # All unique
+
+
+def test_tpgr_fit_flat_prior(data_random):
+    x = data_random
+    n_sensors = 3
+    flat_prior = np.linspace(0.9, 0.1, x.shape[1])
+    tpgr = TPGR(n_sensors=n_sensors, prior=flat_prior, noise=0.1)
+    # flat prior will not use singular values
+    tpgr.fit(x, singular_values=np.ones(x.shape[1]))
+
+    sensors = tpgr.get_sensors()
+
+    assert len(sensors) == n_sensors
+    assert len(set(sensors)) == n_sensors
+
+
+def test_tpgr_none_noise(data_random):
+    x = data_random
+    singular_values = np.linspace(1.0, 0.1, x.shape[1])
+    tpgr = TPGR(n_sensors=3)
+
+    with pytest.warns(UserWarning):
+        tpgr.fit(x, singular_values)
+
+    # Check that noise was set to the mean of computed prior
+    expected_noise = singular_values.mean()
+    assert abs(tpgr.noise - expected_noise) < 1e-10
+
+
+def test_tpgr_invalid_prior(data_random):
+    x = data_random
+    singular_values = np.ones(x.shape[1])
+
+    # Invalid string
+    with pytest.raises(ValueError):
+        tpgr = TPGR(n_sensors=3, prior="invalid")
+        tpgr.fit(x, singular_values)
+
+    # Invalid 2D prior
+    invalid_prior_2d = np.random.rand(2, 2)
+    with pytest.raises(ValueError):
+        tpgr = TPGR(n_sensors=3, prior=invalid_prior_2d)
+        tpgr.fit(x, singular_values)
+
+    # Prior with invalid shape
+    wrong_shape_prior = np.full(3, 1)  # Length 3 instead of x.shape[1]
+    with pytest.raises(ValueError):
+        tpgr = TPGR(n_sensors=3, prior=wrong_shape_prior, noise=0.1)
+        tpgr.fit(x, singular_values)
+
+
+def test_tpgr_reproducibility(data_random):
+    """Test that TPGR results are reproducible with same input."""
+    x = data_random
+    singular_values = np.linspace(1.0, 0.1, x.shape[1])
+
+    tpgr1 = TPGR(n_sensors=3, noise=0.1)
+    tpgr2 = TPGR(n_sensors=3, noise=0.1)
+
+    tpgr1.fit(x, singular_values)
+    tpgr2.fit(x, singular_values)
+
+    assert tpgr1.sensors_ == tpgr2.sensors_
+
+
+def test_tpgr_one_pt_energy(data_random):
+    """Test TPGR one-point energy calculation."""
+    x = data_random
+    singular_values = np.linspace(1.0, 0.1, x.shape[1])
+    tpgr = TPGR(n_sensors=3, noise=0.1)
+    G = x @ np.diag(singular_values)
+
+    one_pt_energy = tpgr._one_pt_energy(G)
+
+    assert one_pt_energy.shape == (x.shape[0],)
+    assert np.all(one_pt_energy <= 0)  # All 1-pt energies should be negative
+
+
+def test_tpgr_two_pt_energy(data_random):
+    """Test TPGR two-point energy calculation."""
+    x = data_random
+    singular_values = np.linspace(1.0, 0.1, x.shape[1])
+    tpgr = TPGR(n_sensors=3, noise=0.1)
+    G = x @ np.diag(singular_values)
+
+    # Select first sensor manually
+    G_selected = G[[0], :]
+    G_remaining = G[1:, :]
+
+    two_pt_energy = tpgr._two_pt_energy(G_selected, G_remaining)
+
+    assert two_pt_energy.shape == (x.shape[0] - 1,)
+    assert np.all(two_pt_energy >= 0)  # All 2-pt energies should be non-negative

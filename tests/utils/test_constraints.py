@@ -22,6 +22,8 @@ from pysensors.utils._constraints import (
     get_indices_from_coordinates,
     load_functional_constraints,
     order_constrained_sensors,
+    get_constrained_sensors_indices_distance,
+    get_constrained_sensors_indices_distance_df
 )
 
 
@@ -411,7 +413,6 @@ def test_get_coordinates_from_indices_exceptions():
             f"Function raised an unexpected exception with valid DataFrame input: {e}"
         )
 
-    # Test 5: No exception with Z_axis provided
     try:
         result = get_coordinates_from_indices(
             [0, 1], df, X_axis="x_coord", Y_axis="y_coord", Z_axis="z_coord"
@@ -423,7 +424,6 @@ def test_get_coordinates_from_indices_exceptions():
     except Exception as e:
         pytest.fail(f"Function raised an unexpected exception with Z_axis: {e}")
 
-    # Test 6: No exception when using numpy array
     try:
         result = get_coordinates_from_indices(5, np_data)
         assert len(result) == 2
@@ -448,6 +448,560 @@ def test_user_function():
     assert func.__name__ == "test_user_function"
     assert func() == 1
 
+def test_get_constrained_sensors_indices_distance_empty_piv():
+    """Test that the function handles empty piv array."""
+    piv = np.array([])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 2.0, 5, 5
+    with pytest.raises(IndexError):
+        result = get_constrained_sensors_indices_distance(  # noqa:F841
+            j, piv, r, nx, ny, all_sensors
+        )
+
+def test_get_constrained_sensors_indices_distance_j_zero():
+    """Test that the function handles j=0 correctly."""
+    piv = np.array([0, 12, 24])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 0, 1.5, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 0)**2 + (y - 0)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_center_position():
+    """Test that the function handles center sensor correctly."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 2.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 2)**2 + (y - 2)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_large_radius():
+    """Test that the function handles very large radius correctly."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 10.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    assert np.array_equal(np.sort(result), np.sort(all_sensors))
+
+def test_get_constrained_sensors_indices_distance_small_radius():
+    """Test that the function handles very small radius correctly."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 0.5, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected = np.array([12])
+    assert np.array_equal(result, expected)
+
+def test_get_constrained_sensors_indices_distance_corner_position():
+    """Test that the function handles corner sensor correctly."""
+    piv = np.array([0])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 1.5, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 0)**2 + (y - 0)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_edge_position():
+    """Test that the function handles edge sensor correctly."""
+    piv = np.array([2])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 1.5, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 0)**2 + (y - 2)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_different_grid_size():
+    """Test that the function handles different grid dimensions."""
+    nx, ny = 3, 4
+    all_sensors = np.arange(nx * ny)
+    piv = np.array([5])
+    j, r = 1, 1.5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    x_ref, y_ref = np.unravel_index(5, (nx, ny))
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - x_ref)**2 + (y - y_ref)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_boundary_radius():
+    """Test that the function handles radius exactly on distance boundary."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, nx, ny = 1, 5, 5
+    r = np.sqrt(2)
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 2)**2 + (y - 2)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_single_sensor_grid():
+    """Test that the function handles 1x1 grid."""
+    nx, ny = 1, 1
+    all_sensors = np.array([0])
+    piv = np.array([0])
+    j, r = 1, 1.0
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected = np.array([0])
+    assert np.array_equal(result, expected)
+
+def test_get_constrained_sensors_indices_distance_no_sensors_in_radius():
+    """Test that the function handles case where no sensors are within radius."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 0.1, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    assert len(result) <= 1
+    if len(result) == 1:
+        assert result[0] == 12
+
+def test_get_constrained_sensors_indices_distance_large_j_value():
+    """Test that the function raises IndexError when j causes out-of-bounds access."""
+    piv = np.array([5, 10, 15])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 10, 2.0, 5, 5
+    with pytest.raises(IndexError):
+        result = get_constrained_sensors_indices_distance(
+            j, piv, r, nx, ny, all_sensors
+        )
+
+def test_get_constrained_sensors_indices_distance_subset_sensors():
+    """Test that the function handles subset of sensors correctly."""
+    all_sensors = np.array([0, 5, 10, 15, 20])
+    piv = np.array([10])
+    j, r, nx, ny = 1, 3.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    assert all(sensor in all_sensors for sensor in result)
+    x_ref, y_ref = np.unravel_index(10, (nx, ny))
+    for sensor in result:
+        x, y = np.unravel_index(sensor, (nx, ny))
+        distance_sq = (x - x_ref)**2 + (y - y_ref)**2
+        assert distance_sq < r**2
+
+def test_get_constrained_sensors_indices_distance_invalid_sensor_index():
+    """Test that the function handles invalid sensor indices in piv."""
+    piv = np.array([100])  # Invalid index for 5x5 grid
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 2.0, 5, 5
+    with pytest.raises(ValueError):
+        result = get_constrained_sensors_indices_distance(  # noqa:F841
+            j, piv, r, nx, ny, all_sensors
+        )
+
+def test_get_constrained_sensors_indices_distance_negative_radius():
+    """Test that the function handles negative radius."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, -1.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    assert len(result) >= 1
+
+def test_get_constrained_sensors_indices_distance_zero_radius():
+    """Test that the function handles zero radius."""
+    piv = np.array([12])
+    all_sensors = np.arange(25)
+    j, r, nx, ny = 1, 0.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    assert len(result) == 0
+
+def test_get_constrained_sensors_indices_distance_rectangular_grid():
+    """Test that the function handles rectangular (non-square) grids."""
+    nx, ny = 2, 8
+    all_sensors = np.arange(nx * ny)
+    piv = np.array([5])
+    j, r = 1, 2.0
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected_indices = []
+    for idx in all_sensors:
+        x, y = np.unravel_index(idx, (nx, ny))
+        if (x - 0)**2 + (y - 5)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_single_sensor_in_all_sensors():
+    """Test that the function handles single sensor in all_sensors array."""
+    piv = np.array([12])
+    all_sensors = np.array([12])
+    j, r, nx, ny = 1, 2.0, 5, 5
+    result = get_constrained_sensors_indices_distance(
+        j, piv, r, nx, ny, all_sensors
+    )
+    expected = np.array([12])
+    assert np.array_equal(result, expected)
+
+def test_get_constrained_sensors_indices_distance_df_empty_dataframe():
+    """Test that the function handles empty DataFrame."""
+    piv = np.array([0])
+    df = pd.DataFrame({}, columns=["x", "y"])
+    all_sensors = np.array([])
+    j, r = 1, 2.0
+    with pytest.raises(KeyError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "x", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_empty_all_sensors():
+    """Test that the function handles empty all_sensors array."""
+    piv = np.array([0])
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    all_sensors = np.array([])
+    j, r = 1, 2.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert len(result) == 0
+
+def test_get_constrained_sensors_indices_distance_df_empty_piv():
+    """Test that the function handles empty piv array."""
+    piv = np.array([])
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 2.0
+    with pytest.raises(IndexError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "x", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_j_zero():
+    """Test that the function handles j=0 correctly."""
+    piv = np.array([0, 1, 2])
+    df = pd.DataFrame({"x": [0, 5, 10], "y": [0, 0, 0]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 0, 3.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected_indices = []
+    current_x, current_y = 0, 0
+    for idx in all_sensors:
+        x, y = df.loc[idx, "x"], df.loc[idx, "y"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_basic_functionality():
+    """Test basic functionality with simple DataFrame."""
+    piv = np.array([1])
+    df = pd.DataFrame({
+        "x": [0, 5, 10, 15, 20],
+        "y": [0, 0, 0, 0, 0]
+    })
+    all_sensors = np.array([0, 1, 2, 3, 4])
+    j, r = 1, 6.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected_indices = []
+    current_x, current_y = 5, 0
+    for idx in all_sensors:
+        x, y = df.loc[idx, "x"], df.loc[idx, "y"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_large_radius():
+    """Test that the function handles very large radius correctly."""
+    piv = np.array([2])
+    df = pd.DataFrame({
+        "x": [0, 5, 10, 15, 20],
+        "y": [0, 5, 10, 15, 20]
+    })
+    all_sensors = np.array([0, 1, 2, 3, 4])
+    j, r = 1, 100.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert np.array_equal(np.sort(result), np.sort(all_sensors))
+
+def test_get_constrained_sensors_indices_distance_df_small_radius():
+    """Test that the function handles very small radius correctly."""
+    piv = np.array([2])
+    df = pd.DataFrame({
+        "x": [0, 5, 10, 15, 20],
+        "y": [0, 5, 10, 15, 20]
+    })
+    all_sensors = np.array([0, 1, 2, 3, 4])
+    j, r = 1, 0.5
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected = np.array([2])
+    assert np.array_equal(result, expected)
+
+def test_get_constrained_sensors_indices_distance_df_missing_column():
+    """Test that the function handles missing column names."""
+    piv = np.array([0])
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 2.0
+    with pytest.raises(KeyError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "z", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_invalid_sensor_index():
+    """Test that the function handles invalid sensor indices in piv."""
+    piv = np.array([10])
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 2.0
+    with pytest.raises(KeyError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "x", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_invalid_all_sensors_index():
+    """Test that the function handles invalid indices in all_sensors."""
+    piv = np.array([0])
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    all_sensors = np.array([0, 1, 10])
+    j, r = 1, 2.0
+    with pytest.raises(KeyError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "x", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_large_j_value():
+    """Test that the function raises IndexError when j causes out-of-bounds access."""
+    piv = np.array([0, 1, 2])
+    df = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [1, 2, 3, 4, 5]})
+    all_sensors = np.array([0, 1, 2, 3, 4])
+    j, r = 10, 2.0
+    with pytest.raises(IndexError):
+        result = get_constrained_sensors_indices_distance_df(
+            j, piv, r, df, all_sensors, "x", "y"
+        )
+
+def test_get_constrained_sensors_indices_distance_df_large_j_value_valid():
+    """Test that the function handles j larger than expected but within piv bounds."""
+    piv = np.array([0, 2, 4])
+    df = pd.DataFrame({"x": [0, 1, 2, 3, 4], "y": [0, 1, 2, 3, 4]})
+    all_sensors = np.array([0, 1, 2, 3, 4])
+    j, r = 3, 2.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected_indices = []
+    current_x, current_y = 4, 4
+    for idx in all_sensors:
+        x, y = df.loc[idx, "x"], df.loc[idx, "y"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_subset_sensors():
+    """Test that the function handles subset of sensors correctly."""
+    piv = np.array([2])
+    df = pd.DataFrame({
+        "x": [0, 1, 2, 3, 4, 5],
+        "y": [0, 1, 2, 3, 4, 5]
+    })
+    all_sensors = np.array([0, 2, 4])
+    j, r = 1, 3.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert all(sensor in all_sensors for sensor in result)
+    current_x, current_y = df.loc[2, "x"], df.loc[2, "y"]
+    for sensor in result:
+        x, y = df.loc[sensor, "x"], df.loc[sensor, "y"]
+        distance_sq = (x - current_x)**2 + (y - current_y)**2
+        assert distance_sq < r**2
+
+def test_get_constrained_sensors_indices_distance_df_negative_radius():
+    """Test that the function handles negative radius."""
+    piv = np.array([1])
+    df = pd.DataFrame({"x": [0, 5, 10], "y": [0, 0, 0]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, -1.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert len(result) >= 1
+
+def test_get_constrained_sensors_indices_distance_df_zero_radius():
+    """Test that the function handles zero radius."""
+    piv = np.array([1])
+    df = pd.DataFrame({"x": [0, 5, 10], "y": [0, 0, 0]})
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 0.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert len(result) == 0
+
+def test_get_constrained_sensors_indices_distance_df_different_column_names():
+    """Test that the function handles different column names."""
+    piv = np.array([1])
+    df = pd.DataFrame({
+        "longitude": [0, 5, 10],
+        "latitude": [0, 5, 10]
+    })
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 8.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "longitude", "latitude"
+    )
+    expected_indices = []
+    current_x, current_y = 5, 5
+    for idx in all_sensors:
+        x, y = df.loc[idx, "longitude"], df.loc[idx, "latitude"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_float_coordinates():
+    """Test that the function handles float coordinates."""
+    piv = np.array([1])
+    df = pd.DataFrame({
+        "x": [0.5, 2.3, 4.7, 6.1],
+        "y": [1.2, 3.4, 5.6, 7.8]
+    })
+    all_sensors = np.array([0, 1, 2, 3])
+    j, r = 1, 3.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected_indices = []
+    current_x, current_y = 2.3, 3.4
+    for idx in all_sensors:
+        x, y = df.loc[idx, "x"], df.loc[idx, "y"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_with_nan_values():
+    """Test that the function handles NaN values in DataFrame."""
+    piv = np.array([0])
+    df = pd.DataFrame({
+        "x": [1, np.nan, 3, 4],
+        "y": [1, 2, np.nan, 4]
+    })
+    all_sensors = np.array([0, 1, 2, 3])
+    j, r = 1, 2.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    for sensor in result:
+        x, y = df.loc[sensor, "x"], df.loc[sensor, "y"]
+        assert not (pd.isna(x) or pd.isna(y))
+
+def test_get_constrained_sensors_indices_distance_df_single_sensor():
+    """Test that the function handles single sensor in all_sensors array."""
+    piv = np.array([1])
+    df = pd.DataFrame({
+        "x": [0, 5, 10],
+        "y": [0, 5, 10]
+    })
+    all_sensors = np.array([1])
+    j, r = 1, 2.0
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected = np.array([1])
+    assert np.array_equal(result, expected)
+
+def test_get_constrained_sensors_indices_distance_df_boundary_radius():
+    """Test that the function handles radius exactly on distance boundary."""
+    piv = np.array([0])
+    df = pd.DataFrame({
+        "x": [0, 1, 0, 1],
+        "y": [0, 0, 1, 1]
+    })
+    all_sensors = np.array([0, 1, 2, 3])
+    j, r = 1, np.sqrt(2)
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    expected_indices = []
+    current_x, current_y = 0, 0
+    for idx in all_sensors:
+        x, y = df.loc[idx, "x"], df.loc[idx, "y"]
+        if (x - current_x)**2 + (y - current_y)**2 < r**2:
+            expected_indices.append(idx)
+    expected = np.array(expected_indices)
+    assert np.array_equal(np.sort(result), np.sort(expected))
+
+def test_get_constrained_sensors_indices_distance_df_does_not_modify_input():
+    """Test that the function does not modify input DataFrame or arrays."""
+    piv = np.array([0, 1])
+    df = pd.DataFrame({
+        "x": [0, 5, 10],
+        "y": [0, 5, 10]
+    })
+    all_sensors = np.array([0, 1, 2])
+    j, r = 1, 6.0
+    piv_copy = piv.copy()
+    df_copy = df.copy()
+    all_sensors_copy = all_sensors.copy()
+
+    result = get_constrained_sensors_indices_distance_df(
+        j, piv, r, df, all_sensors, "x", "y"
+    )
+    assert np.array_equal(piv, piv_copy)
+    assert df.equals(df_copy)
+    assert np.array_equal(all_sensors, all_sensors_copy)
 
 class TestBaseConstraint:
 

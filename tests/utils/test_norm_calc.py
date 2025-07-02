@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-
+import pandas as pd
 from pysensors.utils._norm_calc import distance, exact_n, max_n, predetermined
 
 
@@ -378,3 +378,146 @@ def test_predetermined_dimension_matching():
         didx = np.isin(piv[j:], lin_idx, invert=invert_condition)
         expected[didx] = 0
         assert np.array_equal(result, expected)
+
+def test_distance_missing_info_parameter():
+    """Test that the function raises ValueError when 'info' parameter is missing."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, r=2.0, all_sensors=np.array([0, 1, 2, 3]))  # noqa:F841
+    assert "Must provide 'info' parameter as a np.darray or dataframe" in str(excinfo.value)
+
+def test_distance_missing_r_parameter():
+    """Test that the function raises ValueError when 'r' parameter is missing."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = np.zeros((5, 5))
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, all_sensors=np.array([0, 1, 2, 3]))
+    assert "Must provide 'r' parameter for radius constraints" in str(excinfo.value)
+
+def test_distance_negative_radius():
+    """Test that the function raises ValueError when radius is negative."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = np.zeros((5, 5))
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=-1.0, all_sensors=np.array([0, 1, 2, 3]))
+    assert "Radius 'r' must be positive, got -1.0" in str(excinfo.value)
+
+def test_distance_zero_radius():
+    """Test that the function raises ValueError when radius is zero."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = np.zeros((5, 5))
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=0.0, all_sensors=np.array([0, 1, 2, 3]))
+    assert "Radius 'r' must be positive, got 0.0" in str(excinfo.value)
+
+def test_distance_numpy_array_missing_nx():
+    """Test that the function raises ValueError when nx is missing for numpy array."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = np.zeros((5, 5))
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=2.0, all_sensors=np.array([0, 1, 2, 3]))
+    assert "Must provide nx parameter" in str(excinfo.value)
+
+def test_distance_numpy_array_missing_ny():
+    """Test that the function raises ValueError when ny is missing for numpy array."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = np.zeros((5, 5))
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=2.0, nx=5, all_sensors=np.array([0, 1, 2, 3]))
+    assert "Must provide nx parameter" in str(excinfo.value)
+
+def test_distance_dataframe_missing_x_axis():
+    """Test that the function raises Exception when X_axis is missing for DataFrame."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = pd.DataFrame({"x": [0, 1, 2, 3, 4], "y": [0, 1, 2, 3, 4]})
+    with pytest.raises(Exception) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=2.0, Y_axis="y", all_sensors=np.array([0, 1, 2, 3]))
+    assert "Must provide X_axis as **kwargs as your data is a dataframe" in str(excinfo.value)
+
+def test_distance_dataframe_missing_y_axis():
+    """Test that the function raises Exception when Y_axis is missing for DataFrame."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = pd.DataFrame({"x": [0, 1, 2, 3, 4], "y": [0, 1, 2, 3, 4]})
+    with pytest.raises(Exception) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=2.0, X_axis="x", all_sensors=np.array([0, 1, 2, 3]))
+    assert "Must provide Y_axis as **kwargs as your data is a dataframe" in str(excinfo.value)
+
+def test_distance_invalid_info_type():
+    """Test that the function raises ValueError when info is neither numpy array nor DataFrame."""
+    dlens = np.array([1.0, 2.0, 3.0, 4.0])
+    piv = np.array([0, 1, 2, 3])
+    j = 0
+    info = "invalid_type"
+    with pytest.raises(ValueError) as excinfo:
+        from pysensors.utils._norm_calc import distance
+        result = distance(dlens, piv, j, info=info, r=2.0, all_sensors=np.array([0, 1, 2, 3]))
+    assert "'info' parameter must be either np.ndarray or pd.DataFrame" in str(excinfo.value)
+
+def test_distance_j_equals_piv_length():
+    """Test that the function handles j equal to piv length."""
+    dlens = np.ones(3)
+    piv = np.array([0, 5, 10])
+    j = 3
+    info = np.zeros((5, 5))
+    all_sensors = np.array([0, 5, 10])
+    from pysensors.utils._norm_calc import distance
+    result = distance(
+        dlens.copy(), piv, j,
+        info=info, r=2.0, nx=5, ny=5, all_sensors=all_sensors
+    )
+    assert isinstance(result, np.ndarray)
+    assert len(result) == len(dlens)
+    assert np.array_equal(result, dlens)
+
+def test_distance_single_sensor_piv():
+    """Test that the function handles single sensor in piv."""
+    dlens = np.array([1.0])
+    piv = np.array([12])
+    j = 0
+    info = np.zeros((5, 5))
+    all_sensors = np.array([12])
+    from pysensors.utils._norm_calc import distance
+    result = distance(
+        dlens.copy(), piv, j,
+        info=info, r=2.0, nx=5, ny=5, all_sensors=all_sensors
+    )
+    assert isinstance(result, np.ndarray)
+    assert len(result) == len(dlens)
+
+def test_distance_j_greater_than_piv_length():
+    """Test that the function handles j greater than piv length gracefully."""
+    dlens = np.ones(3)
+    piv = np.array([0, 1, 2])
+    j = 5
+    info = np.zeros((5, 5))
+    all_sensors = np.array([0, 1, 2])
+    from pysensors.utils._norm_calc import distance
+    with pytest.raises(IndexError):
+        result = distance(
+            dlens.copy(), piv, j,
+            info=info, r=2.0, nx=5, ny=5, all_sensors=all_sensors
+        )

@@ -13,7 +13,7 @@ PySensors Examples
    sea_surface_temperature
    reconstruction_comparison
    two_point_greedy
-   vandermonde
-   spatially_constrained_qr
-   functional_constraints_class
-   simulation_constrained_sensing
+   polynomial_curve_fitting
+   spatial_constrained_qr
+   Olivetti_constrained_sensing
+   OPTI-TWIST_constrained_sensing

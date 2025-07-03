@@ -117,6 +117,76 @@ def get_constrained_sensors_indices_dataframe(x_min, x_max, y_min, y_max, df, **
     return idx_constrained
 
 
+def get_constrained_sensors_indices_distance(j, piv, r, nx, ny, all_sensors):
+    """
+    Efficiently finds sensors within radius r of a given sensor.
+
+    Parameters
+    ----------
+    j : int
+        Current iteration (0-indexed)
+    piv : np.ndarray
+        Array of sensor indices in order of placement
+    r : float
+        Radius constraint (minimum distance between sensors)
+    nx, ny : int
+        Grid dimensions
+    all_sensors : np.ndarray
+        Ranked list of sensor locations.
+
+    Returns
+    -------
+    idx_constrained : np.ndarray
+        Array of sensor indices within radius r
+    """
+    sensor_idx = max(0, j - 1)
+    current_sensor = piv[sensor_idx]
+    current_coords = np.unravel_index([current_sensor], (nx, ny))
+    x_cord, y_cord = current_coords[0][0], current_coords[1][0]
+    sensor_coords = np.unravel_index(all_sensors, (nx, ny))
+    distances_sq = (sensor_coords[0] - x_cord) ** 2 + (sensor_coords[1] - y_cord) ** 2
+    return all_sensors[distances_sq < r**2]
+
+
+def get_constrained_sensors_indices_distance_df(
+    j, piv, r, df, all_sensors, X_axis, Y_axis
+):
+    """
+    Efficiently finds sensors within radius r of a given sensor for DataFrame input.
+
+    Parameters
+    ----------
+    j : int
+        Current iteration (0-indexed)
+    piv : np.ndarray
+        Array of sensor indices in order of placement
+    r : float
+        Radius constraint (minimum distance between sensors)
+    df : pd.DataFrame
+        DataFrame containing sensor coordinates
+    all_sensors : np.ndarray
+        Ranked list of sensor locations
+    X_axis : str
+        Column name for X coordinates in the DataFrame
+    Y_axis : str
+        Column name for Y coordinates in the DataFrame
+
+    Returns
+    -------
+    idx_constrained : np.ndarray
+        Array of sensor indices within radius r
+    """
+    sensor_idx = max(0, j - 1)
+    current_sensor = piv[sensor_idx]
+    current_x = df.loc[current_sensor, X_axis]
+    current_y = df.loc[current_sensor, Y_axis]
+    sensors_df = df.loc[all_sensors]
+    distances_sq = (sensors_df[X_axis] - current_x) ** 2 + (
+        sensors_df[Y_axis] - current_y
+    ) ** 2
+    return all_sensors[distances_sq.values < r**2]
+
+
 def load_functional_constraints(functionHandler):
     """
     Parameters:
@@ -555,32 +625,37 @@ class BaseConstraint(object):
         """
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        constrained = sensors[np.where(~np.isin(all_sensors[:n_sensors], sensors))[0]]
-        unconstrained = sensors[np.where(np.isin(all_sensors[:n_sensors], sensors))[0]]
+        constrained = sensors[~np.isin(sensors, all_sensors[:n_sensors])]
+        unconstrained = sensors[np.isin(sensors, all_sensors[:n_sensors])]
+
         if isinstance(self.data, np.ndarray):
             xconst = np.mod(constrained, np.sqrt(n_features))
             yconst = np.floor(constrained / np.sqrt(n_features))
             xunconst = np.mod(unconstrained, np.sqrt(n_features))
             yunconst = np.floor(unconstrained / np.sqrt(n_features))
+
             self.ax.plot(xconst, yconst, "*", color=color_constrained)
             self.ax.plot(xunconst, yunconst, "*", color=color_unconstrained)
+
         elif isinstance(self.data, pd.DataFrame):
-            constCoords = get_coordinates_from_indices(
+            xconst, yconst = get_coordinates_from_indices(
                 constrained,
                 self.data,
                 Y_axis=self.Y_axis,
                 X_axis=self.X_axis,
                 Field=self.Field,
             )
-            unconstCoords = get_coordinates_from_indices(
+
+            xunconst, yunconst = get_coordinates_from_indices(
                 unconstrained,
                 self.data,
                 Y_axis=self.Y_axis,
                 X_axis=self.X_axis,
                 Field=self.Field,
             )
-            self.ax.plot(constCoords, "*", color=color_constrained)
-            self.ax.plot(unconstCoords, "*", color=color_unconstrained)
+
+            self.ax.plot(xconst, yconst, "*", color=color_constrained)
+            self.ax.plot(xunconst, yunconst, "*", color=color_unconstrained)
 
     def sensors_dataframe(self, sensors):
         """
@@ -620,6 +695,7 @@ class BaseConstraint(object):
         """
         Function to annotate the sensor location on the grid while also plotting the
         sensor location
+
         Attributes
         ----------
         sensors : np.darray,
@@ -639,29 +715,40 @@ class BaseConstraint(object):
         """
         n_samples, n_features = self.data.shape
         n_sensors = len(sensors)
-        constrained = sensors[np.where(~np.isin(all_sensors[:n_sensors], sensors))[0]]
-        unconstrained = sensors[np.where(np.isin(all_sensors[:n_sensors], sensors))[0]]
+
+        # Fixed logic for finding constrained and unconstrained sensors
+        constrained = sensors[~np.isin(sensors, all_sensors[:n_sensors])]
+        unconstrained = sensors[np.isin(sensors, all_sensors[:n_sensors])]
+
         if isinstance(self.data, np.ndarray):
             xTop = np.mod(sensors, np.sqrt(n_features))
             yTop = np.floor(sensors / np.sqrt(n_features))
+
             xconst = np.mod(constrained, np.sqrt(n_features))
             yconst = np.floor(constrained / np.sqrt(n_features))
+
             xunconst = np.mod(unconstrained, np.sqrt(n_features))
             yunconst = np.floor(unconstrained / np.sqrt(n_features))
+
             data = np.vstack([sensors, xTop, yTop]).T  # noqa:F841
+
             self.ax.plot(xconst, yconst, "*", color=color_constrained, alpha=0.5)
             self.ax.plot(xunconst, yunconst, "*", color=color_unconstrained, alpha=0.5)
-            for ind, i in enumerate(range(len(xTop))):
-                self.ax.annotate(
-                    f"{str(ind)}",
-                    (xTop[i], yTop[i]),
-                    xycoords="data",
-                    xytext=(-20, 20),
-                    textcoords="offset points",
-                    color="r",
-                    fontsize=12,
-                    arrowprops=dict(arrowstyle="->", color="black"),
-                )
+
+            # Improved annotation logic with index checking
+            for ind in range(len(sensors)):
+                if ind < len(xTop) and ind < len(yTop):  # Make sure index is in bounds
+                    self.ax.annotate(
+                        f"{ind}",
+                        (xTop[ind], yTop[ind]),
+                        xycoords="data",
+                        xytext=(-20, 20),
+                        textcoords="offset points",
+                        color="r",
+                        fontsize=12,
+                        arrowprops=dict(arrowstyle="->", color="black"),
+                    )
+
         elif isinstance(self.data, pd.DataFrame):
             xTop, yTop = get_coordinates_from_indices(
                 sensors,
@@ -670,6 +757,7 @@ class BaseConstraint(object):
                 X_axis=self.X_axis,
                 Field=self.Field,
             )
+
             xconst, yconst = get_coordinates_from_indices(
                 constrained,
                 self.data,
@@ -677,6 +765,7 @@ class BaseConstraint(object):
                 X_axis=self.X_axis,
                 Field=self.Field,
             )
+
             xunconst, yunconst = get_coordinates_from_indices(
                 unconstrained,
                 self.data,
@@ -684,19 +773,25 @@ class BaseConstraint(object):
                 X_axis=self.X_axis,
                 Field=self.Field,
             )
+
             self.ax.plot(xconst, yconst, "*", color=color_constrained, alpha=0.5)
             self.ax.plot(xunconst, yunconst, "*", color=color_unconstrained, alpha=0.5)
-            for _, i in enumerate(range(len(sensors))):
-                self.ax.annotate(
-                    f"{str(i)}",
-                    (xTop[i], yTop[i]),
-                    xycoords="data",
-                    xytext=(-20, 20),
-                    textcoords="offset points",
-                    color="r",
-                    fontsize=12,
-                    arrowprops=dict(arrowstyle="->", color="black"),
-                )
+
+            # Improved annotation logic - check array lengths and indices
+            for i in range(len(sensors)):
+                if i < len(xTop) and i < len(yTop):  # Make sure index is in bounds
+                    # Check that the coordinates are valid (not NaN)
+                    if np.isfinite(xTop[i]) and np.isfinite(yTop[i]):
+                        self.ax.annotate(
+                            f"{i}",
+                            (xTop[i], yTop[i]),
+                            xycoords="data",
+                            xytext=(-20, 20),
+                            textcoords="offset points",
+                            color="r",
+                            fontsize=12,
+                            arrowprops=dict(arrowstyle="->", color="black"),
+                        )
 
 
 class Circle(BaseConstraint):
@@ -1235,33 +1330,45 @@ class Polygon(BaseConstraint):
         """
         Function to compute whether a certain point on the grid lies inside/outside
         the defined constrained region
+
         Attributes
         ----------
-        x : float,
-            x coordinate of point on the grid being evaluated to check whether it lies
+        coords : list or tuple
+            [x, y] coordinates of point on the grid being evaluated to check whether
+            it lies
             inside or outside the constrained region
-        y : float,
-            y coordinate of point on the grid being evaluated to check whether it lies
-            inside or outside the constrained region
+
+        Returns
+        -------
+        bool
+            True if point satisfies the constraint (inside for "in", outside for "out"),
+            False otherwise
         """
+        if len(coords) != 2:
+            raise ValueError("coords must contain exactly 2 elements [x, y]")
+
         x, y = coords[:]
-        # define point in polygon
         polygon = self.xy_coords
         n = len(polygon)
+
+        if n < 3:
+            raise ValueError("Polygon must have at least 3 vertices")
         inFlag = False
 
         for i in range(n):
             x1, y1 = polygon[i]
             x2, y2 = polygon[(i + 1) % n]
-
-            if (y1 < y and y2 >= y) or (y2 < y and y1 >= y):
-                if x1 + (y - y1) / (y2 - y1) * (x2 - x1) < x:
-                    inFlag = not inFlag
-
+            if (y1 > y) != (y2 > y):
+                if y1 != y2:
+                    x_intersect = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+                    if x < x_intersect:
+                        inFlag = not inFlag
         if self.loc.lower() == "in":
             return not inFlag
         elif self.loc.lower() == "out":
             return inFlag
+        else:
+            raise ValueError(f"Invalid constraint type: {self.loc}.Must be'in' or'out'")
 
 
 class UserDefinedConstraints(BaseConstraint):
@@ -1385,7 +1492,7 @@ class UserDefinedConstraints(BaseConstraint):
                         self.all_sensors, self.data
                     )
                     for k in range(len(xValue)):
-                        G[k, i] = eval(
+                        G[k, i] = not eval(
                             self.equations[i], {"x": xValue[k], "y": yValue[k]}
                         )
                     idx_const, rank = (

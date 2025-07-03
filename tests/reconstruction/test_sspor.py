@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 from numpy import isnan, mean, nan, sqrt, zeros
 from pytest_lazyfixture import lazy_fixture
+from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -281,7 +282,7 @@ def test_sensor_selector_properties(data_random):
     assert all(model.get_selected_sensors() == model.selected_sensors)
 
 
-class MockBasisWithWarning:
+class MockBasisWithWarning(BaseEstimator):
     """Mock basis class that raises warnings when fit is called."""
 
     def __init__(self, n_basis_modes=3):

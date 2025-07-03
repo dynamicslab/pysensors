@@ -1492,7 +1492,7 @@ class UserDefinedConstraints(BaseConstraint):
                         self.all_sensors, self.data
                     )
                     for k in range(len(xValue)):
-                        G[k, i] = eval(
+                        G[k, i] = not eval(
                             self.equations[i], {"x": xValue[k], "y": yValue[k]}
                         )
                     idx_const, rank = (

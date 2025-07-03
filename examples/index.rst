@@ -11,7 +11,7 @@ PySensors Examples
    cost_constrained_qr
    cross_validation
    sea_surface_temperature
-   vandermonde
-   spatially_constrained_qr
-   functional_constraints_class
-   simulation_constrained_sensing
+   polynomial_curve_fitting
+   spatial_constrained_qr
+   Olivetti_constrained_sensing
+   OPTI-TWIST_constrained_sensing

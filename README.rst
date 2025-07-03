@@ -306,7 +306,7 @@ References
    (2024): 15501 - 15516.
    `[DOI] <https://doi.org/10.1109/JSEN.2024.3368875>`__
 
-.. |Build| image:: https://github.com/dynamicslab/pysensors/workflows/main.yml/badge.svg
+.. |Build| image:: https://github.com/dynamicslab/pysensors/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ACI
 
 .. |RTD| image:: https://readthedocs.org/projects/python-sensors/badge/?version=latest

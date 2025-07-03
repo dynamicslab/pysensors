@@ -11,6 +11,8 @@ PySensors Examples
    cost_constrained_qr
    cross_validation
    sea_surface_temperature
+   reconstruction_comparison
+   two_point_greedy
    vandermonde
    spatially_constrained_qr
    functional_constraints_class

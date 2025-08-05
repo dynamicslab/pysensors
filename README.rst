@@ -60,7 +60,7 @@ Use the ``predict`` method to reconstruct a new function sampled at the chosen s
   # Regularized reconstruction, on the other hand is the default method for predict. It also requires other parameters like prior and noise
   f_pred_regularized = model.predict(f, prior, noise)
 
-See `reconstruction comparison example <https://python-sensors.readthedocs.io/en/latest/examples/reconstruction_comparison.html>` for more information on the methods of reconstruction.
+See `reconstruction comparison example <https://python-sensors.readthedocs.io/en/latest/examples/reconstruction_comparison.html>`__ for more information on the methods of reconstruction.
 
 .. figure:: docs/figures/vandermonde.png
   :align: center
@@ -104,7 +104,7 @@ constrained region, the constraints in utils compute the constrained sensor indi
 The constrained shapes currently implemented are: ``Circle``, ``Cylinder``, ``Line``, ``Parabola``, ``Ellipse``, ``Polygon``.
 A user can also define their own constraints using ``UserDefinedConstraints``, this type of constraint has the ability to take in either a function or a .py file which contains a functional definition of the constrained region.
 
-See `this example <https://python-sensors.readthedocs.io/en/latest/examples/Olivetti_constrained_sensing.html>` for more information.
+See `this example <https://python-sensors.readthedocs.io/en/latest/examples/Olivetti_constrained_sensing.html>`__ for more information.
 
 Classification
 ^^^^^^^^^^^^^^
@@ -318,7 +318,7 @@ References
 
 - Klishin, Andrei A., J. Nathan Kutz, Krithika Manohar
   "Data-Induced Interations of Sparse Sensors" (2023)
-  `[DOI] <https://doi.org/10.48550/arXiv.2307.11838>`
+  `[DOI] <https://doi.org/10.48550/arXiv.2307.11838>`__
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ACI

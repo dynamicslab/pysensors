@@ -23,7 +23,7 @@ using PySensors effectively.
 
 The diagram below shows current Pysensors capabilities.
 
-.. figure:: docs/figures/pysensors-capabilities.png
+.. figure:: docs/figures/pysensors-capabilities.jpeg
   :align: center
   :alt: A diagram showing current pysensors capabilities.
   :figclass: align-center
@@ -201,7 +201,7 @@ The primary PySensors objects are the ``SSPOR`` and ``SSPOC`` classes, which are
 * Convenience functions to aid in the analysis of error as number of sensors or basis modes are varied
 
 The diagram below outlines a flow chart of how a user can utilize pysensors.
-.. figure:: docs/figures/pysensors-methods.png
+.. figure:: docs/figures/pysensors-methods.jpeg
   :align: center
   :alt: A flow chart of pysensors methods.
   :figclass: align-center

@@ -89,6 +89,8 @@ Three strategies to deal with constraints are currently developed:
 
 * ``predetermined`` - A number of sensor locations are predetermined and the aim is to optimize the rest.
 
+* ``distance constrained`` - Enforces a minimum distance 'r' between selected sensors.
+
 .. code-block:: python
 
   optimizer_exact = ps.optimizers.GQR()
@@ -201,6 +203,7 @@ The primary PySensors objects are the ``SSPOR`` and ``SSPOC`` classes, which are
 * Convenience functions to aid in the analysis of error as number of sensors or basis modes are varied
 
 The diagram below outlines a flow chart of how a user can utilize pysensors.
+
 .. figure:: docs/figures/pysensors-methods.jpeg
   :align: center
   :alt: A flow chart of pysensors methods.

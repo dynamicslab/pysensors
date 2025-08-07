@@ -4,7 +4,7 @@ repos:
   rev: v5.0.0
   hooks:
     - id: check-added-large-files
-      args: ["--maxkb=775"]
+      args: ["--maxkb=900"]
     - id: check-merge-conflict
 - repo: https://github.com/PyCQA/isort
   rev: 5.12.0

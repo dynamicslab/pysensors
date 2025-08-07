@@ -3,7 +3,7 @@ import sys
 
 from setuptools import find_packages, setup
 
-assert sys.version_info >= (3, 6, 0), "pysensors requires Python 3.6+"
+assert sys.version_info >= (3, 9, 0), "pysensors requires Python 3.9+"
 
 NAME = "python-sensors"
 DESCRIPTION = "Sparse sensor placement"
@@ -14,9 +14,10 @@ PYTHON = ">=3.6"
 LICENSE = "MIT"
 CLASSIFIERS = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

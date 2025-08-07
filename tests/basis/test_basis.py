@@ -139,7 +139,8 @@ def custom_instance(sample_basis):
 
 def test_fit_method(custom_instance, sample_basis):
     """Test that fit correctly sets basis_matrix_ and returns self."""
-    result = custom_instance.fit()
+    X = np.ones(sample_basis.shape)
+    result = custom_instance.fit(X)
     expected_basis_matrix = sample_basis[:, :3]
     np.testing.assert_array_equal(custom_instance.basis_matrix_, expected_basis_matrix)
     assert result is custom_instance
@@ -147,7 +148,8 @@ def test_fit_method(custom_instance, sample_basis):
 
 def test_matrix_inverse_default(custom_instance):
     """Test matrix_inverse with default n_basis_modes."""
-    custom_instance.fit()
+    X = np.random.random((10, 10))
+    custom_instance.fit(X)
     result = custom_instance.matrix_inverse()
     expected_result = custom_instance.basis_matrix_.T
     np.testing.assert_array_equal(result, expected_result)
@@ -156,7 +158,8 @@ def test_matrix_inverse_default(custom_instance):
 @pytest.mark.parametrize("n_modes", [1, 2])
 def test_matrix_inverse_with_n_basis_modes(custom_instance, n_modes):
     """Test matrix_inverse with specified n_basis_modes."""
-    custom_instance.fit()
+    X = np.random.random((10, 10))
+    custom_instance.fit(X)
     result = custom_instance.matrix_inverse(n_basis_modes=n_modes)
     expected_result = custom_instance.basis_matrix_[:, :n_modes].T
     np.testing.assert_array_equal(result, expected_result)
@@ -183,7 +186,8 @@ def test_n_basis_modes_setter(custom_instance):
 
 def test_matrix_inverse_calls_validate_input(custom_instance, monkeypatch):
     """Test that matrix_inverse calls _validate_input."""
-    custom_instance.fit()
+    X = np.random.random((10, 10))
+    custom_instance.fit(X)
     validation_called = False
     test_value = None
 

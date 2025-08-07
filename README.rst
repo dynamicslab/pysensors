@@ -21,6 +21,12 @@ the PySensors approach to reconstruction problems and Brunton et al.
 literature review along with examples and additional tips for
 using PySensors effectively.
 
+The diagram below shows current Pysensors capabilities.
+
+.. figure:: docs/figures/pysensors-capabilities.jpeg
+  :align: center
+  :alt: A diagram showing current pysensors capabilities.
+  :figclass: align-center
 
 Reconstruction
 ^^^^^^^^^^^^^^
@@ -43,12 +49,18 @@ feed them to a ``SSPOR`` instance with 10 sensors, and
   model = pysensors.reconstruction.SSPOR(n_sensors=10)
   model.fit(data)
 
-Use the ``predict`` method to reconstruct a new function sampled at the chosen sensor locations:
+Use the ``predict`` method to reconstruct a new function sampled at the chosen sensor locations. There are two methods of reconstruction using ``predict``: ``Unregularized Reconstruction`` and ``Regularized Reconstruction``.
+
 
 .. code-block:: python
 
   f = numpy.abs(x[model.selected_sensors]**2 - 0.5)
-  f_pred = model.predict(f)
+  # Unregularized reconstruction can be used using the method ``unregularized``
+  f_pred_unregularized = model.predict(f, method='unregularized')
+  # Regularized reconstruction, on the other hand is the default method for predict. It also requires other parameters like prior and noise
+  f_pred_regularized = model.predict(f, prior, noise)
+
+See `reconstruction comparison example <https://python-sensors.readthedocs.io/en/latest/examples/reconstruction_comparison.html>`__ for more information on the methods of reconstruction.
 
 .. figure:: docs/figures/vandermonde.png
   :align: center
@@ -77,6 +89,8 @@ Three strategies to deal with constraints are currently developed:
 
 * ``predetermined`` - A number of sensor locations are predetermined and the aim is to optimize the rest.
 
+* ``distance constrained`` - Enforces a minimum distance 'r' between selected sensors.
+
 .. code-block:: python
 
   optimizer_exact = ps.optimizers.GQR()
@@ -89,24 +103,10 @@ Three strategies to deal with constraints are currently developed:
 We have further provided functions to compute the sensors in the constrained regions. For example if the user provides the center and radius of a circular
 constrained region, the constraints in utils compute the constrained sensor indices. Direct constraint plotting capabilities have also been developed.
 
-The constrained shapes currently implemented are:
+The constrained shapes currently implemented are: ``Circle``, ``Cylinder``, ``Line``, ``Parabola``, ``Ellipse``, ``Polygon``.
+A user can also define their own constraints using ``UserDefinedConstraints``, this type of constraint has the ability to take in either a function or a .py file which contains a functional definition of the constrained region.
 
-* ``Circle``
-
-* ``Cylinder``
-
-* ``Line``
-
-* ``Parabola``
-
-* ``Ellipse``
-
-* ``Polygon``
-
-* ``UserDefinedConstraints``
-
-  - This type of constraint has the ability to take in either a function from the user or a
-  .py file which contains a functional definition of the constrained region.
+See `this example <https://python-sensors.readthedocs.io/en/latest/examples/Olivetti_constrained_sensing.html>`__ for more information.
 
 Classification
 ^^^^^^^^^^^^^^
@@ -126,7 +126,7 @@ Bases
 ^^^^^
 The basis in which measurement data are represented can have a dramatic
 effect on performance. PySensors implements the three bases most commonly
-used for sparse sensor placement: raw measurements, SVD/POD/PCA modes, and random projections. Bases can be easily incorporated into ``SSPOR`` and ``SSPOC`` classes:
+used for sparse sensor placement: raw measurements, SVD/POD/PCA modes, and random projections. A user can also define their own custom basis. Bases can be easily incorporated into ``SSPOR`` and ``SSPOC`` classes:
 
 .. code-block:: python
 
@@ -141,7 +141,7 @@ Installation
 
 Dependencies
 ^^^^^^^^^^^^
-The high-level dependencies for PySensors are Linux or macOS and Python 3.6-3.8. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
+The high-level dependencies for PySensors are Linux or macOS and Python 3.9-3.12. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
 
 PySensors has not been tested on Windows.
 
@@ -191,9 +191,23 @@ The primary PySensors objects are the ``SSPOR`` and ``SSPOC`` classes, which are
 
   - ``Identity`` - use raw measurement data
   - ``SVD`` - efficiently compute first k left singular vectors
-  - ``RandomProjection`` - Gaussian random projections of measurements
+  - ``RandomProjection`` - gaussian random projections of measurements
+  - ``CustomBasis`` - user defined bases ranging from DMD modes to Chebyshev polynomials
 
+* ``optimizers`` - submodule implementing different optimizers to fit data
+
+  - ``QR`` - greedy QR optimizer
+  - ``CCQR`` - greedy cost constrained QR optimizer
+  - ``GQR`` - general QR optimizer
+  - ``TPGR`` - two point greedy optmizer
 * Convenience functions to aid in the analysis of error as number of sensors or basis modes are varied
+
+The diagram below outlines a flow chart of how a user can utilize pysensors.
+
+.. figure:: docs/figures/pysensors-methods.jpeg
+  :align: center
+  :alt: A flow chart of pysensors methods.
+  :figclass: align-center
 
 Documentation
 -------------
@@ -300,11 +314,14 @@ References
    (2018): 2642-2656.
    `[DOI] <https://doi.org/10.1109/JSEN.2018.2887044>`__
 
--  Karnik, Niharika, Mohammad G. Abdo, Carlos E. Estrada-Perez, Jun Soo Yoo,
-    Joshua J. Cogliati, Richard S. Skifton, Pattrick Calderoni, Steven L. Brunton, and Krithika Manohar.
-   "Constrained Optimization of Sensor Plcaement for Nuclear Digital Twins" IEEE Sensors Journal 24, no. 9
+-  Karnik, Niharika, Mohammad G. Abdo, Carlos E. Estrada-Perez, Jun Soo Yoo, Joshua J. Cogliati, Richard S. Skifton, Pattrick Calderoni, Steven L. Brunton, and Krithika Manohar.
+   "Constrained Optimization of Sensor Placement for Nuclear Digital Twins" IEEE Sensors Journal 24, no. 9
    (2024): 15501 - 15516.
    `[DOI] <https://doi.org/10.1109/JSEN.2024.3368875>`__
+
+- Klishin, Andrei A., J. Nathan Kutz, Krithika Manohar
+  "Data-Induced Interations of Sparse Sensors" (2023)
+  `[DOI] <https://doi.org/10.48550/arXiv.2307.11838>`__
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ACI

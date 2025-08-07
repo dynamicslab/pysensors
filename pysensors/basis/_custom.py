@@ -38,7 +38,7 @@ class Custom(InvertibleBasis, MatrixMixin):
         else:
             raise ValueError("n_basis_modes must be a positive integer.")
 
-    def fit(self):
+    def fit(self, X):
         """
         Returns
         -------

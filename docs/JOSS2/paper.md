@@ -94,6 +94,6 @@ Finally, we demonstrate these new functionalities using new notebook examples fo
 
 
 # Acknowledgments
-The authors would like to thank B. de Silva for valuable feedback. The authors acknowledge support from the Boeing Company, the National Science Foundation through the Mathematical Foundations of Digital Twins (MATH-DT) program under Award Nos. 2529361 and 2529362; NSF AI Institute in Dynamic Systems under grant 2112085 and the Idaho National Laboratory (INL) Laboratory Directed Research \& Development (LDRD) Program under DOE Idaho Operations Office Contract DE-AC07-05ID14517 for LDRD-22A1059-091FP.
+The authors would like to thank B. de Silva for valuable feedback. The authors acknowledge support from the Boeing Company; the National Science Foundation through the Mathematical Foundations of Digital Twins (MATH-DT) program under Award Nos. 2529361 and 2529362; NSF AI Institute in Dynamic Systems under grant 2112085 and the Idaho National Laboratory (INL) Laboratory Directed Research \& Development (LDRD) Program under DOE Idaho Operations Office Contract DE-AC07-05ID14517 for LDRD-22A1059-091FP.
 
 # References

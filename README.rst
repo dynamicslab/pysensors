@@ -319,9 +319,13 @@ References
    (2024): 15501 - 15516.
    `[DOI] <https://doi.org/10.1109/JSEN.2024.3368875>`__
 
-- Klishin, Andrei A., J. Nathan Kutz, Krithika Manohar
-  "Data-Induced Interations of Sparse Sensors" (2023)
-  `[DOI] <https://doi.org/10.48550/arXiv.2307.11838>`__
+-  Klishin, Andrei A., J. Nathan Kutz, Krithika Manohar
+   "Data-Induced Interations of Sparse Sensors" (2023)
+   arXiv preprint arXiv:2307.11838 (2023). `[arXiv] <https://arxiv.org/abs/2307.11838>`__
+
+-  Niharika Karnik, Yash Bhangale, Mohammad G. Abdo, Andrei A. Klishin, Joshua J. Cogliati, Bingni W. Brunton, J. Nathan Kutz, Steven L. Brunton, Krithika Manohar
+   "PySensors 2.0: A Python Package for Sparse Sensor Placement"
+   arXiv preprint arXiv:2509.08017 (2025). `[arXiv] <https://doi.org/10.48550/arXiv.2509.08017>`__
 
 .. |Build| image:: https://github.com/dynamicslab/pysensors/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/dynamicslab/pysensors/actions?query=workflow%3ACI

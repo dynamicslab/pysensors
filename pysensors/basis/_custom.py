@@ -2,10 +2,12 @@
 custom mode basis class.
 """
 
+from sklearn.base import BaseEstimator
+
 from ._base import InvertibleBasis, MatrixMixin
 
 
-class Custom(InvertibleBasis, MatrixMixin):
+class Custom(InvertibleBasis, MatrixMixin, BaseEstimator):
     """
     Use a custom transformation to map input features to
     custom modes.

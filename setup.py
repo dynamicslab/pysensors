@@ -3,21 +3,21 @@ import sys
 
 from setuptools import find_packages, setup
 
-assert sys.version_info >= (3, 9, 0), "pysensors requires Python 3.9+"
+assert sys.version_info >= (3, 10, 0), "pysensors requires Python 3.10+"
 
 NAME = "python-sensors"
 DESCRIPTION = "Sparse sensor placement"
 URL = "https://github.com/dynamicslab/pysensors"
 EMAIL = "bdesilva@uw.edu, kmanohar@uw.edu, emily.e.clark93@gmail.com"
 AUTHOR = "Brian de Silva, Krithika Manohar, Emily Clark"
-PYTHON = ">=3.6"
+PYTHON = ">=3.10"
 LICENSE = "MIT"
 CLASSIFIERS = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

@@ -141,7 +141,7 @@ Installation
 
 Dependencies
 ^^^^^^^^^^^^
-The high-level dependencies for PySensors are Linux or macOS and Python 3.9-3.12. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
+The high-level dependencies for PySensors are Linux or macOS and Python 3.10-3.13. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
 
 PySensors has not been tested on Windows.
 

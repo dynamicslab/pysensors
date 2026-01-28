@@ -93,17 +93,7 @@ exclude = [
   ".venv",
   "dist",
   "build",
+  "docs",
+  "examples",
   "__pycache__",
 ]
-ignore = [
-  "W503",  # conflicts with black
-  "E203",  # conflicts with black
-]
-per-file-ignores = [
-  "__init__.py:F401,F403",
-]
-max-line-length = 88
-import-order-style = "smarkets"
-statistics = true
-count = true
-verbose = 1

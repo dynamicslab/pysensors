@@ -3580,11 +3580,15 @@ class TestUserDefinedConstraints:
         constraint = UserDefinedConstraints(
             all_sensors=all_sensors, equation="x**2 + y**2 <= 4", data=sample_array
         )
-        with patch(
-            "pysensors.utils._constraints.get_coordinates_from_indices"
-        ) as mock_get_coords, patch("builtins.eval") as mock_eval, patch.object(
-            BaseConstraint, "get_functionalConstraind_sensors_indices"
-        ) as mock_get_func:
+        with (
+            patch(
+                "pysensors.utils._constraints.get_coordinates_from_indices"
+            ) as mock_get_coords,
+            patch("builtins.eval") as mock_eval,
+            patch.object(
+                BaseConstraint, "get_functionalConstraind_sensors_indices"
+            ) as mock_get_func,
+        ):
             x_values = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
             y_values = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
             mock_get_coords.side_effect = [
@@ -3634,13 +3638,17 @@ class TestUserDefinedConstraints:
                 all_sensors=all_sensors, file="test_constraint.py", data=sample_array
             )
             assert constraint.functions == test_function
-            with patch.object(
-                BaseConstraint, "functional_constraints"
-            ) as mock_func_constr, patch.object(
-                BaseConstraint, "get_functionalConstraind_sensors_indices"
-            ) as mock_get_func, patch(
-                "pysensors.utils._constraints.get_coordinates_from_indices"
-            ) as mock_get_coords:
+            with (
+                patch.object(
+                    BaseConstraint, "functional_constraints"
+                ) as mock_func_constr,
+                patch.object(
+                    BaseConstraint, "get_functionalConstraind_sensors_indices"
+                ) as mock_get_func,
+                patch(
+                    "pysensors.utils._constraints.get_coordinates_from_indices"
+                ) as mock_get_coords,
+            ):
                 mock_func_constr.return_value = np.array([1.5, -0.5, 0.8, -1.2, 2.3])
                 mock_get_func.return_value = (np.array([0, 2, 4]), np.array([0, 1, 2]))
                 mock_get_coords.return_value = (

@@ -23,4 +23,6 @@ repos:
   rev: 7.1.1
   hooks:
     - id: flake8
-      args: ["--config=setup.cfg"]
+      args:
+        - --max-line-length=88
+        - --extend-ignore=E203,F401

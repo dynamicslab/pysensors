@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", 3.13]
 
     steps:
     - uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
           fail-fast: false
           max-parallel: 4
           matrix:
-            python-version: ["3.9", "3.10", "3.11", "3.12"]
+            python-version: ["3.10", "3.11", "3.12", 3.13]
 
       steps:
         - uses: actions/checkout@v4
@@ -63,7 +63,8 @@ jobs:
             python-version: ${{ matrix.python-version }}
         - name: Install dependencies
           run: |
-            pip install -r requirements-dev.txt
+            pip install --upgrade pip
+            pip install -e ".[dev,examples]"
         - name: Test with pytest
           run: |
             pytest tests --cov=pysensors --cov-report=xml
@@ -71,7 +72,7 @@ jobs:
           uses: codecov/codecov-action@v5
           with:
             token: ${{ secrets.CODECOV_TOKEN }}
-            file: ./coverage.xml
+            files: ./coverage.xml
         - name: Execute feature notebook with papermill
           run: |
             pip install papermill
@@ -80,6 +81,6 @@ jobs:
         - uses: actions/cache@v4
           with:
             path: ~/.cache/pip
-            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
             restore-keys: |
               ${{ runner.os }}-pip-

@@ -1,9 +1,67 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "setuptools_scm_git_archive"]
-build-backend = "setuptools.build_meta:__legacy__"
+requires = [
+  "setuptools>=64",
+  "wheel",
+  "setuptools_scm[toml]>=8",
+  "setuptools_scm_git_archive",
+]
+build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
-write_to = "pysensors/version.py"
+[project]
+name = "python-sensors"
+description = "Sparse Sensor Placement"
+authors = [
+  {name="Brian de Silva", email="bdesilva@uw.edu"},
+  {name="Krithika Manohar", email="kmanohar@uw.edu"},
+  {name="Emily Clark", email="emily.e.clark93@gmail.com"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dynamic = ["version"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+readme = "README.rst"
+dependencies = [
+  "scikit-learn",
+  "numpy>=2.0",
+  "matplotlib>=3.10",
+  "pandas",
+  "scipy"
+]
+
+[project.urls]
+Homepage = "https://github.com/dynamicslab/pysensors"
+Repository = "https://github.com/dynamicslab/pysensors"
+
+[project.optional-dependencies]
+dev = [
+  "pytest >=6.2.4, <8.0.0",
+  "pytest-cov",
+  "pytest-lazy-fixture",
+  "flake8-builtins-unleashed",
+  "codecov",
+  "sphinx >= 2",
+  "sphinxcontrib-apidoc",
+  "sphinx_rtd_theme",
+  "pre-commit",
+  "nbsphinx",
+]
+examples = [
+  "jupyter",
+  "matplotlib",
+  "netCDF4",
+  "notebook",
+  "seaborn",
+]
 
 [tool.black]
 line-length = 88
@@ -21,4 +79,21 @@ exclude = '''
 filterwarnings = [
   "ignore::RuntimeWarning",
   "ignore::UserWarning"
+]
+
+[tool.setuptools]
+packages = { find = { exclude = ["tests", "examples"] } }
+
+[tool.setuptools_scm]
+write_to = "pysensors/version.py"
+
+[tool.flake8]
+exclude = [
+  ".git",
+  ".venv",
+  "dist",
+  "build",
+  "docs",
+  "examples",
+  "__pycache__",
 ]

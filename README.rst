@@ -141,7 +141,7 @@ Installation
 
 Dependencies
 ^^^^^^^^^^^^
-The high-level dependencies for PySensors are Linux or macOS and Python 3.10-3.13. ``pip`` is also recommended as is makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
+The requirements for PySensors are Linux or macOS and Python 3.10-3.13. ``pip`` is recommended as it makes managing PySensors' other dependencies much easier. You can install it by following the instructions `here <https://packaging.python.org/tutorials/installing-packages/#ensure-you-can-run-pip-from-the-command-line>`__.
 
 PySensors has not been tested on Windows.
 
@@ -174,13 +174,12 @@ Then, to install the package, run
   cd pysensors
   pip install .
 
-If you do not have pip you can instead use
+If you do not have root access, you should add the ``--user`` option to the install command above.
+If you want an editable install (recommended for development), run
 
 .. code-block:: bash
 
-  python setup.py install
-
-If you do not have root access, you should add the ``--user`` option to the ``install`` commands above.
+  pip install -e .
 
 
 Features
@@ -213,11 +212,11 @@ Documentation
 -------------
 PySensors has a `documentation site <https://python-sensors.readthedocs.io/en/latest/index.html>`__ hosted by readthedocs.
 Examples are available `online <https://python-sensors.readthedocs.io/en/latest/examples/index.html>`__, as static
-`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as `interactive notebooks <https://gesis.mybinder.org/binder/v2/gh/dynamicslab/pysensors/654e8144e44bcdc4e481b59a36c496033ef90bf6>`__. To run the example notebooks locally you should install the dependencies in ``requirements-examples.txt``:
+`Jupyter notebooks <https://github.com/dynamicslab/pysensors/tree/master/examples>`__ and as `interactive notebooks <https://gesis.mybinder.org/binder/v2/gh/dynamicslab/pysensors/654e8144e44bcdc4e481b59a36c496033ef90bf6>`__. To run the example notebooks locally, you should install the examples dependencies:
 
 .. code-block:: bash
 
-  pip install -r requirements-examples.txt
+  pip install -e ".[examples]"
 
 Community guidelines
 --------------------
@@ -233,11 +232,11 @@ your work!
 
 Contributing code
 ^^^^^^^^^^^^^^^^^
-We welcome contributions to PySensors. To contribute a new feature please submit a pull request. To get started we recommend installing the packages in ``requirements-dev.txt`` via
+We welcome contributions to PySensors. To contribute a new feature please submit a pull request. To get started, we recommend installing the optional dev packages
 
 .. code-block:: bash
 
-    pip install -r requirements-dev.txt
+    pip install -e ".[dev]"
 
 This will allow you to run unit tests and automatically format your code. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
 

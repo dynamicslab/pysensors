@@ -1,6 +1,6 @@
 PySensors
 =========
-|Build| |RTD| |PyPI| |Codecov| |Binder| |JOSS| |Zenodo|
+|Build| |RTD| |PyPI| |Codecov| |Binder| |JOSS1| |JOSS2| |DOI|
 
 **PySensors** is a Scikit-learn style Python package for the sparse placement of sensors, either for reconstruction or classification tasks.
 
@@ -264,13 +264,15 @@ If you find a bug in the code or want to request a new feature, please open an i
 
 Citing PySensors
 ----------------
-We have published a short paper in the Journal of Open Source Software (JOSS). You can find the paper `here  <https://joss.theoj.org/papers/10.21105/joss.02828>`__.
+We have published 2 papers in the Journal of Open Source Software (JOSS). You can find the papers here: `JOSS1  <https://joss.theoj.org/papers/10.21105/joss.02828>`__ and `JOSS2  <https://joss.theoj.org/papers/10.21105/joss.09265#>`__.
 
 If you use PySensors in your work, please consider citing it using:
 
 .. code-block:: text
 
-    de Silva et al., (2021). PySensors: A Python package for sparse sensor placement. Journal of Open Source Software, 6(58), 2828, https://doi.org/10.21105/joss.02828``
+    de Silva et al., (2021). PySensors: A Python package for sparse sensor placement. Journal of Open Source Software, 6(58), 2828, https://doi.org/10.21105/joss.02828
+
+    Karnik et al. (2026). PySensors 2.0: A Python Package for Sparse Sensor Placement. Journal of Open Source Software, 11(118), 9265, https://doi.org/10.21105/joss.09265
 
 Bibtex:
 
@@ -286,6 +288,19 @@ Bibtex:
     pages = {2828},
     author = {Brian M. de Silva and Krithika Manohar and Emily Clark and Bingni W. Brunton and J. Nathan Kutz and Steven L. Brunton},
     title = {PySensors: A Python package for sparse sensor placement},
+    journal = {Journal of Open Source Software}
+  }
+
+  @article{Karnik2026,
+    doi = {10.21105/joss.09265},
+    url = {https://doi.org/10.21105/joss.09265},
+    year = {2026},
+    publisher = {The Open Journal},
+    volume = {11},
+    number = {118},
+    pages = {9265},
+    author = {Karnik, Niharika and Bhangale, Yash and Abdo, Mohammad G. and Klishin, Andrei A. and Cogliati, Joshua J. and Brunton, Bingni W. and Kutz, J. Nathan and Brunton, Steven L. and Manohar, Krithika},
+    title = {PySensors 2.0: A Python Package for Sparse Sensor Placement},
     journal = {Journal of Open Source Software}
   }
 
@@ -342,9 +357,12 @@ References
 .. |Binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/dynamicslab/pysensors/master
 
-.. |JOSS| image:: https://joss.theoj.org/papers/10.21105/joss.02828/status.svg
+.. |JOSS1| image:: https://joss.theoj.org/papers/10.21105/joss.02828/status.svg
     :target: https://doi.org/10.21105/joss.02828
 
-.. |Zenodo| image:: https://zenodo.org/badge/260577702.svg
-    :target: https://zenodo.org/badge/latestdoi/260577702
+.. |JOSS2| image:: https://joss.theoj.org/papers/10.21105/joss.09265/status.svg
+   :target: https://doi.org/10.21105/joss.09265
+
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.18665848.svg
+   :target: https://doi.org/10.5281/zenodo.18665848
 

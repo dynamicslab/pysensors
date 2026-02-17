@@ -12,8 +12,11 @@ name = "python-sensors"
 description = "Sparse Sensor Placement"
 authors = [
   {name="Brian de Silva", email="bdesilva@uw.edu"},
+  {name="Niharika Karnik", email="niharika.karnik29@gmail.com"},
+  {name="Yash Bhangale", email="yash6599@uw.edu"},
+  {name="Mohammad Abdo", email="mohammad.abdo@inl.gov"},
   {name="Krithika Manohar", email="kmanohar@uw.edu"},
-  {name="Emily Clark", email="emily.e.clark93@gmail.com"},
+  {name="Emily Clark", email="emily.e.clark93@gmail.com"},  
 ]
 license = {text = "MIT"}
 requires-python = ">=3.10"
